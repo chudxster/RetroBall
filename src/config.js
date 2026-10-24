@@ -192,7 +192,8 @@ const AI = {
   think: [0.5, 0.2],       // seconds between ball-handler decisions
   reaction: [0.45, 0.12],  // delay before jumping to contest a shot
   shotError: [0.14, 0.035], // spread of the release point around the middle of the green
-  stealRate: [0.1, 0.5],   // steal attempts per second when in range of the ball handler
+  stealRate: [0.1, 0.5],   // how often (per second) the ball handler's defender jumps in to reach for the ball...
+  lungeTime: 0.6,          // ...giving up after this long if they can't get close enough
   stealChance: [0.15, 0.35],
   interceptChance: [0.1, 0.35],
   blockChance: [0.15, 0.4],
@@ -201,9 +202,9 @@ const AI = {
   shootRange: 150,    // won't shoot from farther out than this (unless the hold timer runs out)
   minHold: 0.5,       // seconds with the ball before considering a jumper
   maxHold: 7,         // after this long holding the ball, shoot whatever happens
-  guardGapBall: 22,   // how far off the man defenders play, toward their own hoop: on the ball...
-  guardGapOff: 38,    // ...and off it
-  pickupLine: 10,     // half-court defense: defenders wait this far inside their own half for the offense to cross
+  guardGapBall: 32,   // how far off the man defenders play, toward their own hoop: on the ball...
+  guardGapOff: 50,    // ...and off it
+  pickupLine: 25,     // half-court defense: defenders wait this far inside their own half for the offense to cross
   helpRange: 110,     // a ball handler this close to the hoop draws a help defender...
   helpDepth: 16,      // ...who stands this far out from the rim, toward the ball
   hangTime: 1.1,      // seconds an AI dunker hangs on the rim on a rim-hang dunk

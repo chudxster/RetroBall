@@ -194,13 +194,30 @@ const AIBrain = (() => {
       target = { x: hoop.x + (hx / hl) * AI.helpDepth, y: hoop.y + (hy / hl) * AI.helpDepth };
     }
 
-    // Half-court defense: nobody follows the offense past the half-court line; they wait on their own half and pick
-    // their man up once he crosses.
+    // Half-court defense: nobody follows the offense past the pick-up line inside their own half; they wait there and
+    // pick their man up once he crosses. Steals and close-outs only happen on this side of it too.
     const limit = COURT.length / 2 - hoop.dir * AI.pickupLine;
-    if ((target.x - limit) * hoop.dir > 0) target = { x: limit, y: target.y };
+    const inHalf = (q) => (q.x - limit) * hoop.dir <= 0;
+    if (!inHalf(target)) target = { x: limit, y: target.y };
+
+    // Playing off the ball handler, the defender now and then jumps in to reach for the ball, then backs off again.
+    if (onBall && inHalf(man) && !man.shot) {
+      if (m.lungeT > 0) {
+        m.lungeT -= dt;
+        target = { x: man.x + man.facing * 6, y: man.y };
+        if (p.stealCD <= 0 && courtDist(p, man) < DEFENSE.stealRange) {
+          ctl.steal = true;
+          m.lungeT = 0;
+        }
+      } else if (p.stealCD <= 0 && Math.random() < aiValue(p, AI.stealRate) * dt) {
+        m.lungeT = AI.lungeTime;
+      }
+    } else {
+      m.lungeT = 0;
+    }
 
     // A shooter nearby: close out on them and jump to contest after a reaction delay.
-    const shooter = opp.find((q) => q.shot && !q.shot.dunk && !q.shot.released && courtDist(q, p) < DEFENSE.contestRange * 1.5);
+    const shooter = opp.find((q) => q.shot && !q.shot.dunk && !q.shot.released && inHalf(q) && courtDist(q, p) < DEFENSE.contestRange * 1.5);
     if (shooter) {
       target = { x: shooter.x, y: shooter.y };
       if (m.contestFor !== shooter.shot) {
@@ -216,10 +233,6 @@ const AIBrain = (() => {
 
     moveTo(ctl, p, target);
     if (Math.abs(man.x - p.x) > 2) ctl.face = Math.sign(man.x - p.x);
-
-    if (onBall && !man.shot && p.stealCD <= 0 && courtDist(p, man) < DEFENSE.stealRange + 4 && Math.random() < aiValue(p, AI.stealRate) * dt) {
-      ctl.steal = true;
-    }
   }
 
   // The off-ball defender (not the user's player) closest to the hoop being attacked.

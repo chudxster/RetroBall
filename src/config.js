@@ -85,9 +85,10 @@ const SHOT = {
   flightSpeed: 400,
   meterLinger: 0.9,   // seconds the meter stays up after release
   // From behind the half-court line the green is exactly this many frames (1/60 s) of the meter wide, or
-  // deepFramesMax with the shooting upgrade maxed out; near-misses ("slightly" early/late) never go in from there.
+  // deepFramesMax with the shooting upgrade maxed out; any mistimed release from there goes in only by luck.
   deepFrames: 2,
   deepFramesMax: 5,
+  deepLuck: 1 / 50,
   // Fadeaway: shooting while holding away from the hoop jumps backwards. Harder to time, harder to contest.
   fadeAway: -0.5,     // counts as "away" when the move direction is within ~60 degrees of straight back (dot product)
   fadeDist: 22,       // world units drifted back over the jump
@@ -176,6 +177,7 @@ const DEFENSE = {
   stuffChance: 0.3,   // ...with these odds each (AI defenders add their block chance)
   userStuffChance: 0.4,
   separation: 11,     // players closer than this get pushed apart
+  retreatSpeed: 1.6,  // defenders still in the offense's half run back to their own this much faster
 };
 
 // Upgrades for the user's own player, bought in the pause menu (free +/- for now). Effects per level:

@@ -141,6 +141,16 @@ const Play = (() => {
     return false;
   }
 
+  // Getting back on defense: a player whose team doesn't have the ball, still beyond their pick-up line and heading
+  // back toward their own hoop, runs DEFENSE.retreatSpeed times faster.
+  function retreatBoost(game, p, move) {
+    if (game.mode === 'free' || game.possession === p.team || p.hasBall) return 1;
+    const hoop = defendHoop(p.team);
+    const limit = COURT.length / 2 - hoop.dir * AI.pickupLine;
+    const back = (p.x - limit) * hoop.dir > 0 && move.x * hoop.dir < 0;
+    return back ? DEFENSE.retreatSpeed : 1;
+  }
+
   // Hand the ball to `p`: their team now has it. The user always plays the home ball handler; when the other
   // team gets it, the user's control jumps to whoever is nearest the ball.
   function give(game, p) {
@@ -245,5 +255,5 @@ const Play = (() => {
     }
   }
 
-  return { act, pass, passTarget, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, give, nearestTo, switchPlayer, pickups, separate };
+  return { act, pass, passTarget, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, retreatBoost, give, nearestTo, switchPlayer, pickups, separate };
 })();

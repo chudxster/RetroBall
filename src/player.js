@@ -122,7 +122,8 @@ class Player {
     };
   }
 
-  update(dt, move) {
+  // `speedK` scales top speed (defenders hustling back, see Play.retreatBoost).
+  update(dt, move, speedK = 1) {
     this.prevX = this.x;
     this.prevY = this.y;
     this.prevZ = this.z;
@@ -152,7 +153,7 @@ class Player {
     // Steer velocity toward the target at a fixed rate: quick to respond, but with a little weight.
     const boost = 1 + UPGRADES.speed * this.upgrades.speed;
     const dribbling = this.hasBall ? PLAYER.ballSpeed : 1;
-    const maxSpeed = this.bracketSpeed() * boost * dribbling * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
+    const maxSpeed = this.bracketSpeed() * boost * dribbling * speedK * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
     const tx = ix * maxSpeed;
     const ty = iy * maxSpeed * PLAYER.depthSpeed;
     const dx = tx - this.vx;

@@ -113,9 +113,10 @@ const Shooting = (() => {
   }
 
   // Release timing decides make or miss; the aim below then sends the ball where physics will play that out.
-  // `deep` (beyond half court): only the green itself goes in.
+  // `deep` (beyond half court): outside the green, only a SHOT.deepLuck chance of it going in anyway.
   function grade(fill, lo, hi, deep) {
     if (fill >= lo && fill <= hi) return { label: 'PERFECT', color: COLORS.good, make: true };
+    if (deep && Math.random() < SHOT.deepLuck) return { label: 'LUCKY!', color: COLORS.okay, make: true };
     const early = fill < lo;
     const off = early ? lo - fill : fill - hi;
     if (off <= SHOT.goodMargin) {

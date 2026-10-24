@@ -4,7 +4,7 @@ const Input = (() => {
   const STORAGE_KEY = 'retroball.controls';
   const DEFAULT_BINDS = {
     up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD',
-    shoot: 'Space', action: 'KeyE', pass: 'KeyQ', dash: 'ShiftLeft', pause: 'KeyP',
+    shoot: 'Space', action: 'KeyE', pass: 'KeyQ', pause: 'KeyP',
   };
   const ARROWS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 
@@ -75,10 +75,10 @@ const Input = (() => {
     return keys.every((k) => k.length === 1) ? keys.join('') : keys.join('/');
   }
 
-  // Double-tapping left or right queues a dash that way; the dash key queues one the way the player is moving.
-  // Either is picked up by takeDash.
-  let lastTap = { dir: 0, t: -Infinity };
-  let dash = { dir: 0, t: -Infinity };
+  // Double-tapping a move key (up, down, left or right) queues a dash that way, picked up by takeDash.
+  const TAP_DIRS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+  let lastTap = { name: null, t: -Infinity };
+  let dash = { dir: null, t: -Infinity };
   const now = () => performance.now() / 1000;
 
   window.addEventListener('keydown', (e) => {
@@ -86,17 +86,14 @@ const Input = (() => {
     if (e.target instanceof Element && e.target.closest('#menu')) return;
     const ours = Object.keys(binds).some((n) => isBound(n, e.code));
     if (ours) e.preventDefault();
-    if (!e.repeat) {
-      if (isBound('dash', e.code)) dash = { dir: 'held', t: now() };
-      const dir = isBound('left', e.code) ? -1 : isBound('right', e.code) ? 1 : 0;
-      if (dir) {
-        const t = now();
-        if (lastTap.dir === dir && t - lastTap.t < settings.doubleTap) {
-          dash = { dir, t };
-          lastTap = { dir: 0, t: -Infinity };
-        } else {
-          lastTap = { dir, t };
-        }
+    const name = Object.keys(TAP_DIRS).find((n) => isBound(n, e.code));
+    if (name && !e.repeat) {
+      const t = now();
+      if (lastTap.name === name && t - lastTap.t < settings.doubleTap) {
+        dash = { dir: TAP_DIRS[name], t };
+        lastTap = { name: null, t: -Infinity };
+      } else {
+        lastTap = { name, t };
       }
     }
     down.add(e.code);
@@ -128,11 +125,10 @@ const Input = (() => {
     action: () => held('action'),
     // Pass with the ball, switch player on defense.
     pass: () => held('pass'),
-    // A just-requested dash, once: 'held' (dash key: go the way the player is moving), -1 / 1 (double tap left /
-    // right), or 0 for none. Stale ones (e.g. pressed while paused) are dropped.
+    // A just-made double tap's direction ({ x, y }), once, or null. Stale ones (e.g. tapped while paused) are dropped.
     takeDash() {
-      const d = now() - dash.t < 0.2 ? dash.dir : 0;
-      dash = { dir: 0, t: -Infinity };
+      const d = now() - dash.t < 0.2 ? dash.dir : null;
+      dash = { dir: null, t: -Infinity };
       return d;
     },
   };

@@ -253,7 +253,7 @@ const Menu = (() => {
   // Controls: the double-tap dash window and a key button per action. Clicking a button waits for the next key
   // (Esc cancels); a key already used elsewhere swaps over. Saved by Input.
   const KEYBIND_NAMES = {
-    up: 'Up', down: 'Down', left: 'Left', right: 'Right', dash: 'Dash',
+    up: 'Up', down: 'Down', left: 'Left', right: 'Right',
     shoot: 'Shoot/block', action: 'Dunk/steal', pass: 'Pass/switch', pause: 'Pause',
   };
 

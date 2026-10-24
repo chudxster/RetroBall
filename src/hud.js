@@ -16,20 +16,31 @@ function drawHud(ctx, game) {
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
   const k = Input.keyLabel;
   const hint = free
-    ? `${Input.moveLabel()} MOVE  ${k('dash')} DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK`
-    : `${Input.moveLabel()} MOVE  ${k('dash')} DASH  ${k('shoot')} SHOOT/BLOCK  ${k('action')} DUNK/STEAL  ${k('pass')} PASS/SWITCH`;
+    ? `${Input.moveLabel()} MOVE  2X TAP DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK`
+    : `${Input.moveLabel()} MOVE  2X TAP DASH  ${k('shoot')} SHOOT/BLOCK  ${k('action')} DUNK/STEAL  ${k('pass')} PASS/SWITCH`;
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
-// Speed lines trailing a dashing player (behind them sideways; a straight up/down dash trails behind the facing).
+// Speed lines trailing a dashing player: horizontal streaks behind a sideways dash, vertical ones above or below
+// an up/down dash.
 function drawDashLines(ctx, p) {
   const k = p.scale;
-  const back = -(Math.sign(p.dashDir.x) || p.facing);
   ctx.fillStyle = COLORS.line;
-  for (const [dy, len] of [[-58, 10], [-44, 16], [-30, 12], [-16, 8]]) {
-    const x0 = p.sx + back * Math.round(14 * k);
-    const w = Math.round(len * k);
-    ctx.fillRect(back > 0 ? x0 : x0 - w, p.by + Math.round(dy * k), w, 1);
+  if (p.dashDir.x) {
+    const back = -Math.sign(p.dashDir.x);
+    for (const [dy, len] of [[-58, 10], [-44, 16], [-30, 12], [-16, 8]]) {
+      const x0 = p.sx + back * Math.round(14 * k);
+      const w = Math.round(len * k);
+      ctx.fillRect(back > 0 ? x0 : x0 - w, p.by + Math.round(dy * k), w, 1);
+    }
+  } else {
+    // Dashing toward the camera the streaks trail above the head; away from it, below the feet.
+    const up = p.dashDir.y > 0;
+    for (const [dx, len] of [[-9, 8], [-3, 12], [3, 12], [9, 8]]) {
+      const h = Math.round(len * k);
+      const y = up ? p.by - Math.round(76 * k) - h : p.by + Math.round(2 * k);
+      ctx.fillRect(p.sx + Math.round(dx * k), y, 1, h);
+    }
   }
 }
 

@@ -114,10 +114,8 @@ function userControls(frozen) {
   const holder = state.ball.holder;
   const ctl = AIBrain.blank();
   ctl.move = frozen ? { x: 0, y: 0 } : Input.move();
-  // Shift dashes the way you're holding (or facing, holding nothing); a double tap dashes left or right.
-  const dash = frozen ? 0 : Input.takeDash();
-  if (dash === 'held') ctl.dash = ctl.move.x || ctl.move.y ? { ...ctl.move } : { x: state.user.facing, y: 0 };
-  else if (dash) ctl.dash = { x: dash, y: 0 };
+  // Double-tapping a direction dashes that way.
+  ctl.dash = frozen ? null : Input.takeDash();
   ctl.shoot = !!keys.shoot;
   if (u.hasBall || u.shot) {
     ctl.dunk = !!keys.action;

@@ -15,7 +15,7 @@ every AI player gets the same number of levels as you, spread at random (the AI 
 | Key | With the ball | On defense |
 | --- | --- | --- |
 | WASD / arrows | Move: keep holding a direction to speed up (faster after 0.5s, fastest after 1s) | Move |
-| Shift (or double-tap A / D) | Dash the way you're holding (3 second cooldown) | Dash |
+| Double-tap W / A / S / D | Dash that way (3 second cooldown) | Dash |
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball |

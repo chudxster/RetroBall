@@ -148,8 +148,7 @@ const PICKUP = {
   delay: 0.5,         // after a shot or pass, the thrower can't grab the ball for this long
 };
 
-// Dash: Shift bursts the way you're holding (or facing); double-tapping left or right also works. Then wait out
-// the cooldown.
+// Dash: double-tap any direction (up, down, left or right) for a short burst that way, then wait out the cooldown.
 const DASH = {
   speed: 250,         // world units per second during the burst...
   time: 0.16,         // ...for this long (the dash upgrade stretches it)

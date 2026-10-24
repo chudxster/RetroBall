@@ -130,6 +130,10 @@ input {
   color: #94b0c2;
 }
 
+.row + .test-note {
+  margin-top: calc(var(--px) * 4);
+}
+
 .pct {
   min-width: calc(var(--px) * 24);
   text-align: right;

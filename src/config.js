@@ -224,7 +224,10 @@ const COLORS = {
 
 const SKINS = ['#f2c9a0', '#d9a066', '#a86b47', '#7a4a32', '#5a3524'];
 
-const CROWD_SHIRTS = ['#b13e53', '#3b5dc9', '#f4f4f4', '#ffcd75', '#38b764', '#41a6f6', '#ef7d57', '#5d275d'];
+const CROWD = {
+  density: 0.92, // share of seats filled (0..1); which seats are taken is random each load
+};
+const CROWD_SHIRTS =['#b13e53', '#3b5dc9', '#f4f4f4', '#ffcd75', '#38b764', '#41a6f6', '#ef7d57', '#5d275d'];
 const CROWD_HAIR = ['#1a1c2c', '#1a1c2c', '#5d275d', '#7a4a32', '#ffcd75', '#94b0c2'];
 
 // The player's customizable appearance. Colors are #rrggbb; number is a 1-2 digit string.
@@ -276,7 +279,7 @@ function rand(lo, hi) {
   return lo + Math.random() * (hi - lo);
 }
 
-// Deterministic 0..1 noise from two integers (used for crowd layout).
+// Deterministic 0..1 noise from two integers (used for crowd layout and plank seams).
 function hash2(a, b) {
   let h = (a * 374761393 + b * 668265263) | 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177);

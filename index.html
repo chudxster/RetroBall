@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <!-- Testing: dunk outcome odds. Not saved; a reload restores the defaults. -->
+      <!-- Testing: dunk outcome odds and crowd density. Not saved; a reload restores the defaults. -->
       <div class="test-view" id="test-view" hidden>
         <p class="test-note">Dunk odds (testing)</p>
         <div class="row">
@@ -89,12 +89,18 @@
           <span class="slider-spacer"></span>
           <span class="value pct" id="normal-chance-value"></span>
         </div>
+        <p class="test-note">Arena (testing)</p>
+        <div class="row">
+          <label for="crowd-density">Crowd</label>
+          <input type="range" id="crowd-density" min="0" max="100" step="1">
+          <span class="value pct" id="crowd-density-value"></span>
+        </div>
       </div>
 
       <div class="menu-foot">
         <button type="button" class="btn btn-quiet btn-small" id="test-toggle">Test</button>
         <button type="button" class="btn btn-quiet" id="reset-look">Reset look</button>
-        <button type="button" class="btn btn-quiet" id="reset-odds" hidden>Default odds</button>
+        <button type="button" class="btn btn-quiet" id="reset-odds" hidden>Defaults</button>
       </div>
     </div>
   </div>

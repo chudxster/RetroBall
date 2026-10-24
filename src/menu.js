@@ -118,8 +118,9 @@ const Menu = (() => {
   }
 
   // Testing view: sliders for the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two
-  // add up past 100% the hang share shrinks; "normal" shows whatever is left.
+  // add up past 100% the hang share shrinks; "normal" shows whatever is left. Plus the crowd density, live on CROWD.
   const DEFAULT_ODDS = { hangChance: DUNK.hangChance, shatterChance: DUNK.shatterChance };
+  const DEFAULT_CROWD = { density: CROWD.density };
 
   function initTestView() {
     const playerView = document.getElementById('player-view');
@@ -127,7 +128,8 @@ const Menu = (() => {
     const toggle = document.getElementById('test-toggle');
     const resetLook = document.getElementById('reset-look');
     const resetOdds = document.getElementById('reset-odds');
-    const sliders = [...testView.querySelectorAll('input[type="range"]')];
+    const sliders = [...testView.querySelectorAll('input[data-odds]')];
+    const crowd = document.getElementById('crowd-density');
 
     const sync = () => {
       for (const s of sliders) {
@@ -136,6 +138,8 @@ const Menu = (() => {
       }
       const normal = Math.max(0, 100 - Math.round((DUNK.hangChance + DUNK.shatterChance) * 100));
       document.getElementById('normal-chance-value').textContent = `${normal}%`;
+      crowd.value = Math.round(CROWD.density * 100);
+      document.getElementById('crowd-density-value').textContent = `${crowd.value}%`;
     };
 
     for (const s of sliders) {
@@ -144,8 +148,13 @@ const Menu = (() => {
         sync();
       });
     }
+    crowd.addEventListener('input', () => {
+      CROWD.density = Number(crowd.value) / 100;
+      sync();
+    });
     resetOdds.addEventListener('click', () => {
       Object.assign(DUNK, DEFAULT_ODDS);
+      Object.assign(CROWD, DEFAULT_CROWD);
       sync();
     });
     toggle.addEventListener('click', () => {

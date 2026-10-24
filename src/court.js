@@ -4,6 +4,10 @@ const SEAT_SPACING = 9;
 const PLANK_W = 10;        // world units per plank row (planks run the length of the court)
 const PLANK_SEAM_GAP = 60; // world units between plank ends along a row
 
+// Picked once per load so every visit gets a different crowd. Each seat has a fixed roll against CROWD.density,
+// so raising the density only adds people (and lowering it only removes them) without reshuffling the rest.
+const CROWD_SEED = Math.floor(Math.random() * 1e6);
+
 function drawArena(ctx, time) {
   ctx.fillStyle = COLORS.wall;
   ctx.fillRect(0, 0, VIEW_W, CROWD_TOP);
@@ -46,8 +50,8 @@ function drawCrowdRow(ctx, row, top, time) {
   const last = Math.ceil((offset + VIEW_W / 2) / SEAT_SPACING) + 1;
 
   for (let k = first; k <= last; k++) {
-    const h = hash2(k, row);
-    if (h < 0.08) continue; // empty seat
+    if (hash2(k + CROWD_SEED, row + 1013) >= CROWD.density) continue; // empty seat
+    const h = hash2(k + CROWD_SEED, row);
     const sx = Math.round(VIEW_W / 2 + k * SEAT_SPACING - offset);
     const cheering = Math.sin(time * 6 + h * 50) > 0.97;
     const y = top + (cheering ? -2 : 0);

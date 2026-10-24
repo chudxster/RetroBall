@@ -341,16 +341,15 @@ class Player {
     const swing = this.armSwingPhase() * ARM.swing * runK;
     const bend = ARM.bend * runK;
 
-    // Whichever arm is nearer the camera is drawn wider, unshaded and in front of the body. Side-on, both arms hang
-    // from the same shoulder, the far one hidden behind the body and near arm until it swings out; in the
-    // three-quarter views the body is turned, so the far shoulder sits at the other edge of the torso.
+    // Whichever arm is nearer the camera is drawn wider, unshaded and in front of the body. Running side-on, both
+    // arms are drawn in front, one at each edge of the torso, so both stay in view.
     const backNear = turn < 0;
     const frontNear = turn >= 0;
+    const armsInFront = turn === 0 && !this.shot;
     const backW = backNear ? 8 : turn > 0 ? 4 : 6;
     const backSkin = backNear ? c.skin : c.skinDark;
     const backShade = backNear ? c.skinDark : c.skinDarker;
-    const backX = turn === 0 ? 11 : -11;
-    let backArm = this.armChain(backX, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
+    let backArm = this.armChain(-11, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
     const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
     const frontSkin = frontNear ? c.skin : c.skinDark;
     const frontShade = frontNear ? c.skinDark : c.skinDarker;
@@ -365,13 +364,11 @@ class Player {
         ]
       : this.armChain(11, -50 + u, -swing, -swing + bend, frontW, frontNear && turn > 0 ? 1 : 0, frontSkin, frontShade);
 
-    // Jump shot: shooting arm straight up under the ball (with a wrist flick once it's gone), guide arm raised beside
-    // it (side-on, just behind it from the same shoulder).
+    // Jump shot: shooting arm straight up under the ball (with a wrist flick once it's gone), guide arm raised behind.
     if (this.shot) {
-      const guideX = turn === 0 ? 9 : -10;
       backArm = [
-        [guideX, -64, 6, 14, c.skinDark],
-        [guideX, -56, 6, 2, c.trim],
+        [-10, -64, 6, 14, c.skinDark],
+        [-10, -56, 6, 2, c.trim],
       ];
       frontArm = [
         [6, -66, 6, 16, c.skin],
@@ -441,8 +438,8 @@ class Player {
         ? [...kicked(-3, c.skinDark), ...kicked(0, c.skin)]
         : [...leg(-8 + back, c.skinDark, c.skinDarker), ...leg(2 + front, c.skin, c.skinDark)]),
 
-      // Far arm goes behind the body. The back arm swings opposite the legs.
-      ...(backNear ? frontArm : backArm),
+      // Far arm goes behind the body (unless both are in front). The back arm swings opposite the legs.
+      ...(armsInFront ? [] : backNear ? frontArm : backArm),
 
       // Shorts: darker back, waistband, side stripe and hem. With the legs kicked out they curve forward over the
       // thighs instead (see kickedShorts).
@@ -469,7 +466,7 @@ class Player {
       ...this.headParts(u, turn < 0 ? 'back' : 'side', face),
 
       // Near arm goes in front of the body.
-      ...(backNear ? backArm : frontArm),
+      ...(armsInFront ? [...backArm, ...frontArm] : backNear ? backArm : frontArm),
 
       // Armhole straps on both sides of the jersey go last so the arms never cover them.
       [8, -52 + u, 2, 6, c.trim],

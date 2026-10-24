@@ -22,7 +22,6 @@
         <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true">Player</button>
         <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
         <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Gamemode</button>
-        <button type="button" class="tab" role="tab" data-panel="practice-view" aria-selected="false">Practice</button>
         <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
         <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false">UI</button>
       </div>
@@ -161,6 +160,18 @@
           </div>
         </div>
 
+        <!-- Practice modes: just the user's player. Picking one starts it fresh. -->
+        <p class="test-note">Practice (just you; picking one starts it fresh)</p>
+        <button type="button" class="mode-option" data-mode="free" aria-pressed="false">
+          <span class="mode-name">Free shot</span>
+          <span class="mode-desc">Just you and the ball, either hoop</span>
+        </button>
+        <button type="button" class="mode-option" data-mode="world" aria-pressed="false">
+          <span class="mode-name">Around the world</span>
+          <span class="mode-desc">15 spots in order: make each one to move on. Timed.</span>
+          <span class="mode-desc" id="world-best"></span>
+        </button>
+
         <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
         <div class="stack-view test-section" id="test-view">
           <p class="test-note">Testing (not saved)</p>
@@ -203,20 +214,6 @@
           </div>
           <div class="tuning-list" id="tuning-list"></div>
         </div>
-      </div>
-
-      <!-- Practice modes: just the user's player. Picking one starts it fresh. -->
-      <div class="tab-panel stack-view" id="practice-view" role="tabpanel" hidden>
-        <p class="test-note">Practice (picking one starts it fresh)</p>
-        <button type="button" class="mode-option" data-mode="free" aria-pressed="false">
-          <span class="mode-name">Free shot</span>
-          <span class="mode-desc">Just you and the ball, either hoop</span>
-        </button>
-        <button type="button" class="mode-option" data-mode="world" aria-pressed="false">
-          <span class="mode-name">Around the world</span>
-          <span class="mode-desc">15 spots in order: make each one to move on. Timed.</span>
-          <span class="mode-desc" id="world-best"></span>
-        </button>
       </div>
 
       <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->

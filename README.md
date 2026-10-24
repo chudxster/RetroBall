@@ -6,8 +6,8 @@ A Retro Bowl-style 2.5D pixel-art basketball game. Plain HTML5 canvas and JavaSc
 
 Open `index.html` in a browser (double-clicking works), or serve the folder from any static host.
 
-**3v3 Casual** (full court, AI teammates and opponents, half-court defense) is in the pause menu's Gamemode tab. The
-Practice tab has **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across under
+The pause menu's Gamemode tab has **3v3 Casual** (full court, AI teammates and opponents, half-court defense) and,
+under Practice, **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across under
 the hoop, two from each elbow, three free throws, five threes around the arc), make each to move on, timed, with your
 best time saved.
 
@@ -35,7 +35,7 @@ the same spot, spread at random (the AI doesn't dash).
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal (reaching in too close risks a foul) |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball (free shot: get the ball back where you stand) |
-| Esc / P | Pause menu: Player (customize), Upgrades, Gamemode (mode, free throws), Controls (keybinds, dash double-tap timing), Test (dunk odds, AI level, crowd) | |
+| Esc / P | Pause menu: Player (customize), Upgrades, Gamemode (3v3 and its game options, practice modes, testing, player tuning), Controls (keybinds, dash double-tap timing), UI (stats box) | |
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 

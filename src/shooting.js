@@ -189,8 +189,8 @@ const Shooting = (() => {
     ball.launch(from.x, from.y, from.z, target, SHOT.baseTime + dist / SHOT.flightSpeed, { hoop, points, dist, team: p.team, ft });
     ball.thrower = p;
     ball.lastTeam = p.team;
-    // The release grade shows for the user's team (the user always plays a home player).
-    if (p.team === 0) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);
+    // The release grade shows for the home team, and for a 2 Player opponent's own shots.
+    if (p.team === 0 || isHuman(game, p)) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);
   }
 
   // Dunk range grows with speed toward the hoop: a standing dunk needs to be under the rim, a run at top speed
@@ -209,7 +209,7 @@ const Shooting = (() => {
     const hoop = shotHoop(game, p);
     const { dist, ok } = dunkRange(p, hoop);
     if (!ok) {
-      if (p === game.user) addPopup(game, 'TOO FAR', COLORS.hint, p.x, p.y, 48);
+      if (isHuman(game, p)) addPopup(game, 'TOO FAR', COLORS.hint, p.x, p.y, 48);
       return;
     }
     if (Math.abs(hoop.x - p.x) > 1) p.facing = Math.sign(hoop.x - p.x);
@@ -245,7 +245,7 @@ const Shooting = (() => {
       t: 0,
       rise: DUNK.rise + dist * DUNK.risePerUnit,
       // The user's rim hang lasts until the dunk button is pressed again (see updateDunk); the AI lets go on its own.
-      hang: { normal: DUNK.hang, hang: p === game.user ? Infinity : AI.hangTime, shatter: DUNK.shatterHang }[outcome],
+      hang: { normal: DUNK.hang, hang: isHuman(game, p) ? Infinity : AI.hangTime, shatter: DUNK.shatterHang }[outcome],
       bend: { normal: DUNK.bend, hang: DUNK.hangBend, shatter: DUNK.shatterBend }[outcome],
       outcome,
       rimZ: HOOP.rimZ + 1 - reach,

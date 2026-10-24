@@ -27,6 +27,15 @@ function drawHud(ctx, game) {
 
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
+  // 2 Player: each player's keys on their half of the line, in their color.
+  if (game.mode === 'duo') {
+    ['p1', 'p2'].forEach((set, i) => {
+      const k = (name) => Input.keyLabel(name, set);
+      const text = `P${i + 1} ${Input.moveLabel(set)} ${k('shoot')}=SHOOT ${k('action')}=DUNK ${k('pass')}=PASS`;
+      drawText(ctx, text, VIEW_W * (i ? 0.75 : 0.25), VIEW_H - 14, DUO.markers[i], { align: 'center', scale: TEXT_SCALE });
+    });
+    return;
+  }
   const k = Input.keyLabel;
   const hint = game.drill
     ? `HOLD ${k('shoot')} TO SHOOT  -  MAKE IT TO MOVE ON`
@@ -90,7 +99,10 @@ function drawGameOver(ctx, game) {
   ctx.fillStyle = 'rgba(26, 28, 44, 0.85)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   const mid = VIEW_W / 2;
-  drawText(ctx, won ? 'YOU WIN!' : 'YOU LOSE', mid, 40, won ? COLORS.good : COLORS.bad, { align: 'center', scale: TEXT_SCALE * 3, shadow: COLORS.outline });
+  const versus = game.mode === 'duo' && Duo.versus();
+  const title = versus ? `P${won ? 1 : 2} WINS!` : won ? 'YOU WIN!' : 'YOU LOSE';
+  const titleColor = versus ? DUO.markers[won ? 0 : 1] : won ? COLORS.good : COLORS.bad;
+  drawText(ctx, title, mid, 40, titleColor, { align: 'center', scale: TEXT_SCALE * 3, shadow: COLORS.outline });
   drawText(ctx, `FINAL${ot}`, mid, 82, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
   const [homeName, awayName] = game.abbrs;
   drawText(ctx, `${homeName} ${home} - ${away} ${awayName}`, mid, 100, COLORS.line, { align: 'center', scale: TEXT_SCALE * 2 });
@@ -116,8 +128,53 @@ function drawGameOver(ctx, game) {
   if (r) drawCareerResult(ctx, r, mid, 254);
   if (game.clock.overT > 1 && Math.floor(game.time * 2) % 2 === 0) {
     const next = r ? 'FOR THE NEXT GAME' : 'TO PLAY AGAIN';
-    drawText(ctx, `PRESS ${Input.keyLabel('shoot')} ${next}`, mid, VIEW_H - 46, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
+    const prompt = game.mode === 'duo'
+      ? `${Input.keyLabel('shoot', 'p1')}: RUN IT BACK (SAME UPGRADES)   ${Input.keyLabel('shoot', 'p2')}: NEW DRAFT`
+      : `PRESS ${Input.keyLabel('shoot')} ${next}`;
+    drawText(ctx, prompt, mid, VIEW_H - 46, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
   }
+}
+
+// 2 Player upgrade draft: each player's half of the screen, with their points left, the five stats as pips (a
+// cursor on the picked one) and whether they're ready.
+function drawDraft(ctx, game) {
+  const d = game.draft;
+  ctx.fillStyle = 'rgba(26, 28, 44, 0.9)';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const title = d.phase === 'pre' ? `PRE-GAME UPGRADES: ${d.points} POINTS EACH` : `HALFTIME: +${d.points} POINTS EACH`;
+  drawText(ctx, title, VIEW_W / 2, 26, COLORS.okay, { align: 'center', scale: TEXT_SCALE, shadow: COLORS.outline });
+  const coop = !Duo.versus();
+  const levels = Duo.levels();
+  d.sides.forEach((s, i) => {
+    const set = i ? 'p2' : 'p1';
+    const color = DUO.markers[i];
+    const x0 = i ? VIEW_W / 2 + 16 : 16;
+    const k = (name) => Input.keyLabel(name, set);
+    drawText(ctx, `PLAYER ${i + 1}${coop ? '' : i ? ' (AWAY)' : ' (HOME)'}`, x0, 56, color, { scale: TEXT_SCALE });
+    drawText(ctx, `POINTS LEFT ${s.left}`, x0, 76, s.left ? COLORS.line : COLORS.hint, { scale: TEXT_SCALE });
+    UPGRADE_KEYS.forEach((key, row) => {
+      const y = 104 + row * 26;
+      const on = row === s.cursor && !s.ready;
+      if (on) {
+        ctx.fillStyle = COLORS.wall;
+        ctx.fillRect(x0 - 6, y - 5, VIEW_W / 2 - 20, 20);
+      }
+      drawText(ctx, key, x0, y, on ? color : COLORS.hint, { scale: TEXT_SCALE });
+      for (let n = 0; n < UPGRADES.max; n++) {
+        const px = x0 + 110 + n * 14;
+        ctx.fillStyle = COLORS.outline;
+        ctx.fillRect(px - 1, y - 1, 12, 12);
+        ctx.fillStyle = n < levels[i][key] ? (n >= levels[i][key] - s.bought[key] ? color : COLORS.good) : COLORS.meterBg;
+        ctx.fillRect(px, y, 10, 10);
+      }
+    });
+    const help = `${k('up')}/${k('down')} PICK  ${k('right')} ADD  ${k('left')} TAKE BACK`;
+    drawText(ctx, help, x0, 246, COLORS.hint, { scale: TEXT_SCALE });
+    const ready = s.ready ? 'READY!' : `PRESS ${k('shoot')} WHEN READY`;
+    drawText(ctx, ready, x0, 270, s.ready ? COLORS.good : color, { scale: TEXT_SCALE, shadow: COLORS.outline });
+  });
+  const who = coop ? 'EACH UPGRADES THEIR OWN PLAYER' : 'UPGRADES GO TO YOUR WHOLE TEAM';
+  drawText(ctx, who, VIEW_W / 2, 300, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
 // A career game's payout: the challenge (made or missed), then points x the result's and the challenge's multipliers.
@@ -203,7 +260,7 @@ function drawPassTarget(ctx, p) {
 }
 
 // A small arrow over the head of the player the user is controlling.
-function drawUserMarker(ctx, p) {
+function drawUserMarker(ctx, p, color = COLORS.okay) {
   const x = p.sx;
   const y = p.by - Math.round(92 * p.scale);
   ctx.fillStyle = COLORS.outline;
@@ -211,7 +268,7 @@ function drawUserMarker(ctx, p) {
   ctx.fillRect(x - 4, y + 1, 9, 2);
   ctx.fillRect(x - 3, y + 3, 7, 2);
   ctx.fillRect(x - 1, y + 5, 3, 2);
-  ctx.fillStyle = COLORS.okay;
+  ctx.fillStyle = color;
   ctx.fillRect(x - 4, y, 9, 1);
   ctx.fillRect(x - 3, y + 1, 7, 2);
   ctx.fillRect(x - 2, y + 3, 5, 2);
@@ -250,10 +307,10 @@ function drawShotMeter(ctx, meter, player) {
 }
 
 // Blinking reminder above a player hanging on the rim.
-function drawHangPrompt(ctx, player, time) {
+function drawHangPrompt(ctx, player, time, key = Input.keyLabel('action')) {
   if (Math.floor(time * 3) % 2) return;
   const y = player.by - Math.round(96 * player.scale);
-  drawText(ctx, `${Input.keyLabel('action')} TO LET GO`, player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
+  drawText(ctx, `${key} TO LET GO`, player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
 }
 
 // Floating text anchored to a spot in the world, rising and blinking out.

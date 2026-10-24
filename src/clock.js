@@ -23,10 +23,10 @@ const Clock = (() => {
     return (period <= 2 ? game.rules.halfMinutes : GAME.otMinutes) * 60;
   }
 
-  // Players hold still during the banners and after the final buzzer.
+  // Players hold still during the banners, a 2 Player upgrade draft, and after the final buzzer.
   function stopped(game) {
     const c = game.clock;
-    return !!c && (c.breakT > 0 || c.over);
+    return !!game.draft || (!!c && (c.breakT > 0 || c.over));
   }
 
   function update(dt, game, frozen) {
@@ -38,7 +38,14 @@ const Clock = (() => {
     }
     if (c.breakT > 0) {
       c.breakT -= dt;
-      if (c.breakT <= 0) startPeriod(game);
+      if (c.breakT > 0) return;
+      // 2 Player: halftime upgrades first (Duo starts the 2nd half once both players are ready).
+      if (game.mode === 'duo' && c.period === 1) {
+        c.banner = null;
+        Duo.startDraft(game, 'half');
+      } else {
+        startPeriod(game);
+      }
       return;
     }
     const { ball } = game;
@@ -133,5 +140,5 @@ const Clock = (() => {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  return { start, update, stopped, resetShot, periodLabel, format };
+  return { start, update, stopped, resetShot, startPeriod, periodLabel, format };
 })();

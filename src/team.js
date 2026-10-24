@@ -23,9 +23,14 @@ let endsSwapped = false;
 let awayKit = null;
 let opponentAILevel = null;
 
-// A full game (3v3 Casual or a career game): both teams, the ref and the clocks.
+// A full game (3v3 Casual, a career game or 2 Player): both teams, the ref and the clocks.
 function isFullGame(game) {
-  return game.mode === '3v3' || game.mode === 'career';
+  return game.mode === '3v3' || game.mode === 'career' || game.mode === 'duo';
+}
+
+// Whether a person is playing `p` right now (the user, or either player in 2 Player mode).
+function isHuman(game, p) {
+  return game.humans.some((h) => h.player === p);
 }
 
 // The away team's jersey color, given the home team's (benches and the scorer's table wear it too).

@@ -23,7 +23,7 @@ const AIBrain = (() => {
 
   function think(dt, game, ctls, frozen) {
     for (const p of game.players) {
-      if (p === game.user) continue;
+      if (isHuman(game, p)) continue;
       const ctl = blank();
       if (!frozen) decide(dt, game, p, ctl);
       ctls.set(p, ctl);
@@ -251,7 +251,7 @@ const AIBrain = (() => {
     let best = null;
     let bestD = Infinity;
     for (const q of game.players) {
-      if (q.team !== p.team || q === game.user || q.sitting) continue;
+      if (q.team !== p.team || isHuman(game, q) || q.sitting) continue;
       const man = opponents(game, q).find((o) => o.role === q.role);
       if (man === holder) continue;
       const d = courtDist(q, hoop);
@@ -273,7 +273,7 @@ const AIBrain = (() => {
     let best = null;
     let bestD = Infinity;
     for (const q of game.players) {
-      if (q.team !== p.team || q === game.user || q.sitting) continue;
+      if (q.team !== p.team || isHuman(game, q) || q.sitting) continue;
       const d = courtDist(q, at);
       if (d < bestD) {
         bestD = d;

@@ -86,7 +86,7 @@ const Play = (() => {
     const ballX = h.x + h.facing * 8;
     const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p);
     const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
-    const chance = (p === game.user ? lerp(...DEFENSE.userStealChance, opponentAILevel ?? AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
+    const chance = (isHuman(game, p) ? lerp(...DEFENSE.userStealChance, opponentAILevel ?? AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
@@ -178,7 +178,7 @@ const Play = (() => {
     for (const d of opponents(game, shooter)) {
       const range = DEFENSE.blockRange * (1 + UPGRADES.blockRange * d.upgrades.defense);
       if (!d.jump || d.z < DEFENSE.blockMinZ || courtDist(d, shooter) > range) continue;
-      const base = d === game.user ? DEFENSE.userBlockChance : aiValue(d, AI.blockChance);
+      const base = isHuman(game, d) ? DEFENSE.userBlockChance : aiValue(d, AI.blockChance);
       const chance = (base + blockBonus(d)) * shooter.shot.contest * DEFENSE.blockOdds;
       if (Math.random() >= chance) continue;
       // Knocked back the way the shooter came from, landing loose.
@@ -205,7 +205,7 @@ const Play = (() => {
   // A dunk attempt into a guarded rim may get stuffed: the dunker goes up, the ball comes back out loose.
   function tryStuff(game, p, hoop) {
     for (const d of rimGuards(game, p, hoop)) {
-      const chance = ((d === game.user ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5) + blockBonus(d)) * DEFENSE.stuffOdds;
+      const chance = ((isHuman(game, d) ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5) + blockBonus(d)) * DEFENSE.stuffOdds;
       if (Math.random() >= chance) continue;
       p.hasBall = false;
       p.jump = { t: 0 };
@@ -236,8 +236,9 @@ const Play = (() => {
     return back ? DEFENSE.retreatSpeed : 1;
   }
 
-  // Hand the ball to `p`: their team now has it. The user always plays the home ball handler; when the other
-  // team gets it, the user's control jumps to whoever is nearest the ball.
+  // Hand the ball to `p`: their team now has it. A person playing alone on their side always plays its ball
+  // handler; when the other team gets it, their control jumps to whoever is nearest the ball. (Two people on one
+  // side, in co-op, each keep their own player.)
   function give(game, p) {
     const { ball } = game;
     if (ball.holder && ball.holder !== p) ball.holder.hasBall = false;
@@ -251,16 +252,18 @@ const Play = (() => {
     p.hasBall = true;
     p.mind.holdT = 0;
     game.possession = p.team;
-    if (p.team === 0) game.user = p;
-    else game.user = nearestTo(game, 0, p, game.user);
+    for (const h of game.humans) {
+      if (game.humans.some((o) => o !== h && o.team === h.team)) continue;
+      h.player = h.team === p.team ? p : nearestTo(game, h.team, p, h.player);
+    }
   }
 
-  // The player on `team` nearest to spot `at` (preferring to stay on `fallback` if it's a tie).
-  function nearestTo(game, team, at, fallback, exclude = null) {
+  // The player on `team` nearest to spot `at` (preferring to stay on `fallback` if it's a tie), skipping `exclude`.
+  function nearestTo(game, team, at, fallback, exclude = []) {
     let best = fallback;
-    let bestD = fallback && fallback !== exclude ? courtDist(fallback, at) : Infinity;
+    let bestD = fallback && !exclude.includes(fallback) ? courtDist(fallback, at) : Infinity;
     for (const q of game.players) {
-      if (q.team !== team || q === exclude || q.sitting) continue;
+      if (q.team !== team || exclude.includes(q) || q.sitting) continue;
       const d = courtDist(q, at);
       if (d < bestD - 0.5) {
         bestD = d;
@@ -270,10 +273,12 @@ const Play = (() => {
     return best;
   }
 
-  // Q without the ball: switch to the teammate nearest the ball (or the next nearest if that's already you).
-  function switchPlayer(game) {
+  // Pass key without the ball: person `h` switches to the teammate nearest the ball (or the next nearest if that's
+  // already them), never one the other person is playing.
+  function switchPlayer(game, h) {
     const at = game.ball.holder || game.ball;
-    game.user = nearestTo(game, 0, at, null, game.user) || game.user;
+    const taken = game.humans.map((o) => o.player);
+    h.player = nearestTo(game, h.team, at, null, taken) || h.player;
   }
 
   // Whoever is in reach of a loose ball grabs it, nearest first. A pass's receiver reaches further; opponents in
@@ -294,7 +299,7 @@ const Play = (() => {
       if (ball.pass && p.team !== ball.pass.team) {
         const rolls = ball.pass.rolls;
         if (!rolls.has(p)) {
-          const chance = (p === game.user ? DEFENSE.userIntercept : aiValue(p, AI.interceptChance)) * DEFENSE.interceptOdds;
+          const chance = (isHuman(game, p) ? DEFENSE.userIntercept : aiValue(p, AI.interceptChance)) * DEFENSE.interceptOdds;
           rolls.set(p, Math.random() < chance);
         }
         if (!rolls.get(p)) continue;

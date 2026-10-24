@@ -179,6 +179,14 @@ const CAREER = {
   ],
 };
 
+// 2 Player mode (see duo.js): before tip-off both players get the same random number of upgrade points, picked
+// from prePoints, and spend them on their side; at halftime they get more, from halfPoints.
+const DUO = {
+  prePoints: [4, 10],
+  halfPoints: [2, 6],
+  markers: ['#ffcd75', '#41a6f6'], // player 1's and player 2's arrow and text colors
+};
+
 // Fouls: reaching for a steal can be called a foul, more likely the closer the reacher is to the ball handler: no
 // chance from `far` out (the steal reach without upgrades), rising to `maxChance` with bodies touching (`near`, the
 // separation distance). With free throws on (Gamemode tab) the fouled player shoots one from the line; otherwise

@@ -17,6 +17,15 @@ saves automatically in the browser after every game and upgrade. The career pane
 career as text to copy somewhere safe and paste back later (another browser or device, or after clearing site data);
 if the browser can't save at all (some private windows), the panel says so and shows the code right away.
 
+**2 Player** (Gamemode tab; the arrow picks the format) is two people on one keyboard: **Versus 3v3** (each runs a
+team with two AI teammates), **Versus 1v1**, or **Co-op** (together, plus an AI teammate, against three AI players).
+Player 1 plays with WASD, R (shoot), E (dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets
+can be changed in the Controls tab, and only Esc pauses. Before tip-off both players get the same random number of
+upgrade points and spend them on a split screen at the same time (up/down to pick, right to add, left to take back,
+shoot when ready): in versus they upgrade their whole team, in co-op their own player. At halftime they get more.
+After the final buzzer player 1's shoot key **runs it back** with the same pre-game upgrades, player 2's starts a
+new draft.
+
 The pause menu's Gamemode tab also has **3v3 Casual** (full court, AI teammates and opponents, half-court defense) and,
 under Practice, **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across under
 the hoop, two from each elbow, three free throws, five threes around the arc), make each to move on, timed, with your
@@ -80,6 +89,7 @@ The game scales itself to fit the frame in whole pixels. Players click the frame
 | `src/clock.js` | 3v3 game clock: halves, overtime, shot clock, final buzzer |
 | `src/practice.js` | Practice drills: Around the World |
 | `src/career.js` | Career mode: league, schedule, standings, playoffs, challenges, tokens and bought upgrades |
+| `src/duo.js` | 2 Player mode: formats, the split-screen upgrade draft, run it back |
 | `src/ref.js` | The referee: wanders the sideline, passes the ball in for free throws |
 | `src/play.js` | Passing, steals, blocks, contests, pickups and possession |
 | `src/shooting.js` | Shot meter, release grading, dunks |

@@ -670,3 +670,18 @@ input[type="color"]::-moz-color-swatch {
 .career-panel > .btn {
   align-self: flex-start;
 }
+
+/* 2 Player keybinds: action, player 1's key, player 2's key */
+.keybinds.keybinds-duo {
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: calc(var(--px) * 2) calc(var(--px) * 4);
+}
+
+/* 2 Player formats: a little tighter than the mode buttons */
+.duo-format {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: calc(var(--px) * 2);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+}

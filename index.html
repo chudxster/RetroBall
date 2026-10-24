@@ -170,6 +170,31 @@
           </div>
         </div>
 
+        <!-- 2 Player: two people on one keyboard. The arrow opens the formats; picking one starts it. -->
+        <div class="mode-row">
+          <button type="button" class="mode-option" data-mode="duo" aria-pressed="false">
+            <span class="mode-name">2 Player</span>
+            <span class="mode-desc" id="duo-desc">Two players, one keyboard: draft upgrades, then play</span>
+          </button>
+          <button type="button" class="mode-expand" aria-expanded="false" aria-controls="options-duo" aria-label="2 Player formats"><span class="chevron">&gt;</span></button>
+        </div>
+        <div class="mode-settings" id="options-duo" hidden>
+          <p class="test-note">Format (picking one starts it)</p>
+          <button type="button" class="mode-option duo-format" data-format="vs3" aria-pressed="false">
+            <span class="mode-name">Versus 3v3</span>
+            <span class="mode-desc">Each player runs a team, with two AI teammates</span>
+          </button>
+          <button type="button" class="mode-option duo-format" data-format="vs1" aria-pressed="false">
+            <span class="mode-name">Versus 1v1</span>
+            <span class="mode-desc">Just the two of you, full court</span>
+          </button>
+          <button type="button" class="mode-option duo-format" data-format="coop" aria-pressed="false">
+            <span class="mode-name">Co-op</span>
+            <span class="mode-desc">Together (plus an AI teammate) against three AI players</span>
+          </button>
+          <p class="mode-desc" id="duo-keys"></p>
+        </div>
+
         <!-- Practice modes: just the user's player. Picking one starts it fresh. -->
         <p class="test-note">Practice (just you; picking one starts it fresh)</p>
         <button type="button" class="mode-option" data-mode="free" aria-pressed="false">
@@ -236,6 +261,8 @@
         </div>
         <p class="test-note">Keybinds (click, then press a key)</p>
         <div class="keybinds" id="keybinds"></div>
+        <p class="test-note">2 Player keybinds</p>
+        <div class="keybinds keybinds-duo" id="keybinds-duo"></div>
       </div>
 
       <!-- On-screen display toggles. Saved between visits. -->
@@ -284,6 +311,7 @@
   <script src="src/tuning.js"></script>
   <script src="src/menu.js"></script>
   <script src="src/career.js"></script>
+  <script src="src/duo.js"></script>
   <script src="src/main.js"></script>
 </body>
 </html>

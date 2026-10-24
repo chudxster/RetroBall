@@ -15,8 +15,8 @@ const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0
 
 const state = {
   time: 0,
-  // '3v3', 'career' (a career game, see career.js), 'free' (free shot) or 'world' (Around the World): the last two
-  // just the user
+  // '3v3', 'career' (a career game, see career.js), 'duo' (2 Player, see duo.js), 'free' (free shot) or 'world'
+  // (Around the World): the last two just the user
   mode: loadMode(),
   look: loadLook(),  // the user's custom look; team colors come from it
   team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
@@ -24,7 +24,13 @@ const state = {
   ui: loadPrefs(UI_STORAGE_KEY, DEFAULT_UI),          // { stats }: what the HUD shows
   roster: [],        // all six players, in either mode
   players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
-  user: null,        // the player the user controls
+  // The people playing: { pad (key set, see Input), team, start (their player at a reset), player (the one they
+  // control now), prevKeys, ctl }. One in every mode but 2 Player.
+  humans: [],
+  get user() {       // the (first) person's player
+    return this.humans[0].player;
+  },
+  draft: null,       // a 2 Player upgrade draft in progress (see Duo)
   ref: null,         // the referee (3v3 only; see ref.js)
   ball: new Ball(),
   possession: 0,     // team with the ball (or that last had it)
@@ -44,16 +50,19 @@ const state = {
   careerResult: null, // a finished career game's tokens and result (see Career.finish)
 };
 
-// A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball.
-function newGame(mode) {
+// A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball. In 2
+// Player mode `runBack` keeps the last game's pre-game upgrades instead of drafting again.
+function newGame(mode, runBack = false) {
   state.mode = mode;
   endsSwapped = false;
+  const duo = mode === 'duo';
+  Input.setTwoPlayer(duo);
   // A career game: the opponent's kit (unless it's too close to the home jersey), AI level and upgrades, and the
   // career team's own levels.
   const career = mode === 'career' ? Career.setup() : null;
   awayKit = career && !colorsClash(career.kit.jersey, state.look.jersey) ? career.kit : null;
   opponentAILevel = career ? career.aiLevel : null;
-  state.abbrs = career ? career.abbrs : ['HOME', 'AWAY'];
+  state.abbrs = career ? career.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
   state.challenge = career ? career.challenge : null;
   state.careerResult = null;
   state.roster = makePlayers(state.look, state.team);
@@ -61,9 +70,11 @@ function newGame(mode) {
   if (career) rollAIUpgrades(state.roster, Career.team(), career.upgrades);
   else rollAIUpgrades(state.roster, state.team);
   const solo = !isFullGame(state); // free shot and the practice drills: just the user's player
-  state.players = solo ? [star] : state.roster;
+  state.players = solo ? [star] : duo ? Duo.players(state.roster) : state.roster;
   state.ref = solo ? null : Ref.make();
-  state.user = star;
+  const people = duo ? Duo.humans(state.roster) : [{ pad: 'solo', team: 0, start: star }];
+  state.humans = people.map((h) => ({ ...h, player: h.start, prevKeys: {}, ctl: null }));
+  state.draft = null;
   state.score = [0, 0];
   state.stats = [newStats(), newStats()];
   state.popups = [];
@@ -81,6 +92,7 @@ function newGame(mode) {
   else state.clock = null;
   state.drill = null;
   if (mode === 'world') Practice.start(state);
+  if (duo) Duo.start(state, runBack);
 }
 
 function update(dt) {
@@ -98,17 +110,27 @@ function update(dt) {
   const frozen = !!(camera.pan || state.fade) || Clock.stopped(state) || whistle;
   // After the final buzzer, a fresh press of the shoot key starts a new game (in career, opens the career menu to
   // pick the next one).
+  // In 2 Player, player 1's shoot key runs it back and player 2's starts a new draft (see Duo.updateAfter).
   if (state.clock && state.clock.over && state.clock.overT > 1) {
-    if (!Input.shoot()) state.replayReady = true;
-    else if (state.replayReady) {
+    if (state.mode === 'duo') {
+      const before = state.clock;
+      Duo.updateAfter(state, newGame);
+      if (state.clock !== before) return;
+    } else if (!Input.shoot()) {
+      state.replayReady = true;
+    } else if (state.replayReady) {
       state.replayReady = false;
       if (state.mode === 'career') Menu.openCareer();
       else newGame(state.mode);
       return;
     }
   }
+  if (state.draft) Duo.updateDraft(state);
   const ctls = new Map();
-  ctls.set(state.user, userControls(frozen));
+  for (const h of state.humans) {
+    h.ctl = humanControls(h, frozen);
+    ctls.set(h.player, h.ctl);
+  }
   AIBrain.think(dt, state, ctls, frozen);
   if (state.freeThrow) freeThrowControls(ctls);
   if (state.drill) Practice.controls(state, ctls);
@@ -130,7 +152,7 @@ function update(dt) {
     called.waitT -= dt;
     if (called.waitT <= 0) startFreeThrow(called.shooter);
   }
-  if (ctls.get(state.user).switch) Play.switchPlayer(state);
+  for (const h of state.humans) if (h.ctl.switch) Play.switchPlayer(state, h);
   Play.separate(state);
 
   ball.update(dt);
@@ -161,22 +183,22 @@ function update(dt) {
   camera.update(dt, holder ? holder.x + holder.vx * CAMERA.lead : focus.x, lerp(1, CAMERA.zoomMin, zoomT), tilt);
 }
 
-// The keyboard, read as a control object (the same shape the AI fills in). Space shoots with the ball and jumps
-// to block (or at least contest) without it; E dunks with the ball and steals on defense; Q passes with the ball and switches player
-// otherwise.
-let prevKeys = {};
-function userControls(frozen) {
-  const keys = frozen ? {} : { shoot: Input.shoot(), action: Input.action(), pass: Input.pass() };
-  const prev = prevKeys;
+// A person's keys (their pad), read as a control object (the same shape the AI fills in). Shoot shoots with the
+// ball and jumps to block (or at least contest) without it; action dunks with the ball and steals on defense; pass
+// passes with the ball and switches player otherwise.
+function humanControls(h, frozen) {
+  const pad = Input.pad(h.pad);
+  const keys = frozen ? {} : { shoot: pad.shoot(), action: pad.action(), pass: pad.pass() };
+  const prev = h.prevKeys;
   const pressed = (k) => !!keys[k] && !prev[k];
-  prevKeys = keys;
+  h.prevKeys = keys;
 
-  const u = state.user;
+  const u = h.player;
   const holder = state.ball.holder;
   const ctl = AIBrain.blank();
-  ctl.move = frozen ? { x: 0, y: 0 } : Input.move();
+  ctl.move = frozen ? { x: 0, y: 0 } : pad.move();
   // Double-tapping a direction dashes that way.
-  ctl.dash = frozen ? null : Input.takeDash();
+  ctl.dash = frozen ? null : pad.takeDash();
   ctl.shoot = !!keys.shoot;
   if (u.hasBall || u.shot) {
     ctl.dunk = !!keys.action;
@@ -208,7 +230,8 @@ function checkBallBehindHoop(dt) {
     const outOn = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
     resetToCenter();
     if (isFullGame(state) || outOn === 0) {
-      const text = outOn === 0 ? 'OUT ON PLAYER' : 'OUT ON AI';
+      const names = state.mode === 'duo' && Duo.versus() ? ['P1', 'P2'] : ['PLAYER', 'AI'];
+      const text = `OUT ON ${names[outOn]}`;
       const at = ball.holder || ball;
       addPopup(state, text, outOn === 0 ? COLORS.bad : COLORS.okay, at.x, at.y, RESET.outTextZ, RESET.outTextTime);
     }
@@ -281,7 +304,7 @@ function resetToCenter(instant = false) {
   }
   state.freeThrow = null;
   lineUp();
-  state.user = state.players[0];
+  for (const h of state.humans) h.player = h.start;
   ball.respawn(cx, cy, RESET.dropHeight);
   if (instant) camera.snap(cx);
   else camera.panTo(cx, RESET.panTime);
@@ -293,7 +316,7 @@ function restartPlay(team, instant = false) {
   state.freeThrow = null;
   if (state.ref) state.ref.hasBall = false;
   lineUp();
-  state.user = state.players[0];
+  for (const h of state.humans) h.player = h.start;
   const p = state.players.find((q) => q.team === team && q.role === 0);
   Play.give(state, p);
   Clock.resetShot(state, team);
@@ -321,7 +344,11 @@ function startFreeThrow(shooter) {
   ball.reserved = shooter.team;
   ball.lastTeam = shooter.team;
   state.possession = shooter.team;
-  state.user = shooter.team === 0 ? shooter : state.players[0];
+  // A person alone on their side plays the shooter, or waits on their starting player on the other side.
+  for (const h of state.humans) {
+    if (state.humans.some((o) => o !== h && o.team === h.team)) continue;
+    h.player = h.team === shooter.team ? shooter : h.start;
+  }
   state.freeThrow = { shooter, pending: false, refT: REF.passDelay };
   state.outFor = 0;
   camera.panTo(shooter.x, RESET.panTime);
@@ -378,7 +405,7 @@ function render(alpha) {
   drawCourt(ctx);
 
   // Everything standing on the floor is drawn back-to-front by depth.
-  const { ball, user } = state;
+  const { ball } = state;
   const movers = ball.held ? [...state.players] : [...state.players, ball];
   if (state.ref) movers.push(state.ref);
   for (const m of movers) m.prepare(alpha);
@@ -400,17 +427,23 @@ function render(alpha) {
     if (p.dashT > 0) drawDashLines(ctx, p);
     if (p.dazedT > 0) drawDazed(ctx, p, state.time);
   }
-  drawDashCooldown(ctx, user);
-  if (state.players.length > 1) drawUserMarker(ctx, user);
-  // With the ball, show who a pass would go to (it follows the direction held, like the pass itself).
-  if (user.hasBall && !user.shot && state.players.length > 1) {
-    const target = Play.passTarget(state, user, Input.move());
-    if (target) drawPassTarget(ctx, target);
-  }
-  if (user.meter) drawShotMeter(ctx, user.meter, user);
-  if (user.shot && user.shot.dunk && user.shot.hang === Infinity && user.shot.released) {
-    drawHangPrompt(ctx, user, state.time);
-  }
+  // Each person's markers (in 2 Player, in their own color): dash cooldown, the arrow over their player, who a pass
+  // would go to (following the direction held, like the pass itself), their shot meter and the rim-hang prompt.
+  const duo = state.mode === 'duo';
+  state.humans.forEach((h, i) => {
+    const u = h.player;
+    const color = duo ? DUO.markers[i] : COLORS.okay;
+    drawDashCooldown(ctx, u);
+    if (state.players.length > 1) drawUserMarker(ctx, u, color);
+    if (u.hasBall && !u.shot && state.players.length > 1) {
+      const target = Play.passTarget(state, u, Input.pad(h.pad).move());
+      if (target) drawPassTarget(ctx, target);
+    }
+    if (u.meter) drawShotMeter(ctx, u.meter, u);
+    if (u.shot && u.shot.dunk && u.shot.hang === Infinity && u.shot.released) {
+      drawHangPrompt(ctx, u, state.time, Input.keyLabel('action', h.pad));
+    }
+  });
   drawPopups(ctx, state);
   drawHud(ctx, state);
   if (state.clock) {
@@ -418,6 +451,7 @@ function render(alpha) {
     if (state.clock.banner) drawBanner(ctx, state.clock.banner);
     if (state.clock.over) drawGameOver(ctx, state);
   }
+  if (state.draft) drawDraft(ctx, state);
   if (state.fade) {
     ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha()})`;
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);

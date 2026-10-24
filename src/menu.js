@@ -22,7 +22,7 @@ const OLD_UPGRADE_STORAGE_KEY = 'retroball.upgrades'; // the user's player's lev
 const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
 const NAME_MAX = 12;
 const MODE_STORAGE_KEY = 'retroball.mode';
-const MODES = ['3v3', 'free', 'world'];
+const MODES = ['3v3', 'duo', 'free', 'world'];
 const RULES_STORAGE_KEY = 'retroball.rules';
 const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock };
 const UI_STORAGE_KEY = 'retroball.ui';
@@ -208,7 +208,7 @@ const Menu = (() => {
     document.getElementById('game').addEventListener('pointerdown', () => setOpen(false));
     window.addEventListener('keydown', (e) => {
       const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
-      if (e.code === 'Escape' || (Input.isBound('pause', e.code) && !typing)) {
+      if (e.code === 'Escape' || (Input.isPause(e.code) && !typing)) {
         e.preventDefault();
         setOpen(!open);
       }
@@ -413,7 +413,7 @@ const Menu = (() => {
 
   // Gamemode: picking a different mode starts a new game in it. Rule toggles below apply right away.
   function initModeView() {
-    const options = [...panel.querySelectorAll('.mode-option')];
+    const options = [...panel.querySelectorAll('.mode-option[data-mode]')];
     initToggle(document.getElementById('free-throws'), game.rules, 'freeThrows', RULES_STORAGE_KEY);
     initToggle(document.getElementById('shot-clock'), game.rules, 'shotClock', RULES_STORAGE_KEY);
     initNumber(document.getElementById('half-minutes'), game.rules, 'halfMinutes', RULES_STORAGE_KEY);
@@ -455,14 +455,37 @@ const Menu = (() => {
           openCareerPanel();
           return;
         }
-        if (o.dataset.mode === game.mode() && o.dataset.mode !== 'world') return;
+        // (Around the World and 2 Player start over when picked again.)
+        if (o.dataset.mode === game.mode() && o.dataset.mode !== 'world' && o.dataset.mode !== 'duo') return;
         game.setMode(o.dataset.mode);
         saveMode(o.dataset.mode);
         sync();
+        if (o.dataset.mode === 'duo') setOpen(false); // straight to the upgrade draft
       });
     }
-    syncModeView = sync; // the best time may have changed since the menu was last open
-    sync();
+    // 2 Player formats: picking one starts a 2 Player game in it.
+    const formats = [...panel.querySelectorAll('.duo-format')];
+    const duoKeys = document.getElementById('duo-keys');
+    for (const f of formats) {
+      f.addEventListener('click', () => {
+        Duo.setFormat(f.dataset.format);
+        game.setMode('duo');
+        saveMode('duo');
+        sync();
+        setOpen(false);
+      });
+    }
+    const syncDuo = () => {
+      for (const f of formats) f.setAttribute('aria-pressed', String(f.dataset.format === Duo.format()));
+      const keys = (set) => ['shoot', 'action', 'pass'].map((n) => Input.keyLabel(n, set)).join(' ');
+      duoKeys.textContent = `P1: ${Input.moveLabel('p1')} + ${keys('p1')}. P2: ${Input.moveLabel('p2')} + ${keys('p2')} `
+        + '(shoot, dunk/steal, pass/switch; change them in Controls). Esc pauses.';
+    };
+    syncModeView = () => { // the best time may have changed since the menu was last open
+      sync();
+      syncDuo();
+    };
+    syncModeView();
   }
 
   // A new element with a class and text (text, never HTML: team names come from the user).
@@ -636,36 +659,44 @@ const Menu = (() => {
     const slider = document.getElementById('double-tap');
     const value = document.getElementById('double-tap-value');
     const list = document.getElementById('keybinds');
-    const buttons = {};
-    let listening = null;
+    const duoList = document.getElementById('keybinds-duo');
+    const buttons = []; // { set, name, btn }
+    let listening = null; // { set, name } waiting for a key
     let swallowUp = null;
+    const isListening = (b) => !!listening && listening.set === b.set && listening.name === b.name;
 
     const sync = () => {
       slider.value = Math.round(Input.settings.doubleTap * 1000);
       value.textContent = `${slider.value}ms`;
-      for (const [name, btn] of Object.entries(buttons)) {
-        btn.textContent = listening === name ? '...' : Input.keyLabel(name);
-        btn.setAttribute('aria-pressed', String(listening === name));
+      for (const b of buttons) {
+        b.btn.textContent = isListening(b) ? '...' : Input.keyLabel(b.name, b.set);
+        b.btn.setAttribute('aria-pressed', String(isListening(b)));
       }
     };
 
-    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
-      const row = document.createElement('div');
-      row.className = 'keybind';
-      const label = document.createElement('span');
-      label.className = 'keybind-label';
-      label.textContent = text;
-      const btn = document.createElement('button');
+    const keyButton = (set, name, text) => {
+      const btn = el('button', 'key-btn');
       btn.type = 'button';
-      btn.className = 'key-btn';
-      btn.setAttribute('aria-label', `Key for ${text}`);
+      btn.setAttribute('aria-label', `${set === 'solo' ? 'Key' : `${set.toUpperCase()} key`} for ${text}`);
+      const b = { set, name, btn };
       btn.addEventListener('click', () => {
-        listening = listening === name ? null : name;
+        listening = isListening(b) ? null : { set, name };
         sync();
       });
-      row.append(label, btn);
+      buttons.push(b);
+      return btn;
+    };
+
+    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
+      const row = el('div', 'keybind');
+      row.append(el('span', 'keybind-label', text), keyButton('solo', name, text));
       list.append(row);
-      buttons[name] = btn;
+    }
+    // 2 Player: each action with player 1's key and player 2's (only Esc pauses there).
+    duoList.append(el('span', ''), el('span', 'keybind-label', 'P1'), el('span', 'keybind-label', 'P2'));
+    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
+      if (name === 'pause') continue;
+      duoList.append(el('span', 'keybind-label', text), keyButton('p1', name, text), keyButton('p2', name, text));
     }
 
     // While waiting for a key, grab it before the game or the pause shortcut sees it (and swallow its key-up so
@@ -674,7 +705,7 @@ const Menu = (() => {
       if (!listening) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (e.code !== 'Escape') Input.setBind(listening, e.code);
+      if (e.code !== 'Escape') Input.setBind(listening.set, listening.name, e.code);
       swallowUp = e.code;
       listening = null;
       sync();

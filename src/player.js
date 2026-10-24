@@ -14,6 +14,9 @@ const SHOOT_BALL_X = 4;   // ball held overhead while rising for a shot: left ed
 const SHOOT_BALL_TOP = -80; // ...and top
 const FRONTAL_BALL_X = 8; // ball's left edge in the front/back views, under the dribbling hand
 const VIEW_MIN_SPEED = 0.2; // below this fraction of run speed the player settles back to the side view
+// Running arms: segment lengths (px) and, at run speed, how far they swing and how much the elbows bend (radians).
+// The forearm never comes up past foreMax (about level).
+const ARM = { upper: 5, fore: 6, swing: 0.6, bend: 0.9, foreMax: 1.5 };
 // Shorts over legs stuck straight out (falling from a shattered rim, or sitting): [thigh cover], [hem across the legs].
 const LEGS_OUT_SHORTS = [[[10, -30, 4, 11]], [[14, -28, 2, 9]]];
 
@@ -64,6 +67,7 @@ class Player {
     this.prevZ = 0;
     this.vx = 0;
     this.vy = 0;
+    this.speed = 0;
     this.facing = facing;
     this.view = 'side'; // see update(): side, frontQ / backQ (45 degrees), front / back
     this.stride = 0;
@@ -152,6 +156,7 @@ class Player {
     const speed = Math.hypot(this.vx, this.vy);
     this.stride += speed * dt;
     this.dribbleT += dt * lerp(2, 3.2, Math.min(speed / PLAYER.sprintSpeed, 1));
+    this.speed = speed;
     this.moving = speed > 10;
   }
 
@@ -268,6 +273,31 @@ class Player {
     ];
   }
 
+  // -1..1 over the stride: +1 when the far arm is fully forward (with the near leg forward, run frame 0).
+  armSwingPhase() {
+    if (!this.moving || this.shot) return 0;
+    return Math.sin((2 * Math.PI * this.stride) / (4 * PLAYER.strideLen) + Math.PI / 4);
+  }
+
+  // An arm hanging from the shoulder at (x, y): an upper arm at angle `upper` then a forearm at `fore` (radians,
+  // 0 = straight down, positive = swung forward). Each segment is stamped with a w x w square every pixel along
+  // it, so the arm keeps its thickness at any angle; then a wristband and darker knuckles at the hand.
+  // `extra` lengthens both segments (near arms look a little longer).
+  armChain(x, y, upper, fore, w, extra, skin, shadeColor) {
+    const parts = [];
+    const U = ARM.upper + extra;
+    const F = ARM.fore + extra;
+    const a = Math.min(fore, ARM.foreMax);
+    const point = (x0, y0, angle, t) => [x0 + Math.sin(angle) * t, y0 + Math.cos(angle) * t];
+    const stamp = ([cx, cy], color, dy = 0, h = w) => parts.push([Math.round(cx - w / 2), Math.round(cy) + dy, w, h, color]);
+    for (let t = 0; t <= U; t++) stamp(point(x, y, upper, t), skin);
+    const [ex, ey] = point(x, y, upper, U);
+    for (let t = 0; t <= F; t++) stamp(point(ex, ey, a, t), skin);
+    stamp(point(ex, ey, a, F - 2), this.colors.trim, 1, 2);
+    stamp(point(ex, ey, a, F), shadeColor, w - 1, 1);
+    return parts;
+  }
+
   // An eye: a 4x3 white with a 2x2 pupil at column `pupil` (relative to the eye's left edge). Both stay at least
   // 2x2 on screen however small the sprite is drawn.
   eye(x, y, pupil) {
@@ -288,34 +318,34 @@ class Player {
     const [front, back] = frame < 0 ? [dangle, dangle] : LEG_SHIFT[frame].map((s) => Math.round(s * strideK));
     const u = this.bob();
     const dip = this.hasBall && !this.shot ? this.dribblePose().dip : 0;
-    const armSwing = frame === 0 ? 4 : frame === 2 ? -4 : 0;
     const turn = this.view === 'frontQ' ? 1 : this.view === 'backQ' ? -1 : 0;
+
+    // Running arms swing from the shoulder like pendulums, in time with the stride, elbows bending more the
+    // faster the player goes. The far arm swings with the near leg; a free near arm swings opposite it.
+    const runK = this.moving ? clamp(this.speed / PLAYER.runSpeed, 0, 1.25) : 0;
+    const swing = this.armSwingPhase() * ARM.swing * runK;
+    const bend = ARM.bend * runK;
 
     // Whichever arm is nearer the camera is drawn wider, unshaded and in front of the body.
     const backNear = turn < 0;
     const frontNear = turn >= 0;
     const backW = backNear ? 8 : turn > 0 ? 4 : 6;
-    const backH = backNear ? 18 : turn > 0 ? 14 : 16;
-    const backX = -14 + armSwing + (backW === 4 ? 2 : 0);
     const backSkin = backNear ? c.skin : c.skinDark;
-    const backTop = -50 + u;
-    let backArm = [
-      [backX, backTop, backW, backH, backSkin],
-      [backX, backTop + 2, 1, backH - 4, backNear ? c.skinDark : c.skinDarker],
-      [backX, backTop + backH - 6, backW, 2, c.trim],
-      [backX, backTop + backH - 2, backW, 1, backNear ? c.skinDark : c.skinDarker],
-    ];
+    const backShade = backNear ? c.skinDark : c.skinDarker;
+    let backArm = this.armChain(-11, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
     const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
     const frontSkin = frontNear ? c.skin : c.skinDark;
     const frontShade = frontNear ? c.skinDark : c.skinDarker;
-    let frontArm = [
-      [8, -50 + u, frontW, 10, frontSkin],          // upper arm
-      [8, -48 + u, 1, 7, frontShade],
-      [12, -42 + u, frontW, 10 + dip, frontSkin],   // forearm and hand, stretching with the push
-      [12, -41 + u, 1, 8 + dip, frontShade],
-      [12, -38 + u, frontW, 2, c.trim],             // wristband
-      [12, -35 + u + dip, frontW, 1, frontShade],   // knuckles
-    ];
+    let frontArm = this.hasBall
+      ? [
+          [8, -50 + u, frontW, 10, frontSkin],          // upper arm
+          [8, -48 + u, 1, 7, frontShade],
+          [12, -42 + u, frontW, 10 + dip, frontSkin],   // forearm and hand, stretching with the dribble push
+          [12, -41 + u, 1, 8 + dip, frontShade],
+          [12, -38 + u, frontW, 2, c.trim],             // wristband
+          [12, -35 + u + dip, frontW, 1, frontShade],   // knuckles
+        ]
+      : this.armChain(11, -50 + u, -swing, -swing + bend, frontW, frontNear && turn > 0 ? 1 : 0, frontSkin, frontShade);
 
     // Jump shot: shooting arm straight up under the ball (with a wrist flick once it's gone), guide arm raised behind.
     if (this.shot) {
@@ -513,7 +543,7 @@ class Player {
     const dip = this.hasBall ? this.dribblePose().dip : 0;
     const liftL = frame === 0 ? 3 : 0;
     const liftR = frame === 2 ? 3 : 0;
-    const swing = frame === 0 ? 2 : frame === 2 ? -2 : 0;
+    const swing = Math.round(this.armSwingPhase() * 3 * clamp(this.speed / PLAYER.runSpeed, 0, 1.25));
 
     const leg = (x, lift) => [
       [x, -22 + u, 6, 10 - u - lift, c.skin],

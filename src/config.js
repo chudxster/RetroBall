@@ -333,7 +333,7 @@ const COLORS = {
   meterFill: '#f4f4f4',
 };
 
-const SKINS = ['#f2c9a0', '#d9a066', '#a86b47', '#7a4a32', '#5a3524'];
+const SKINS = ['#f2c9a0', '#d9a066', '#a86b47', '#7a4a32', '#5a3524', '#3e2419'];
 
 const CROWD = {
   density: 0.92, // share of seats filled (0..1); which seats are taken is random each load

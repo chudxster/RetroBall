@@ -95,7 +95,7 @@ const SHOT = {
   fadeAway: -0.5,     // counts as "away" when the move direction is within ~60 degrees of straight back (dot product)
   fadeDist: 22,       // world units drifted back over the jump
   fadeGreen: 0.6,     // green zone width multiplier
-  fadeContest: 0.5,   // how much a defender's contest counts against a fadeaway (for when defenders arrive)
+  fadeContest: 0.5,   // how much defenders' contests (and block odds) count against a fadeaway
   fadeLean: 3,        // px the upper body leans back
 };
 
@@ -136,8 +136,9 @@ const DUNK = {
 // Fade to black and back: out, hold on black (the reset happens here), then in.
 const FADE = { out: 0.9, hold: 0.35, in: 0.6 };
 
-// When the ball stays behind a backboard for `outTime` seconds it comes back at center court, with the player
-// placed on one of six spots around the center circle and the camera panning over in `panTime`.
+// When the ball stays behind a backboard for `outTime` seconds play resets and the camera pans over in `panTime`:
+// in 3v3 the team that didn't touch it last gets it on their own half; in free shot it drops (from dropHeight) at
+// center court with the player on one of `spots` spots around the center circle.
 const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9 };
 
 const PICKUP = {

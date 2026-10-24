@@ -107,7 +107,7 @@ const Career = (() => {
     return clean(loadStored(CAREER_STORAGE_KEY)) || fresh();
   }
 
-  // A saved (or pasted) career made safe to use, or null if it isn't one: names and levels are cleaned, and anything
+  // A saved career made safe to use, or null if it isn't one: names and levels are cleaned, and anything
   // the season can't run without must be there and the right shape.
   function clean(saved) {
     const n = LEAGUE.length + 1;
@@ -141,30 +141,6 @@ const Career = (() => {
     saved.teamName = saved.teamName.replace(/\s+/g, ' ').trim().slice(0, TEAM_NAME_MAX);
     saved.tokens = Number.isFinite(saved.tokens) ? Math.max(0, Math.floor(saved.tokens)) : 0;
     return saved;
-  }
-
-  // Backup codes: the whole career as text to copy somewhere safe and paste back later (or on another device).
-  const CODE_PREFIX = 'RB1-';
-
-  function exportCode() {
-    const bytes = new TextEncoder().encode(JSON.stringify(c));
-    return CODE_PREFIX + btoa(String.fromCharCode(...bytes));
-  }
-
-  // Replaces the career with the one in `code`; false (and nothing changes) if the code isn't a valid career.
-  function importCode(code) {
-    try {
-      const text = String(code).replace(/\s+/g, '');
-      if (!text.startsWith(CODE_PREFIX)) return false;
-      const bytes = Uint8Array.from(atob(text.slice(CODE_PREFIX.length)), (ch) => ch.charCodeAt(0));
-      const loaded = clean(JSON.parse(new TextDecoder().decode(bytes)));
-      if (!loaded) return false;
-      c = loaded;
-      save();
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 
   function save() {
@@ -403,8 +379,6 @@ const Career = (() => {
     cost,
     buy,
     setTeamName,
-    exportCode,
-    importCode,
     TEAM_NAME_MAX,
   };
 })();

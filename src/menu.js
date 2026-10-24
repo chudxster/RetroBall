@@ -21,8 +21,6 @@ const TEAM_STORAGE_KEY = 'retroball.team';
 const OLD_UPGRADE_STORAGE_KEY = 'retroball.upgrades'; // the user's player's levels, from before each player had their own
 const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
 const NAME_MAX = 12;
-const MODE_STORAGE_KEY = 'retroball.mode';
-const MODES = ['3v3', 'duo', 'free', 'world'];
 const RULES_STORAGE_KEY = 'retroball.rules';
 const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock };
 const UI_STORAGE_KEY = 'retroball.ui';
@@ -83,23 +81,63 @@ function loadTeam() {
   });
 }
 
-function loadMode() {
-  try {
-    const saved = localStorage.getItem(MODE_STORAGE_KEY);
-    if (MODES.includes(saved)) return saved;
-  } catch (e) {
-    // Storage blocked: use the default.
-  }
-  return '3v3';
+// A new element with a class and text (text, never HTML: team names come from the user).
+function el(tag, className, text = '') {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  e.textContent = text;
+  return e;
 }
 
-function saveMode(mode) {
-  try {
-    localStorage.setItem(MODE_STORAGE_KEY, mode);
-  } catch (e) {
-    // Not fatal; the mode just won't persist.
-  }
+// An ON/OFF button for `prefs[key]`, saved under `storageKey` whenever it flips.
+function initToggle(button, prefs, key, storageKey) {
+  const sync = () => {
+    button.textContent = prefs[key] ? 'ON' : 'OFF';
+    button.setAttribute('aria-pressed', String(prefs[key]));
+  };
+  button.addEventListener('click', () => {
+    prefs[key] = !prefs[key];
+    saveStored(storageKey, prefs);
+    sync();
+  });
+  sync();
 }
+
+// A number box for `prefs[key]`, kept within the box's min/max and step and saved under `storageKey`.
+function initNumber(input, prefs, key, storageKey) {
+  const sync = () => {
+    input.value = String(prefs[key]);
+  };
+  input.addEventListener('change', () => {
+    const step = Number(input.step) || 1;
+    const v = Number(input.value);
+    if (Number.isFinite(v)) {
+      prefs[key] = clamp(Math.round(v / step) * step, Number(input.min), Number(input.max));
+      saveStored(storageKey, prefs);
+    }
+    sync();
+  });
+  sync();
+}
+
+// What each upgrade's level `n` does, for the Upgrades tab and the career screen.
+const UPGRADE_EFFECTS = {
+  speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
+  shooting: (n) => n >= UPGRADES.max
+    ? `+${Math.round(UPGRADES.threeGreen * n * 100)}% 3s, ${SHOT.deepFramesMax}f half court`
+    : `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
+  dunking: (n) => `+${Math.round(UPGRADES.dunkRange * n * 100)}% range, rim odds up`,
+  defense: (n) => `+${Math.round(UPGRADES.stealRange * n * 100)}% steal reach, block`,
+  dash: (n) => `+${Math.round(UPGRADES.dashDistance * n * 100)}% dash distance`,
+};
+
+// Level pips, filled up to `n`.
+function pips(n) {
+  return Array.from({ length: UPGRADES.max }, (_, i) => el('span', i < n ? 'pip on' : 'pip'));
+}
+
+// The testing sliders and player tuning (the Dev tab) only show with ?dev=1 in the address.
+const DEV = new URLSearchParams(location.search).get('dev') === '1';
 
 const Menu = (() => {
   const button = document.getElementById('pause-btn');
@@ -123,14 +161,13 @@ const Menu = (() => {
   ];
   const POSE_SECONDS = 0.8;
 
-  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), rules, ui, mode(),
-  // setMode(mode), startCareerGame(choice) }, where team is the user's team as loadTeam() returns it, rules is
-  // DEFAULT_RULES' shape and ui is { stats }.
+  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), ui, mode(),
+  // inTitle(), restart(), toTitle(), closed() }, where team is the user's team as loadTeam() returns it and ui is
+  // { stats }. inTitle() says the main menu is up (the menu was opened from it, and closing goes back to it).
   let game = null;
   let syncUpgradeView = () => {};
-  let syncModeView = () => {};
+  let syncFoot = () => {};
   let showTab = () => {};
-  let openCareerPanel = () => {};
   let preview = null;
   let look = null;  // player 1's look, which also carries the team kit
   let pick = 0;     // which home player (by role) the Player and Upgrades tabs show
@@ -193,14 +230,14 @@ const Menu = (() => {
     initFaces();
     initTabs();
     initUpgradeView();
-    initModeView();
     initControlsView();
     initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
     initTuningView();
     initTestView();
+    initFoot();
+    panel.querySelector('.tab[data-panel="dev-view"]').hidden = !DEV;
 
     button.addEventListener('click', () => setOpen(!open));
-    document.getElementById('resume').addEventListener('click', () => setOpen(false));
     // Player 1 goes back to the default look (kit included); a teammate to their roster skin, hair and number.
     document.getElementById('reset-look').addEventListener('click', () => {
       applyLook(pick === 0 ? { ...DEFAULT_LOOK } : { ...look, ...ROSTER[0][pick] });
@@ -208,6 +245,7 @@ const Menu = (() => {
     document.getElementById('game').addEventListener('pointerdown', () => setOpen(false));
     window.addEventListener('keydown', (e) => {
       const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+      if (game.inTitle() && !open) return; // the main menu has its own keys (see Title)
       if (e.code === 'Escape' || (Input.isPause(e.code) && !typing)) {
         e.preventDefault();
         setOpen(!open);
@@ -294,8 +332,8 @@ const Menu = (() => {
   }
 
   // Upgrades: the picked player (faces at the top, name editable in place) with +/- per stat, shown as pips with
-  // what the current level does. In a career game it's the career team, whose levels are bought with tokens (and
-  // can't be sold back); otherwise the free testing levels.
+  // what the current level does. In a career game it's the career team, shown but not changed here (levels are
+  // bought on the main menu's Career screen); otherwise the free testing levels.
   function initUpgradeView() {
     const rows = [...panel.querySelectorAll('.upgrade')];
     const nameInput = document.getElementById('player-name');
@@ -303,15 +341,6 @@ const Menu = (() => {
     const note = document.getElementById('upgrade-note');
     const resetButton = document.getElementById('reset-upgrades');
     const picked = () => activeTeam()[pick];
-    const effects = {
-      speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
-      shooting: (n) => n >= UPGRADES.max
-        ? `+${Math.round(UPGRADES.threeGreen * n * 100)}% 3s, ${SHOT.deepFramesMax}f half court`
-        : `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
-      dunking: (n) => `+${Math.round(UPGRADES.dunkRange * n * 100)}% range, rim odds up`,
-      defense: (n) => `+${Math.round(UPGRADES.stealRange * n * 100)}% steal reach, block`,
-      dash: (n) => `+${Math.round(UPGRADES.dashDistance * n * 100)}% dash distance`,
-    };
     const saveTeam = () => {
       if (inCareer()) Career.save();
       else saveStored(TEAM_STORAGE_KEY, game.team);
@@ -323,9 +352,8 @@ const Menu = (() => {
     };
     const sync = () => {
       const career = inCareer();
-      const tokens = Career.get().tokens;
       note.textContent = career
-        ? `Career: ${tokens} tokens. A level costs ${CAREER.levelCost} x its number; bought levels stay.`
+        ? 'Career levels: buy more with tokens on the Career screen (main menu) between games.'
         : 'Free while testing. Each AI opponent gets as many levels as your player in the same spot, at random.';
       resetButton.disabled = career;
       if (document.activeElement !== nameInput) nameInput.value = picked().name;
@@ -333,28 +361,16 @@ const Menu = (() => {
       for (const row of rows) {
         const key = row.dataset.upgrade;
         const n = picked().upgrades[key];
-        const pips = row.querySelector('.pips');
-        pips.replaceChildren(...Array.from({ length: UPGRADES.max }, (_, i) => {
-          const pip = document.createElement('span');
-          pip.className = i < n ? 'pip on' : 'pip';
-          return pip;
-        }));
-        const price = career && n < UPGRADES.max ? Career.cost(n) : 0;
-        const effect = n ? effects[key](n) : '';
-        row.querySelector('.upgrade-effect').textContent = price ? `${effect}${effect ? ' - ' : ''}next ${price} tokens` : effect;
+        row.querySelector('.pips').replaceChildren(...pips(n));
+        row.querySelector('.upgrade-effect').textContent = n ? UPGRADE_EFFECTS[key](n) : '';
         row.querySelector('[data-delta="-1"]').disabled = career || n <= 0;
-        row.querySelector('[data-delta="1"]').disabled = n >= UPGRADES.max || (career && tokens < price);
+        row.querySelector('[data-delta="1"]').disabled = career || n >= UPGRADES.max;
       }
     };
     for (const row of rows) {
       for (const step of row.querySelectorAll('.step')) {
         step.addEventListener('click', () => {
           const key = row.dataset.upgrade;
-          if (inCareer()) {
-            if (Number(step.dataset.delta) > 0) Career.buy(pick, key);
-            sync();
-            return;
-          }
           const levels = picked().upgrades;
           levels[key] = clamp(levels[key] + Number(step.dataset.delta), 0, UPGRADES.max);
           changed();
@@ -378,274 +394,6 @@ const Menu = (() => {
       changed();
     });
     sync();
-  }
-
-  // An ON/OFF button for `prefs[key]`, saved under `storageKey` whenever it flips.
-  function initToggle(button, prefs, key, storageKey) {
-    const sync = () => {
-      button.textContent = prefs[key] ? 'ON' : 'OFF';
-      button.setAttribute('aria-pressed', String(prefs[key]));
-    };
-    button.addEventListener('click', () => {
-      prefs[key] = !prefs[key];
-      saveStored(storageKey, prefs);
-      sync();
-    });
-    sync();
-  }
-
-  // A number box for `prefs[key]`, kept within the box's min/max and step and saved under `storageKey`.
-  function initNumber(input, prefs, key, storageKey) {
-    const sync = () => {
-      input.value = String(prefs[key]);
-    };
-    input.addEventListener('change', () => {
-      const step = Number(input.step) || 1;
-      const v = Number(input.value);
-      if (Number.isFinite(v)) {
-        prefs[key] = clamp(Math.round(v / step) * step, Number(input.min), Number(input.max));
-        saveStored(storageKey, prefs);
-      }
-      sync();
-    });
-    sync();
-  }
-
-  // Gamemode: picking a different mode starts a new game in it. Rule toggles below apply right away.
-  function initModeView() {
-    const options = [...panel.querySelectorAll('.mode-option[data-mode]')];
-    initToggle(document.getElementById('free-throws'), game.rules, 'freeThrows', RULES_STORAGE_KEY);
-    initToggle(document.getElementById('shot-clock'), game.rules, 'shotClock', RULES_STORAGE_KEY);
-    initNumber(document.getElementById('half-minutes'), game.rules, 'halfMinutes', RULES_STORAGE_KEY);
-    initNumber(document.getElementById('shot-seconds'), game.rules, 'shotSeconds', RULES_STORAGE_KEY);
-    document.getElementById('restart-game').addEventListener('click', () => {
-      game.setMode('3v3');
-      saveMode('3v3');
-      sync();
-      setOpen(false);
-    });
-    // The arrow beside a mode opens its game options underneath.
-    for (const arrow of panel.querySelectorAll('.mode-expand')) {
-      const settings = document.getElementById(arrow.getAttribute('aria-controls'));
-      arrow.addEventListener('click', () => {
-        settings.hidden = !settings.hidden;
-        arrow.setAttribute('aria-expanded', String(!settings.hidden));
-      });
-    }
-    const worldBest = document.getElementById('world-best');
-    const careerPanel = document.getElementById('career-panel');
-    const careerArrow = panel.querySelector('.mode-expand[aria-controls="career-panel"]');
-    const sync = () => {
-      for (const o of options) o.setAttribute('aria-pressed', String(o.dataset.mode === game.mode()));
-      const best = Practice.best();
-      worldBest.textContent = best === null ? 'Best: none yet' : `Best: ${Practice.format(best)}`;
-      if (!careerPanel.hidden) renderCareer(careerPanel);
-    };
-    openCareerPanel = () => {
-      careerPanel.hidden = false;
-      careerArrow.setAttribute('aria-expanded', 'true');
-      sync();
-    };
-    careerArrow.addEventListener('click', sync); // (the shared arrow handler above shows or hides it)
-    // Picking the mode already being played does nothing, except Around the World, which starts over. Career opens
-    // its panel instead: a career game starts from a challenge picked there.
-    for (const o of options) {
-      o.addEventListener('click', () => {
-        if (o.dataset.mode === 'career') {
-          openCareerPanel();
-          return;
-        }
-        // (Around the World and 2 Player start over when picked again.)
-        if (o.dataset.mode === game.mode() && o.dataset.mode !== 'world' && o.dataset.mode !== 'duo') return;
-        game.setMode(o.dataset.mode);
-        saveMode(o.dataset.mode);
-        sync();
-        if (o.dataset.mode === 'duo') setOpen(false); // straight to the upgrade draft
-      });
-    }
-    // 2 Player formats: picking one starts a 2 Player game in it.
-    const formats = [...panel.querySelectorAll('.duo-format')];
-    const duoKeys = document.getElementById('duo-keys');
-    for (const f of formats) {
-      f.addEventListener('click', () => {
-        Duo.setFormat(f.dataset.format);
-        game.setMode('duo');
-        saveMode('duo');
-        sync();
-        setOpen(false);
-      });
-    }
-    const syncDuo = () => {
-      for (const f of formats) f.setAttribute('aria-pressed', String(f.dataset.format === Duo.format()));
-      const keys = (set) => ['shoot', 'action', 'pass'].map((n) => Input.keyLabel(n, set)).join(' ');
-      duoKeys.textContent = `P1: ${Input.moveLabel('p1')} + ${keys('p1')}. P2: ${Input.moveLabel('p2')} + ${keys('p2')} `
-        + '(shoot, dunk/steal, pass/switch; change them in Controls). Esc pauses.';
-    };
-    syncModeView = () => { // the best time may have changed since the menu was last open
-      sync();
-      syncDuo();
-    };
-    syncModeView();
-  }
-
-  // A new element with a class and text (text, never HTML: team names come from the user).
-  function el(tag, className, text = '') {
-    const e = document.createElement(tag);
-    if (className) e.className = className;
-    e.textContent = text;
-    return e;
-  }
-
-  // Career panel: season and tokens, the team's name, the next game with its three challenges (picking one starts
-  // it) or the season's result, the last game and the standings.
-  let confirmRestart = false;
-  function renderCareer(box) {
-    const c = Career.get();
-    const next = Career.next();
-    const items = [];
-
-    const head = el('div', 'career-head');
-    const week = next ? next.label : 'SEASON OVER';
-    head.append(el('span', '', `Season ${c.season} - ${week}`), el('span', 'career-tokens', `${c.tokens} tokens`));
-    items.push(head);
-
-    const nameRow = el('div', 'row');
-    const nameLabel = el('label', '', 'Team name');
-    const nameInput = el('input', 'name');
-    Object.assign(nameInput, { id: 'career-team-name', maxLength: Career.TEAM_NAME_MAX, spellcheck: false, autocomplete: 'off', value: c.teamName });
-    nameLabel.htmlFor = nameInput.id;
-    nameInput.addEventListener('input', () => Career.setTeamName(nameInput.value));
-    nameInput.addEventListener('change', () => {
-      if (!nameInput.value.trim()) Career.setTeamName('Home');
-      nameInput.value = Career.get().teamName;
-    });
-    nameRow.append(nameLabel, nameInput, el('span', 'upgrade-effect', `Titles: ${c.titles}`));
-    items.push(nameRow);
-
-    if (next) {
-      const opp = Career.teamOf(next.opp);
-      items.push(el('p', 'test-note', `Next: vs ${opp.name} (${Career.record(next.opp)})`));
-      const playing = game.mode() === 'career';
-      items.push(el('p', 'mode-desc', playing
-        ? 'Pick a challenge to tip off (this restarts the game in progress):'
-        : 'Pick a challenge to tip off. Complete it to multiply that game\'s tokens:'));
-      Career.offer(game.rules).forEach((ch, i) => {
-        const tier = CAREER.tiers[ch.tier];
-        const btn = el('button', `mode-option challenge tier-${ch.tier}`);
-        btn.type = 'button';
-        btn.append(el('span', 'mode-name', `${tier.name} x${tier.mult}`), el('span', 'mode-desc', Career.challengeText(ch)));
-        btn.addEventListener('click', () => {
-          game.startCareerGame(i);
-          syncModeView();
-          setOpen(false);
-        });
-        items.push(btn);
-      });
-    } else {
-      const results = {
-        champion: 'Champions!',
-        final: 'Lost in the final',
-        semis: 'Lost in the semifinal',
-        missed: 'Missed the playoffs',
-      };
-      const champ = c.playoff && c.playoff.champion !== null ? Career.teamOf(c.playoff.champion).name : '';
-      items.push(el('p', 'test-note', `Season ${c.season}: ${results[c.result]}${c.result !== 'champion' && champ ? ` (${champ} won it all)` : ''}`));
-      const nextSeason = el('button', 'btn', `Start season ${c.season + 1}`);
-      nextSeason.type = 'button';
-      nextSeason.addEventListener('click', () => {
-        Career.nextSeason();
-        renderCareer(box);
-      });
-      items.push(nextSeason);
-    }
-
-    if (c.last) {
-      const l = c.last;
-      const vs = Career.teamOf(l.opp).abbr;
-      items.push(el('p', 'mode-desc', `Last game: ${l.won ? 'W' : 'L'} ${l.us}-${l.them} vs ${vs}, +${l.tokens} tokens${l.challenge ? ` (challenge ${l.done ? 'done' : 'missed'})` : ''}`));
-    }
-
-    // Standings: best record first; during the playoffs the seeds are marked.
-    const table = el('div', 'standings');
-    for (const text of ['#', 'Team', 'W-L', '+/-']) table.append(el('span', 'standings-head', text));
-    Career.standings().forEach((i, rank) => {
-      const t = c.league[i];
-      const seeded = c.playoff && c.playoff.seeds.includes(i);
-      const cls = i === 0 ? 'standings-you' : '';
-      const diff = t.pf - t.pa;
-      table.append(
-        el('span', cls, `${rank + 1}${seeded ? '*' : ''}`),
-        el('span', cls, Career.teamOf(i).name),
-        el('span', cls, Career.record(i)),
-        el('span', cls, `${diff > 0 ? '+' : ''}${diff}`),
-      );
-    });
-    items.push(table);
-
-    items.push(...saveSection(box));
-
-    const restart = el('button', 'btn btn-quiet', confirmRestart ? 'Sure? Click again to start over' : 'New career');
-    restart.type = 'button';
-    restart.addEventListener('click', () => {
-      if (confirmRestart) Career.restart();
-      confirmRestart = !confirmRestart;
-      renderCareer(box);
-    });
-    items.push(restart);
-
-    box.replaceChildren(...items);
-  }
-
-  // Saving: progress saves itself after every game and purchase. A backup code (copy it, paste it back) covers
-  // browsers that can't save (it opens by itself there, with a warning) and moving to another device.
-  let showCode = false;
-  let codeMessage = '';
-  function saveSection(box) {
-    const stores = canStore();
-    const items = [];
-    const status = el('p', stores ? 'save-ok' : 'save-warn', stores
-      ? 'Progress saves automatically after every game and upgrade.'
-      : 'This browser isn\'t saving (private window or blocked storage). Copy your backup code after each game!');
-    const toggle = el('button', 'btn btn-quiet', showCode ? 'Hide backup code' : 'Backup code');
-    toggle.type = 'button';
-    toggle.addEventListener('click', () => {
-      showCode = !showCode;
-      codeMessage = '';
-      renderCareer(box);
-    });
-    const row = el('div', 'save-row');
-    row.append(status, toggle);
-    items.push(row);
-    if (!showCode && stores) return items;
-
-    const code = el('textarea', 'save-code');
-    Object.assign(code, { readOnly: true, rows: 3, spellcheck: false, value: Career.exportCode() });
-    code.setAttribute('aria-label', 'Your backup code');
-    const copy = el('button', 'btn', 'Copy code');
-    copy.type = 'button';
-    copy.addEventListener('click', () => {
-      code.select();
-      const done = () => { copy.textContent = 'Copied!'; };
-      if (navigator.clipboard) navigator.clipboard.writeText(code.value).then(done, () => document.execCommand('copy') && done());
-      else if (document.execCommand('copy')) done();
-    });
-    const paste = el('textarea', 'save-code');
-    Object.assign(paste, { rows: 2, spellcheck: false, placeholder: 'Paste a backup code here' });
-    paste.setAttribute('aria-label', 'Paste a backup code');
-    const load = el('button', 'btn btn-quiet', 'Load code');
-    load.type = 'button';
-    load.addEventListener('click', () => {
-      const ok = Career.importCode(paste.value);
-      codeMessage = ok ? 'Loaded! Your career is back.' : 'That code didn\'t work: copy the whole thing, starting with RB1-';
-      if (ok) {
-        game.upgradesChanged();
-        syncUpgradeView();
-      }
-      renderCareer(box);
-    });
-    items.push(el('p', 'mode-desc', 'Your code (keep it somewhere safe):'), code, copy, paste, load);
-    if (codeMessage) items.push(el('p', codeMessage.startsWith('Loaded') ? 'save-ok' : 'save-warn', codeMessage));
-    return items;
   }
 
   // Controls: the double-tap dash window and a key button per action. Clicking a button waits for the next key
@@ -730,7 +478,7 @@ const Menu = (() => {
     sync();
   }
 
-  // Player tuning (bottom of the Gamemode tab): a number box per TUNING entry with its tip and default. A changed
+  // Player tuning (the Dev tab): a number box per TUNING entry with its tip and default. A changed
   // value is highlighted and gets a button back to its default; "Reset all" restores every one.
   function initTuningView() {
     const list = document.getElementById('tuning-list');
@@ -782,7 +530,7 @@ const Menu = (() => {
     });
   }
 
-  // Testing sliders (bottom of the Gamemode tab): the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two
+  // Testing sliders (top of the Dev tab): the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two
   // add up past 100% the hang share shrinks; "normal" shows whatever is left. Plus the AI level (live on AI) and the
   // crowd density (live on CROWD).
   const DEFAULT_ODDS = { hangChance: DUNK.hangChance, shatterChance: DUNK.shatterChance };
@@ -865,21 +613,6 @@ const Menu = (() => {
     }
   }
 
-  function setOpen(value) {
-    if (open === value) return;
-    open = value;
-    panel.hidden = !open;
-    button.setAttribute('aria-expanded', String(open));
-    if (open) {
-      lastFrame = 0;
-      syncModeView();
-      syncUpgradeView(); // tokens may have come in, or the mode (free or career levels) changed
-      requestAnimationFrame(drawPreview);
-    } else {
-      document.getElementById('game').focus();
-    }
-  }
-
   function drawPreview(now) {
     if (!open) return;
     const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.1) : 0;
@@ -906,16 +639,63 @@ const Menu = (() => {
     requestAnimationFrame(drawPreview);
   }
 
-  // After a career game: the menu opens on the career panel, ready to pick the next game's challenge.
-  function openCareer() {
+  // Footer: in a game, Main menu (in a career game that isn't over, after an "are you sure": it won't count) and
+  // Restart (not in career: no do-overs); opened from the main menu, just Back.
+  function initFoot() {
+    const toTitle = document.getElementById('to-title');
+    const restart = document.getElementById('restart-game');
+    const resume = document.getElementById('resume');
+    let confirming = false;
+    // (Each time the menu opens the "are you sure" starts over.)
+    syncFoot = (fresh = false) => {
+      if (fresh) confirming = false;
+      const title = game.inTitle();
+      toTitle.hidden = title;
+      restart.hidden = title || game.mode() === 'career';
+      toTitle.textContent = confirming ? 'Sure? It won\'t count' : 'Main menu';
+      resume.textContent = title ? 'Back' : 'Resume';
+    };
+    toTitle.addEventListener('click', () => {
+      if (game.mode() === 'career' && !game.over() && !confirming) {
+        confirming = true;
+        syncFoot();
+        return;
+      }
+      setOpen(false);
+      game.toTitle();
+    });
+    restart.addEventListener('click', () => {
+      setOpen(false);
+      game.restart();
+    });
+    resume.addEventListener('click', () => setOpen(false));
+  }
+
+  function setOpen(value) {
+    if (open === value) return;
+    open = value;
+    panel.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+    if (open) {
+      lastFrame = 0;
+      syncFoot(true);
+      syncUpgradeView(); // the mode (free or career levels) may have changed
+      requestAnimationFrame(drawPreview);
+    } else {
+      document.getElementById('game').focus();
+      game.closed();
+    }
+  }
+
+  // From the main menu: the menu opened on one of its tabs (Customize, Settings).
+  function openTab(id) {
     setOpen(true);
-    showTab('mode-view');
-    openCareerPanel();
+    showTab(id);
   }
 
   return {
     init,
     isOpen: () => open,
-    openCareer,
+    openTab,
   };
 })();

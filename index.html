@@ -21,9 +21,10 @@
       <div class="menu-head tabs" role="tablist" aria-label="Pause menu sections">
         <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true">Player</button>
         <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
-        <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Gamemode</button>
         <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
         <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false">UI</button>
+        <!-- Only with ?dev=1 in the address (see menu.js): testing sliders and player tuning. -->
+        <button type="button" class="tab" role="tab" data-panel="dev-view" aria-selected="false" hidden>Dev</button>
       </div>
 
       <div class="menu-body tab-panel" id="player-view" role="tabpanel">
@@ -125,90 +126,10 @@
         </div>
       </div>
 
-      <!-- Game mode (switching starts a new game) and rule toggles (saved, apply right away). -->
-      <div class="tab-panel stack-view" id="mode-view" role="tabpanel" hidden>
-        <p class="test-note">Game mode (switching starts a new game)</p>
-        <!-- Career: seasons against a league, upgrades bought with tokens. The panel is built by menu.js; picking a
-             challenge there starts the next game. -->
-        <div class="mode-row">
-          <button type="button" class="mode-option" data-mode="career" aria-pressed="false" aria-controls="career-panel">
-            <span class="mode-name">Career</span>
-            <span class="mode-desc">Seasons, playoffs and upgrades bought with tokens</span>
-          </button>
-          <button type="button" class="mode-expand" aria-expanded="false" aria-controls="career-panel" aria-label="Career"><span class="chevron">&gt;</span></button>
-        </div>
-        <div class="mode-settings career-panel" id="career-panel" hidden></div>
-        <div class="mode-row">
-          <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
-            <span class="mode-name">3v3 Casual</span>
-            <span class="mode-desc">Full court with AI teammates and opponents</span>
-          </button>
-          <button type="button" class="mode-expand" aria-expanded="false" aria-controls="options-3v3" aria-label="3v3 game options"><span class="chevron">&gt;</span></button>
-        </div>
-        <div class="mode-settings" id="options-3v3" hidden>
-          <p class="test-note">Game options</p>
-          <div class="row">
-            <span class="label">Free throws</span>
-            <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
-            <span class="upgrade-effect">1 shot after a reach-in foul</span>
-          </div>
-          <div class="row">
-            <label for="half-minutes">Half length</label>
-            <input type="number" id="half-minutes" class="num tuning-num" min="0.5" max="20" step="0.5">
-            <span class="upgrade-effect">Minutes per half (2 halves)</span>
-          </div>
-          <div class="row">
-            <span class="label">Shot clock</span>
-            <button type="button" class="key-btn" id="shot-clock" aria-pressed="false" aria-label="Shot clock"></button>
-            <input type="number" id="shot-seconds" class="num" min="5" max="60" step="1" aria-label="Shot clock seconds">
-            <span class="upgrade-effect">seconds</span>
-          </div>
-          <div class="row">
-            <span class="label"></span>
-            <button type="button" class="btn btn-quiet" id="restart-game">Restart game</button>
-            <span class="upgrade-effect">Clock changes start next game</span>
-          </div>
-        </div>
-
-        <!-- 2 Player: two people on one keyboard. The arrow opens the formats; picking one starts it. -->
-        <div class="mode-row">
-          <button type="button" class="mode-option" data-mode="duo" aria-pressed="false">
-            <span class="mode-name">2 Player</span>
-            <span class="mode-desc" id="duo-desc">Two players, one keyboard: draft upgrades, then play</span>
-          </button>
-          <button type="button" class="mode-expand" aria-expanded="false" aria-controls="options-duo" aria-label="2 Player formats"><span class="chevron">&gt;</span></button>
-        </div>
-        <div class="mode-settings" id="options-duo" hidden>
-          <p class="test-note">Format (picking one starts it)</p>
-          <button type="button" class="mode-option duo-format" data-format="vs3" aria-pressed="false">
-            <span class="mode-name">Versus 3v3</span>
-            <span class="mode-desc">Each player runs a team, with two AI teammates</span>
-          </button>
-          <button type="button" class="mode-option duo-format" data-format="vs1" aria-pressed="false">
-            <span class="mode-name">Versus 1v1</span>
-            <span class="mode-desc">Just the two of you, full court</span>
-          </button>
-          <button type="button" class="mode-option duo-format" data-format="coop" aria-pressed="false">
-            <span class="mode-name">Co-op</span>
-            <span class="mode-desc">Together (plus an AI teammate) against three AI players</span>
-          </button>
-          <p class="mode-desc" id="duo-keys"></p>
-        </div>
-
-        <!-- Practice modes: just the user's player. Picking one starts it fresh. -->
-        <p class="test-note">Practice (just you; picking one starts it fresh)</p>
-        <button type="button" class="mode-option" data-mode="free" aria-pressed="false">
-          <span class="mode-name">Free shot</span>
-          <span class="mode-desc">Just you and the ball, either hoop</span>
-        </button>
-        <button type="button" class="mode-option" data-mode="world" aria-pressed="false">
-          <span class="mode-name">Around the world</span>
-          <span class="mode-desc">15 spots in order: make each one to move on. Timed.</span>
-          <span class="mode-desc" id="world-best"></span>
-        </button>
-
+      <!-- Dev (only with ?dev=1 in the address): testing sliders and player tuning. -->
+      <div class="tab-panel stack-view" id="dev-view" role="tabpanel" hidden>
         <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
-        <div class="stack-view test-section" id="test-view">
+        <div class="stack-view" id="test-view">
           <p class="test-note">Testing (not saved)</p>
           <p class="test-note">Dunk odds</p>
           <div class="row">
@@ -279,10 +200,115 @@
         <span class="foot-left">
           <button type="button" class="btn btn-quiet" id="reset-look" data-for="player-view">Reset look</button>
           <button type="button" class="btn btn-quiet" id="reset-upgrades" data-for="upgrade-view" hidden>Reset</button>
-          <button type="button" class="btn btn-quiet" id="reset-odds" data-for="mode-view" hidden>Test defaults</button>
+          <button type="button" class="btn btn-quiet" id="reset-odds" data-for="dev-view" hidden>Test defaults</button>
           <button type="button" class="btn btn-quiet" id="reset-controls" data-for="controls-view" hidden>Defaults</button>
         </span>
-        <button type="button" class="btn" id="resume">Resume</button>
+        <span class="foot-right">
+          <!-- In a game only (menu.js hides them when the menu was opened from the main menu). -->
+          <button type="button" class="btn btn-quiet" id="to-title">Main menu</button>
+          <button type="button" class="btn btn-quiet" id="restart-game">Restart</button>
+          <button type="button" class="btn" id="resume">Resume</button>
+        </span>
+      </div>
+    </div>
+
+    <!-- Main menu: the game always opens here, with the AI playing itself behind it. Each mode's screen is a view
+         (title.js shows one at a time); Customize and Settings open the pause menu's tabs. -->
+    <div id="title" role="dialog" aria-label="Main menu" hidden>
+      <h1 class="title-logo">Retro<span>Ball</span></h1>
+      <div class="title-panel">
+        <div class="title-view" id="title-home">
+          <div class="title-grid">
+            <button type="button" class="mode-option" data-go="career">
+              <span class="mode-name">Career</span>
+              <span class="mode-desc" id="title-career-desc">Seasons, playoffs and upgrades bought with tokens</span>
+            </button>
+            <button type="button" class="mode-option" data-go="quick">
+              <span class="mode-name">Quick game</span>
+              <span class="mode-desc">3v3 with AI teammates and opponents</span>
+            </button>
+            <button type="button" class="mode-option" data-go="duo">
+              <span class="mode-name">2 Player</span>
+              <span class="mode-desc">Two players, one keyboard</span>
+            </button>
+            <button type="button" class="mode-option" data-go="practice">
+              <span class="mode-name">Practice</span>
+              <span class="mode-desc">Free shot and Around the World</span>
+            </button>
+            <button type="button" class="mode-option" data-go="customize">
+              <span class="mode-name">Customize</span>
+              <span class="mode-desc">Your team's look and names</span>
+            </button>
+            <button type="button" class="mode-option" data-go="settings">
+              <span class="mode-name">Settings</span>
+              <span class="mode-desc">Controls and display</span>
+            </button>
+          </div>
+          <div class="title-foot">
+            <button type="button" class="btn btn-quiet" id="fullscreen">Fullscreen</button>
+          </div>
+        </div>
+
+        <!-- Career: built by title.js (season, challenges, upgrades, standings). Picking a challenge tips off. -->
+        <div class="title-view" id="title-career" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Career</span></div>
+          <div class="career-panel" id="career-panel"></div>
+        </div>
+
+        <!-- Quick game: the game options (Career and 2 Player games use them too), then tip off. -->
+        <div class="title-view stack-view" id="title-quick" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Quick game</span></div>
+          <div class="row">
+            <span class="label">Free throws</span>
+            <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
+            <span class="upgrade-effect">1 shot after a reach-in foul</span>
+          </div>
+          <div class="row">
+            <label for="half-minutes">Half length</label>
+            <input type="number" id="half-minutes" class="num tuning-num" min="0.5" max="20" step="0.5">
+            <span class="upgrade-effect">Minutes per half (2 halves)</span>
+          </div>
+          <div class="row">
+            <span class="label">Shot clock</span>
+            <button type="button" class="key-btn" id="shot-clock" aria-pressed="false" aria-label="Shot clock"></button>
+            <input type="number" id="shot-seconds" class="num" min="5" max="60" step="1" aria-label="Shot clock seconds">
+            <span class="upgrade-effect">seconds</span>
+          </div>
+          <p class="mode-desc">These options are used by Career and 2 Player games too.</p>
+          <button type="button" class="btn title-start" data-mode="3v3">Tip off</button>
+        </div>
+
+        <!-- 2 Player: two people on one keyboard. Picking a format starts it (with the upgrade draft). -->
+        <div class="title-view stack-view" id="title-duo" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">2 Player</span></div>
+          <button type="button" class="mode-option duo-format" data-format="vs3" aria-pressed="false">
+            <span class="mode-name">Versus 3v3</span>
+            <span class="mode-desc">Each player runs a team, with two AI teammates</span>
+          </button>
+          <button type="button" class="mode-option duo-format" data-format="vs1" aria-pressed="false">
+            <span class="mode-name">Versus 1v1</span>
+            <span class="mode-desc">Just the two of you, full court</span>
+          </button>
+          <button type="button" class="mode-option duo-format" data-format="coop" aria-pressed="false">
+            <span class="mode-name">Co-op</span>
+            <span class="mode-desc">Together (plus an AI teammate) against three AI players</span>
+          </button>
+          <p class="mode-desc" id="duo-keys"></p>
+        </div>
+
+        <!-- Practice: just the user's player. -->
+        <div class="title-view stack-view" id="title-practice" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Practice</span></div>
+          <button type="button" class="mode-option title-start" data-mode="free">
+            <span class="mode-name">Free shot</span>
+            <span class="mode-desc">Just you and the ball, either hoop</span>
+          </button>
+          <button type="button" class="mode-option title-start" data-mode="world">
+            <span class="mode-name">Around the world</span>
+            <span class="mode-desc">15 spots in order: make each one to move on. Timed.</span>
+            <span class="mode-desc" id="world-best"></span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -312,6 +338,7 @@
   <script src="src/menu.js"></script>
   <script src="src/career.js"></script>
   <script src="src/duo.js"></script>
+  <script src="src/title.js"></script>
   <script src="src/main.js"></script>
 </body>
 </html>

@@ -20,7 +20,8 @@ const Clock = (() => {
   }
 
   function periodLength(game, period) {
-    return (period <= 2 ? game.rules.halfMinutes : GAME.otMinutes) * 60;
+    const half = game.mode === 'demo' ? TITLE.demoHalfMinutes : game.rules.halfMinutes;
+    return (period <= 2 ? half : GAME.otMinutes) * 60;
   }
 
   // Players hold still during the banners, a 2 Player upgrade draft, and after the final buzzer.

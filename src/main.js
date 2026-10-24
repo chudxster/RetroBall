@@ -15,9 +15,10 @@ const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0
 
 const state = {
   time: 0,
-  // '3v3', 'career' (a career game, see career.js), 'duo' (2 Player, see duo.js), 'free' (free shot) or 'world'
-  // (Around the World): the last two just the user
-  mode: loadMode(),
+  // 'demo' (the AI playing itself behind the main menu, see title.js), '3v3', 'career' (a career game, see
+  // career.js), 'duo' (2 Player, see duo.js), 'free' (free shot) or 'world' (Around the World): the last two just
+  // the user
+  mode: 'demo',
   look: loadLook(),  // the user's custom look; team colors come from it
   team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
   rules: loadPrefs(RULES_STORAGE_KEY, DEFAULT_RULES), // { freeThrows }
@@ -25,10 +26,10 @@ const state = {
   roster: [],        // all six players, in either mode
   players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
   // The people playing: { pad (key set, see Input), team, start (their player at a reset), player (the one they
-  // control now), prevKeys, ctl }. One in every mode but 2 Player.
+  // control now), prevKeys, ctl }. One in every mode but 2 Player (two) and the demo (none).
   humans: [],
   get user() {       // the (first) person's player
-    return this.humans[0].player;
+    return this.humans.length ? this.humans[0].player : null;
   },
   draft: null,       // a 2 Player upgrade draft in progress (see Duo)
   ref: null,         // the referee (3v3 only; see ref.js)
@@ -72,7 +73,7 @@ function newGame(mode, runBack = false) {
   const solo = !isFullGame(state); // free shot and the practice drills: just the user's player
   state.players = solo ? [star] : duo ? Duo.players(state.roster) : state.roster;
   state.ref = solo ? null : Ref.make();
-  const people = duo ? Duo.humans(state.roster) : [{ pad: 'solo', team: 0, start: star }];
+  const people = duo ? Duo.humans(state.roster) : mode === 'demo' ? [] : [{ pad: 'solo', team: 0, start: star }];
   state.humans = people.map((h) => ({ ...h, player: h.start, prevKeys: {}, ctl: null }));
   state.draft = null;
   state.score = [0, 0];
@@ -108,10 +109,15 @@ function update(dt) {
   // foul's whistle until the free throw is set up.
   const whistle = !!(state.freeThrow && state.freeThrow.pending);
   const frozen = !!(camera.pan || state.fade) || Clock.stopped(state) || whistle;
-  // After the final buzzer, a fresh press of the shoot key starts a new game (in career, opens the career menu to
-  // pick the next one).
-  // In 2 Player, player 1's shoot key runs it back and player 2's starts a new draft (see Duo.updateAfter).
-  if (state.clock && state.clock.over && state.clock.overT > 1) {
+  // After the final buzzer, a fresh press of the shoot key starts a new game (in career, goes to the main menu's
+  // Career screen to pick the next one). In 2 Player, player 1's shoot key runs it back and player 2's starts a new
+  // draft (see Duo.updateAfter). The demo just starts another.
+  if (state.clock && state.clock.over && state.mode === 'demo') {
+    if (state.clock.overT > TITLE.demoRestart) {
+      newGame('demo');
+      return;
+    }
+  } else if (state.clock && state.clock.over && state.clock.overT > 1) {
     if (state.mode === 'duo') {
       const before = state.clock;
       Duo.updateAfter(state, newGame);
@@ -120,7 +126,7 @@ function update(dt) {
       state.replayReady = true;
     } else if (state.replayReady) {
       state.replayReady = false;
-      if (state.mode === 'career') Menu.openCareer();
+      if (state.mode === 'career') toTitle('career');
       else newGame(state.mode);
       return;
     }
@@ -445,29 +451,38 @@ function render(alpha) {
     }
   });
   drawPopups(ctx, state);
-  drawHud(ctx, state);
+  // The demo behind the main menu: just the clock (and halftime), dimmed.
+  const demo = state.mode === 'demo';
+  if (!demo) drawHud(ctx, state);
   if (state.clock) {
     drawClock(ctx, state);
     if (state.clock.banner) drawBanner(ctx, state.clock.banner);
-    if (state.clock.over) drawGameOver(ctx, state);
+    if (state.clock.over && !demo) drawGameOver(ctx, state);
   }
   if (state.draft) drawDraft(ctx, state);
   if (state.fade) {
     ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha()})`;
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   }
-  if (Menu.isOpen()) drawPauseDim(ctx);
-  else if (!document.hasFocus()) drawFocusOverlay(ctx, state.time);
+  if (demo) {
+    ctx.fillStyle = `rgba(26, 28, 44, ${TITLE.dim})`;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  } else if (Menu.isOpen()) {
+    drawPauseDim(ctx);
+  } else if (!document.hasFocus()) {
+    drawFocusOverlay(ctx, state.time);
+  }
 }
 
 // Fixed-timestep loop: physics always ticks at 60Hz, rendering interpolates between ticks.
-// While paused (the menu is open, or the game lost focus and shows "click to play") the simulation stops advancing.
+// While paused (the menu is open, or the game lost focus and shows "click to play") the simulation stops advancing;
+// the demo behind the main menu always plays.
 let last = performance.now();
 let acc = 0;
 function frame(now) {
   const elapsed = Math.min((now - last) / 1000, 0.25);
   last = now;
-  if (!Menu.isOpen() && document.hasFocus()) {
+  if (state.mode === 'demo' || (!Menu.isOpen() && document.hasFocus())) {
     acc += elapsed;
     while (acc >= STEP) {
       update(STEP);
@@ -496,6 +511,18 @@ canvas.addEventListener('pointerdown', () => {
   canvas.focus();
 });
 
+// Back to the main menu (on one of its views, see Title.show), with the demo playing behind it.
+function toTitle(view = 'home') {
+  newGame('demo');
+  Title.show(view);
+}
+
+// A mode picked on the main menu: its game starts, with the keyboard on the game.
+function startMode(mode) {
+  newGame(mode);
+  canvas.focus();
+}
+
 newGame(state.mode);
 Menu.init({
   look: state.look,
@@ -504,19 +531,32 @@ Menu.init({
     setTeamLooks(state.roster, look, state.team);
   },
   team: state.team,
-  // Free upgrades re-roll the opponents to match; career levels are bought in place and opponents keep theirs.
+  // Free upgrades re-roll the opponents to match (career levels are only bought between games).
   upgradesChanged: () => {
     if (state.mode !== 'career') rollAIUpgrades(state.roster, state.team);
   },
-  rules: state.rules,
   ui: state.ui,
   mode: () => state.mode,
-  setMode: newGame,
-  // Career: the picked challenge (0..2) starts the next game.
-  startCareerGame(choice) {
-    Career.begin(choice);
-    newGame('career');
+  over: () => !!(state.clock && state.clock.over),
+  inTitle: () => state.mode === 'demo',
+  restart: () => startMode(state.mode),
+  toTitle,
+  // Opened from the main menu (Customize, Settings): closing it goes back there.
+  closed: () => {
+    if (state.mode === 'demo') Title.show();
   },
 });
+Title.init({
+  rules: state.rules,
+  start: startMode,
+  // Career: the picked challenge (0..2) starts the next game.
+  startCareer(choice) {
+    Career.begin(choice);
+    startMode('career');
+  },
+  openTab: Menu.openTab,
+});
+// (The page may not have the keyboard yet, e.g. in an iframe, so nothing takes focus until it's clicked.)
+Title.show('home', { focus: false });
 fitCanvas();
 requestAnimationFrame(frame);

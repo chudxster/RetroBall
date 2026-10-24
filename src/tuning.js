@@ -1,5 +1,5 @@
 // Player tuning: the config values that shape how players move, shoot, dunk, dash, pass and defend, editable in
-// the pause menu (bottom of the Gamemode tab), most important first. Every one applies to all players, the user's
+// the pause menu (the Dev tab, with ?dev=1), most important first. Every one applies to all players, the user's
 // and the AI's alike (the user and the AI have their own steal/block/intercept/stuff odds, so those are scaled).
 // Each entry names a value by its path in the config (`also` lists values that must follow it), with a short tip. Changes are saved; anything left at its
 // default isn't.

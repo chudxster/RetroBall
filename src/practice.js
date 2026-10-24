@@ -1,4 +1,4 @@
-// Practice drills (Gamemode tab, under Practice). Around the World: 15 shots at the right hoop in order - three
+// Practice drills (main menu, under Practice). Around the World: 15 shots at the right hoop in order - three
 // spots across under the hoop, two from each elbow, three free throws, then five threes around the arc from corner to corner. The
 // player is put on each spot with the ball and can only shoot; a make moves on to the next spot, a miss means
 // shooting from the same spot again. The clock starts with the first shot; the best time is saved.

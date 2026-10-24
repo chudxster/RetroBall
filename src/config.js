@@ -187,9 +187,13 @@ const DUO = {
   markers: ['#ffcd75', '#41a6f6'], // player 1's and player 2's arrow and text colors
 };
 
+// Main menu (title.js): behind it the AI plays itself in a demo game of demoHalfMinutes halves, starting a new one
+// demoRestart seconds after the final buzzer, with the court dimmed by `dim`.
+const TITLE = { demoHalfMinutes: 1, demoRestart: 4, dim: 0.55 };
+
 // Fouls: reaching for a steal can be called a foul, more likely the closer the reacher is to the ball handler: no
 // chance from `far` out (the steal reach without upgrades), rising to `maxChance` with bodies touching (`near`, the
-// separation distance). With free throws on (Gamemode tab) the fouled player shoots one from the line; otherwise
+// separation distance). With free throws on (Quick game options) the fouled player shoots one from the line; otherwise
 // their team just keeps the ball. Either way the fouler is stuck reaching for `stun` seconds.
 const FOUL = {
   far: 22,
@@ -265,7 +269,7 @@ const DEFENSE = {
   stuffChance: 0.3,   // ...with these odds each (AI defenders add their block chance)
   userStuffChance: 0.4,
   // Everyone's steal, block, interception and dunk-stuff odds (the user's and the AI's alike) are multiplied by
-  // these; 1 = as above (set in the Gamemode tab's player tuning).
+  // these; 1 = as above (set in the Dev tab's player tuning).
   stealOdds: 1,
   blockOdds: 1,
   interceptOdds: 1,
@@ -290,7 +294,7 @@ const UPGRADES = {
 };
 
 // Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set with the
-// Gamemode tab's testing sliders.
+// Dev tab's testing sliders.
 // The user's teammates play at a fixed level.
 const AI = {
   level: 0.5,

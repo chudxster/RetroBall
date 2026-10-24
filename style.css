@@ -65,6 +65,10 @@ input {
   background: #f4f4f4;
 }
 
+#pause-btn[hidden] {
+  display: none;
+}
+
 #pause-btn:hover,
 #pause-btn[aria-expanded="true"] {
   background: #3b5dc9;
@@ -125,7 +129,7 @@ input {
   border-bottom: var(--px) solid #333c57;
 }
 
-/* The testing sliders at the bottom of the Gamemode tab, set off from the real settings above. */
+/* Player tuning in the Dev tab, set off from the testing sliders above. */
 .test-section {
   min-height: 0;
   margin-top: calc(var(--px) * 3);
@@ -204,7 +208,8 @@ input {
   color: #ffcd75;
 }
 
-.foot-left {
+.foot-left,
+.foot-right {
   display: flex;
   gap: calc(var(--px) * 3);
 }
@@ -343,42 +348,6 @@ input {
 .mode-option[aria-pressed="true"] {
   background: #29366f;
   border-color: #ffcd75;
-}
-
-/* A mode with options: the arrow beside it opens them underneath */
-.mode-row {
-  display: flex;
-  gap: calc(var(--px) * 2);
-}
-
-.mode-row .mode-option {
-  flex: 1;
-}
-
-.mode-expand {
-  width: calc(var(--px) * 14);
-  padding: 0;
-  background: #262b44;
-  border: var(--px) solid #566c86;
-  cursor: pointer;
-}
-
-.mode-expand:hover {
-  border-color: #f4f4f4;
-}
-
-.mode-expand .chevron {
-  display: inline-block;
-}
-
-.mode-expand[aria-expanded="true"] .chevron {
-  transform: rotate(90deg);
-}
-
-.mode-settings {
-  margin-left: calc(var(--px) * 4);
-  padding-left: calc(var(--px) * 4);
-  border-left: var(--px) solid #333c57;
 }
 
 .mode-name {
@@ -631,14 +600,7 @@ input[type="color"]::-moz-color-swatch {
   cursor: default;
 }
 
-/* Career saving: the status line, and the backup code to copy or paste */
-.save-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(var(--px) * 3);
-}
-
+/* Career saving: whether progress is being saved */
 .save-ok,
 .save-warn {
   margin: 0;
@@ -651,20 +613,6 @@ input[type="color"]::-moz-color-swatch {
 
 .save-warn {
   color: #e43b44;
-}
-
-.save-code {
-  box-sizing: border-box;
-  width: 100%;
-  padding: calc(var(--px) * 2);
-  font: inherit;
-  font-size: 0.6em;
-  color: inherit;
-  text-transform: none;
-  word-break: break-all;
-  resize: vertical;
-  background: #262b44;
-  border: var(--px) solid #94b0c2;
 }
 
 .career-panel > .btn {
@@ -684,4 +632,102 @@ input[type="color"]::-moz-color-swatch {
   width: 100%;
   margin-bottom: calc(var(--px) * 2);
   padding: calc(var(--px) * 3) calc(var(--px) * 4);
+}
+
+/* Smaller footer buttons so Main menu, Restart and Resume fit beside the tab's reset button. */
+.menu-foot .btn {
+  font-size: 0.8em;
+}
+
+/* Main menu: the logo over a panel in the pause menu's style, centered on the demo game behind it */
+#title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--px) * 4);
+  color: #f4f4f4;
+  font-family: 'Silkscreen', monospace;
+  font-size: calc(var(--px) * 8);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+#title[hidden],
+#title [hidden] {
+  display: none;
+}
+
+.title-logo {
+  margin: 0;
+  font-size: calc(var(--px) * 22);
+  font-weight: normal;
+  letter-spacing: var(--px);
+  color: #ffcd75;
+  text-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 #1a1c2c;
+}
+
+.title-logo span {
+  color: #ef7d57;
+}
+
+.title-panel {
+  box-sizing: border-box;
+  width: calc(var(--px) * 204);
+  max-height: calc(var(--px) * 136);
+  overflow-y: auto;
+  padding: calc(var(--px) * 4);
+  background: #1a1c2c;
+  border: var(--px) solid #f4f4f4;
+  box-shadow: calc(var(--px) * 3) calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Home: the modes two to a row */
+.title-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--px) * 3);
+}
+
+.title-grid .mode-option {
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+}
+
+.title-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(var(--px) * 3);
+}
+
+/* A mode's screen: Back and its name across the top */
+.title-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  margin-bottom: calc(var(--px) * 3);
+}
+
+.title-heading {
+  color: #ffcd75;
+}
+
+.title-view.stack-view {
+  min-height: 0;
+}
+
+
+.btn.title-start {
+  align-self: flex-start;
+}
+
+/* Career upgrades: which player, then buy the next level of each stat */
+.career-picks {
+  gap: calc(var(--px) * 2);
+}
+
+.career-buy {
+  min-width: calc(var(--px) * 30);
+  padding: var(--px) calc(var(--px) * 2);
 }

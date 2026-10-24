@@ -9,13 +9,13 @@ Open `index.html` in a browser (double-clicking works), or serve the folder from
 Two modes, picked in the pause menu: **3v3 Casual** (full court, AI teammates and opponents, half-court defense) and
 **Free shot** (just you).
 
-Upgrades (pause menu, free while testing) apply to your own player: speed, shooting, dunking and defense. In 3v3 every
-AI player gets the same number of levels as you, spread at random.
+Upgrades (pause menu, free while testing) apply to your own player: speed, shooting, dunking, defense and dash. In 3v3
+every AI player gets the same number of levels as you, spread at random (the AI doesn't dash).
 
 | Key | With the ball | On defense |
 | --- | --- | --- |
 | WASD / arrows | Move: keep holding a direction to speed up (faster after 0.5s, fastest after 1s) | Move |
-| Double-tap A / D | Dash sideways (3 second cooldown) | Dash sideways |
+| Shift (or double-tap A / D) | Dash the way you're holding (3 second cooldown) | Dash |
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball |

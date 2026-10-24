@@ -47,10 +47,11 @@ function makePlayers(look) {
   return players;
 }
 
-// `total` upgrade levels spread at random over the stats (none past UPGRADES.max).
+// `total` upgrade levels spread at random over the stats (none past UPGRADES.max). The AI never dashes, so dash
+// gets none.
 function randomUpgrades(total) {
-  const levels = { speed: 0, shooting: 0, dunking: 0, defense: 0 };
-  const keys = Object.keys(levels);
+  const levels = { speed: 0, shooting: 0, dunking: 0, defense: 0, dash: 0 };
+  const keys = ['speed', 'shooting', 'dunking', 'defense'];
   for (let n = Math.min(total, keys.length * UPGRADES.max); n > 0; n--) {
     const open = keys.filter((k) => levels[k] < UPGRADES.max);
     levels[open[Math.floor(Math.random() * open.length)]]++;

@@ -81,7 +81,7 @@ class Player {
     this.sitting = false; // knocked onto the floor; can't move until the reset
     this.team = 0;    // 0 = home (the user's team), 1 = away
     this.role = 0;    // 0..2 within the team; defenders guard the opponent with the same role
-    this.upgrades = { speed: 0, shooting: 0, dunking: 0, defense: 0 }; // levels: the user's buys, the AI's random
+    this.upgrades = { speed: 0, shooting: 0, dunking: 0, defense: 0, dash: 0 }; // levels: the user's buys, the AI's random
     this.meter = null; // this player's shot meter while shooting (and briefly after)
     this.jump = null;  // { t } while jumping to contest or block
     this.reachT = 0;   // seconds left of a steal reach (arm out)
@@ -89,7 +89,7 @@ class Player {
     this.dazedT = 0;   // seconds left of stars circling the head after having the ball stolen
     this.stealCD = 0;
     this.dashT = 0;   // seconds left of a dash burst...
-    this.dashDir = 0; // ...in this x direction
+    this.dashDir = { x: 0, y: 0 }; // ...this way (unit vector in control space, like `move`)
     this.dashCD = 0;
     this.prevShoot = false; // last tick's shoot / dunk buttons, so Shooting can spot presses
     this.prevDunk = false;
@@ -175,10 +175,11 @@ class Player {
       this.vy += (dy / dist) * step;
     }
 
-    // Dashing overrides the sideways speed with a burst, then normal steering takes it back down.
+    // Dashing overrides the velocity with a burst, then normal steering takes it back down.
     if (this.dashT > 0 && !stuck) {
-      this.vx = this.dashDir * DASH.speed;
-      this.facing = this.dashDir;
+      this.vx = this.dashDir.x * DASH.speed;
+      this.vy = this.dashDir.y * DASH.speed * PLAYER.depthSpeed;
+      if (this.dashDir.x) this.facing = Math.sign(this.dashDir.x);
     }
 
     this.x += this.vx * dt;
@@ -209,11 +210,13 @@ class Player {
     this.moving = speed > 10;
   }
 
-  // Start a dash burst in x direction `dir`, if it's off cooldown and the player is free to move.
+  // Start a dash burst toward `dir` ({ x, y } in control space), if it's off cooldown and the player is free to
+  // move. The dash upgrade makes it last longer, so it goes further.
   dash(dir) {
-    if (!dir || this.dashCD > 0 || this.airborne() || this.sitting) return;
-    this.dashT = DASH.time;
-    this.dashDir = dir;
+    const len = Math.hypot(dir.x, dir.y);
+    if (!len || this.dashCD > 0 || this.airborne() || this.sitting) return;
+    this.dashT = DASH.time * (1 + UPGRADES.dashDistance * this.upgrades.dash);
+    this.dashDir = { x: dir.x / len, y: dir.y / len };
     this.dashCD = DASH.cooldown;
   }
 

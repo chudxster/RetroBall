@@ -15,15 +15,15 @@ function drawHud(ctx, game) {
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
   const hint = free
-    ? 'WASD MOVE  AA/DD DASH  HOLD SPACE SHOOT  E DUNK'
-    : 'WASD MOVE  AA/DD DASH  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
+    ? 'WASD MOVE  SHIFT DASH  HOLD SPACE SHOOT  E DUNK'
+    : 'WASD MOVE  SHIFT DASH  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
-// Speed lines trailing a dashing player.
+// Speed lines trailing a dashing player (behind them sideways; a straight up/down dash trails behind the facing).
 function drawDashLines(ctx, p) {
   const k = p.scale;
-  const back = -p.dashDir;
+  const back = -(Math.sign(p.dashDir.x) || p.facing);
   ctx.fillStyle = COLORS.line;
   for (const [dy, len] of [[-58, 10], [-44, 16], [-30, 12], [-16, 8]]) {
     const x0 = p.sx + back * Math.round(14 * k);

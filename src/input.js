@@ -5,10 +5,11 @@ const Input = (() => {
   const GAME_KEYS = new Set([
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
-    'Space', 'KeyE', 'KeyQ',
+    'Space', 'KeyE', 'KeyQ', 'ShiftLeft', 'ShiftRight',
   ]);
 
-  // Double-tapping left or right queues a dash that way (picked up by takeDash).
+  // Shift queues a dash the way the player is moving; double-tapping left or right queues one that way.
+  // Either is picked up by takeDash.
   const TAP_DIRS = { KeyA: -1, ArrowLeft: -1, KeyD: 1, ArrowRight: 1 };
   let lastTap = { dir: 0, t: -Infinity };
   let dash = { dir: 0, t: -Infinity };
@@ -18,6 +19,7 @@ const Input = (() => {
     // Typing in the pause menu shouldn't move the player or be blocked.
     if (e.target instanceof Element && e.target.closest('#menu')) return;
     if (GAME_KEYS.has(e.code)) e.preventDefault();
+    if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) dash = { dir: 'held', t: now() };
     const dir = TAP_DIRS[e.code];
     if (dir && !e.repeat) {
       const t = now();
@@ -53,7 +55,8 @@ const Input = (() => {
     pass() {
       return down.has('KeyQ');
     },
-    // A just-made double tap (-1 left, 1 right), once; stale ones (e.g. tapped while paused) are dropped.
+    // A just-requested dash, once: 'held' (Shift: go the way the player is moving), -1 / 1 (double tap left /
+    // right), or 0 for none. Stale ones (e.g. pressed while paused) are dropped.
     takeDash() {
       const d = now() - dash.t < 0.2 ? dash.dir : 0;
       dash = { dir: 0, t: -Infinity };

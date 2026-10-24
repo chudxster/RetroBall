@@ -30,7 +30,7 @@ function saveLook(look) {
 }
 
 const UPGRADE_STORAGE_KEY = 'retroball.upgrades';
-const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense'];
+const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
 const MODE_STORAGE_KEY = 'retroball.mode';
 const MODES = ['3v3', 'free'];
 
@@ -194,6 +194,7 @@ const Menu = (() => {
         : `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
       dunking: (n) => `+${Math.round(UPGRADES.dunkRange * n * 100)}% range, rim odds up`,
       defense: (n) => `+${Math.round(UPGRADES.stealRange * n * 100)}% steal reach, block`,
+      dash: (n) => `+${Math.round(UPGRADES.dashDistance * n * 100)}% dash distance`,
     };
     const changed = () => {
       saveUpgrades(game.upgrades);

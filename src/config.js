@@ -146,10 +146,11 @@ const PICKUP = {
   delay: 0.5,         // after a shot or pass, the thrower can't grab the ball for this long
 };
 
-// Dash: double-tap left or right for a short sideways burst, then wait out the cooldown.
+// Dash: Shift bursts the way you're holding (or facing); double-tapping left or right also works. Then wait out
+// the cooldown.
 const DASH = {
   speed: 250,         // world units per second during the burst...
-  time: 0.16,         // ...for this long
+  time: 0.16,         // ...for this long (the dash upgrade stretches it)
   cooldown: 3,
   doubleTap: 0.125,   // the second tap must come within this many seconds of the first
 };
@@ -203,6 +204,7 @@ const UPGRADES = {
   stealRange: 0.1,     // defense: +10% steal reach (+50% at max)...
   blockRange: 0.1,     // ...+10% block reach...
   blockChance: 0.06,   // ...and +6% odds on blocks and dunk stuffs
+  dashDistance: 0.15,  // +15% dash distance (+75% at max)
 };
 
 // Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set in the Test panel.

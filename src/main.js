@@ -114,7 +114,10 @@ function userControls(frozen) {
   const holder = state.ball.holder;
   const ctl = AIBrain.blank();
   ctl.move = frozen ? { x: 0, y: 0 } : Input.move();
-  ctl.dash = frozen ? 0 : Input.takeDash();
+  // Shift dashes the way you're holding (or facing, holding nothing); a double tap dashes left or right.
+  const dash = frozen ? 0 : Input.takeDash();
+  if (dash === 'held') ctl.dash = ctl.move.x || ctl.move.y ? { ...ctl.move } : { x: state.user.facing, y: 0 };
+  else if (dash) ctl.dash = { x: dash, y: 0 };
   ctl.shoot = !!keys.shoot;
   if (u.hasBall || u.shot) {
     ctl.dunk = !!keys.action;
@@ -186,7 +189,7 @@ function lineUp() {
     Object.assign(p, {
       x: at.x, y: at.y, prevX: at.x, prevY: at.y, z: 0, prevZ: 0, vx: 0, vy: 0,
       shot: null, jump: null, meter: null, hasBall: false, hangSway: 0, pose: null, sitting: false,
-      stunT: 0, dazedT: 0, reachT: 0, runT: 0, dashT: 0, dashCD: 0, mind: {},
+      stunT: 0, dazedT: 0, reachT: 0, runT: 0, dashT: 0, dashCD: 0, dashDir: { x: 0, y: 0 }, mind: {},
     });
     if (Math.abs(at.x - cx) > 1) p.facing = at.x < cx ? 1 : -1;
   }

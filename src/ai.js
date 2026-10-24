@@ -18,7 +18,7 @@ const AIBrain = (() => {
   ];
 
   function blank() {
-    return { move: { x: 0, y: 0 }, dash: 0, shoot: false, dunk: false, pass: null, steal: false, jump: false, switch: false, face: 0 };
+    return { move: { x: 0, y: 0 }, dash: null, shoot: false, dunk: false, pass: null, steal: false, jump: false, switch: false, face: 0 };
   }
 
   function think(dt, game, ctls, frozen) {

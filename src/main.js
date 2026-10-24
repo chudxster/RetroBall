@@ -280,6 +280,11 @@ function render(alpha) {
   }
   drawDashCooldown(ctx, user);
   if (state.players.length > 1) drawUserMarker(ctx, user);
+  // With the ball, show who a pass would go to (it follows the direction held, like the pass itself).
+  if (user.hasBall && !user.shot && state.players.length > 1) {
+    const target = Play.passTarget(state, user, Input.move());
+    if (target) drawPassTarget(ctx, target);
+  }
   if (user.meter) drawShotMeter(ctx, user.meter, user);
   if (user.shot && user.shot.dunk && user.shot.hang === Infinity && user.shot.released) {
     drawHangPrompt(ctx, user, state.time);

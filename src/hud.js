@@ -64,6 +64,22 @@ function drawDazed(ctx, p, time) {
   }
 }
 
+// A green dot over the teammate a pass would go to right now.
+function drawPassTarget(ctx, p) {
+  const x = p.sx;
+  const y = p.by - Math.round(90 * p.scale);
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(x - 2, y - 4, 5, 9);
+  ctx.fillRect(x - 4, y - 2, 9, 5);
+  ctx.fillRect(x - 3, y - 3, 7, 7);
+  ctx.fillStyle = COLORS.good;
+  ctx.fillRect(x - 1, y - 3, 3, 7);
+  ctx.fillRect(x - 3, y - 1, 7, 3);
+  ctx.fillRect(x - 2, y - 2, 5, 5);
+  ctx.fillStyle = mix(COLORS.good, COLORS.line, 0.5);
+  ctx.fillRect(x - 1, y - 2, 2, 1);
+}
+
 // A small arrow over the head of the player the user is controlling.
 function drawUserMarker(ctx, p) {
   const x = p.sx;

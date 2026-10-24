@@ -168,7 +168,7 @@ const PICKUP = {
 const DASH = {
   speed: 250,         // world units per second during the burst (the dash upgrade raises it)...
   time: 0.16,         // ...for this long
-  depthScale: 0.6,    // up/down dashes cover this fraction of the distance a sideways one would
+  depthScale: 0.75,   // up/down dashes cover this fraction of the distance a sideways one would (as seen on screen)
   cooldown: 3,
   doubleTap: 0.125,   // the second tap must come within this many seconds of the first
 };

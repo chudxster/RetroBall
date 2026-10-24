@@ -130,6 +130,9 @@ function userControls(frozen) {
   if (u.hasBall || u.shot) {
     ctl.dunk = !!keys.action;
     if (pressed('pass') && u.hasBall) ctl.pass = Play.passTarget(state, u, ctl.move);
+  } else if (state.mode === 'free') {
+    // Free shot: the pass key brings the ball straight back to the player, wherever they're standing.
+    if (pressed('pass') && !u.sitting) Play.give(state, u);
   } else {
     if (pressed('shoot')) ctl.jump = true;
     if (pressed('action') && holder && holder.team !== u.team) ctl.steal = true;

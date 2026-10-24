@@ -24,7 +24,7 @@ the same spot, spread at random (the AI doesn't dash).
 | Double-tap W / A / S / D | Dash that way (3 second cooldown) | Dash |
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal (reaching in too close risks a foul) |
-| Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball |
+| Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball (free shot: get the ball back where you stand) |
 | Esc / P | Pause menu: Player (customize), Upgrades, Gamemode (mode, free throws), Controls (keybinds, dash double-tap timing), Test (dunk odds, AI level, crowd) | |
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.

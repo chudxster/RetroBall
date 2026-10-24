@@ -17,7 +17,7 @@ function drawHud(ctx, game) {
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
   const k = Input.keyLabel;
   const hint = free
-    ? `${Input.moveLabel()} MOVE  2X TAP DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK`
+    ? `${Input.moveLabel()} MOVE  2X TAP DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK  ${k('pass')} GET BALL`
     : `${Input.moveLabel()} MOVE  2X TAP DASH  ${k('shoot')} SHOOT/BLOCK  ${k('action')} DUNK/STEAL  ${k('pass')} PASS/SWITCH`;
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }

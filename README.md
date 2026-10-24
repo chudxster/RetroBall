@@ -14,6 +14,9 @@ Reaching for a steal can be called a foul, more likely the closer you are to the
 With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of the
 scorer's table, following the play.
 
+Click a face (Player and Upgrades tabs) to pick which of your three players to customize: each has their own skin,
+hair and number (Randomize rolls a new one), while the jersey, shorts and shoe colors are the whole team's.
+
 Upgrades (pause menu, free while testing): each of the three players on your team has their own levels for speed,
 shooting, dunking, defense and dash, and their own name. In 3v3 each AI opponent gets as many levels as your player in
 the same spot, spread at random (the AI doesn't dash).

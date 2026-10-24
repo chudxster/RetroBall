@@ -1,5 +1,7 @@
 const LOOK_STORAGE_KEY = 'retroball.look';
 const LOOK_COLOR_KEYS = ['skin', 'hair', 'jersey', 'shorts', 'shoe', 'laces'];
+const LOOK_KIT_KEYS = ['jersey', 'shorts', 'shoe', 'laces']; // the team's kit: the same for every home player
+const RANDOM_HAIR = ['#1a1c2c', '#3b2a20', '#7a4a32', '#5d275d', '#b13e53', '#ffcd75', '#94b0c2', '#f4f4f4'];
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 // Saved look merged over the defaults; anything missing or malformed falls back to DEFAULT_LOOK.
@@ -79,8 +81,20 @@ function defaultName(i) {
   return `Player ${i + 1}`;
 }
 
-// The user's team: a name and upgrade levels for each home player (by role). Levels saved before players had
-// their own carry over to player 1.
+// A player's own look (the team kit is shared, see LOOK_KIT_KEYS): anything missing or malformed comes from
+// `fallback`.
+function cleanPersonalLook(saved, fallback) {
+  const s = saved || {};
+  return {
+    skin: HEX_RE.test(s.skin) ? s.skin.toLowerCase() : fallback.skin,
+    hair: HEX_RE.test(s.hair) ? s.hair.toLowerCase() : fallback.hair,
+    hairStyle: HAIR_STYLE_NAMES.includes(s.hairStyle) ? s.hairStyle : fallback.hairStyle,
+    number: /^\d{1,2}$/.test(s.number) ? s.number : fallback.number,
+  };
+}
+
+// The user's team: a name, upgrade levels and (for players 2 and 3) their own look, by role. Player 1's look is
+// the saved look itself (loadLook). Levels saved before players had their own carry over to player 1.
 function loadTeam() {
   let saved = null;
   let old = null;
@@ -94,7 +108,8 @@ function loadTeam() {
   return ROSTER[0].map((_, i) => {
     const s = saved[i] || {};
     const name = typeof s.name === 'string' ? cleanName(s.name).trim() : '';
-    return { name: name || defaultName(i), upgrades: cleanLevels(s.upgrades) };
+    const look = i === 0 ? null : cleanPersonalLook(s.look, ROSTER[0][i]);
+    return { name: name || defaultName(i), upgrades: cleanLevels(s.upgrades), look };
   });
 }
 
@@ -152,10 +167,16 @@ const Menu = (() => {
   let game = null;
   let syncUpgradeView = () => {};
   let preview = null;
-  let look = null;
+  let look = null;  // player 1's look, which also carries the team kit
+  let pick = 0;     // which home player (by role) the Player and Upgrades tabs show
   let open = false;
   let previewTime = 0;
   let lastFrame = 0;
+
+  // The look of player `i`: player 1's own, or a teammate's skin, hair and number in the team kit.
+  function lookOf(i) {
+    return i === 0 ? look : { ...look, ...game.team[i].look };
+  }
 
   function init(target) {
     game = target;
@@ -169,17 +190,17 @@ const Menu = (() => {
       swatch.style.background = skin;
       swatch.dataset.skin = skin;
       swatch.setAttribute('aria-label', `Recommended skin tone ${skin}`);
-      swatch.addEventListener('click', () => applyLook({ ...look, skin }));
+      swatch.addEventListener('click', () => applyLook({ ...lookOf(pick), skin }));
       presetRow.appendChild(swatch);
     }
 
     for (const key of LOOK_COLOR_KEYS) {
       const picker = document.getElementById(key);
       const hex = panel.querySelector(`.hex[data-key="${key}"]`);
-      picker.addEventListener('input', () => applyLook({ ...look, [key]: picker.value }));
+      picker.addEventListener('input', () => applyLook({ ...lookOf(pick), [key]: picker.value }));
       hex.addEventListener('change', () => {
         const value = `#${hex.value.trim().replace(/^#/, '')}`.toLowerCase();
-        if (HEX_RE.test(value)) applyLook({ ...look, [key]: value });
+        if (HEX_RE.test(value)) applyLook({ ...lookOf(pick), [key]: value });
         else syncControls();
       });
     }
@@ -187,18 +208,20 @@ const Menu = (() => {
     numberInput.addEventListener('input', () => {
       const digits = numberInput.value.replace(/\D/g, '').slice(0, 2);
       numberInput.value = digits;
-      if (digits) applyLook({ ...look, number: digits });
+      if (digits) applyLook({ ...lookOf(pick), number: digits });
     });
     numberInput.addEventListener('change', syncControls);
 
     for (const step of panel.querySelectorAll('.step[data-step]')) {
       step.addEventListener('click', () => {
         const n = HAIR_STYLE_NAMES.length;
-        const i = HAIR_STYLE_NAMES.indexOf(look.hairStyle);
-        applyLook({ ...look, hairStyle: HAIR_STYLE_NAMES[(i + Number(step.dataset.step) + n) % n] });
+        const i = HAIR_STYLE_NAMES.indexOf(lookOf(pick).hairStyle);
+        applyLook({ ...lookOf(pick), hairStyle: HAIR_STYLE_NAMES[(i + Number(step.dataset.step) + n) % n] });
       });
     }
+    document.getElementById('randomize-look').addEventListener('click', () => applyLook(randomLook()));
 
+    initFaces();
     initTabs();
     initUpgradeView();
     initModeView();
@@ -209,7 +232,10 @@ const Menu = (() => {
 
     button.addEventListener('click', () => setOpen(!open));
     document.getElementById('resume').addEventListener('click', () => setOpen(false));
-    document.getElementById('reset-look').addEventListener('click', () => applyLook({ ...DEFAULT_LOOK }));
+    // Player 1 goes back to the default look (kit included); a teammate to their roster skin, hair and number.
+    document.getElementById('reset-look').addEventListener('click', () => {
+      applyLook(pick === 0 ? { ...DEFAULT_LOOK } : { ...look, ...ROSTER[0][pick] });
+    });
     document.getElementById('game').addEventListener('pointerdown', () => setOpen(false));
     window.addEventListener('keydown', (e) => {
       const typing = e.target instanceof HTMLInputElement;
@@ -220,6 +246,65 @@ const Menu = (() => {
     });
 
     syncControls();
+  }
+
+  // Faces of the user's team beside the Player-tab preview and atop the Upgrades tab: clicking one picks who both
+  // tabs show.
+  const FACE_W = 24;
+  const FACE_H = 26;
+
+  function initFaces() {
+    for (const holder of panel.querySelectorAll('.faces')) {
+      game.team.forEach((_, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'face';
+        btn.dataset.face = i;
+        const canvas = document.createElement('canvas');
+        canvas.width = FACE_W;
+        canvas.height = FACE_H;
+        btn.append(canvas);
+        btn.addEventListener('click', () => setPick(i));
+        holder.append(btn);
+      });
+    }
+    drawFaces();
+  }
+
+  // Each face is the player's sprite from the front, framed on the head and shoulders.
+  function drawFaces() {
+    for (const btn of panel.querySelectorAll('.face')) {
+      const i = Number(btn.dataset.face);
+      const p = new Player({ x: 0, y: 0, look: lookOf(i) });
+      Object.assign(p, { hasBall: false, view: 'front', facing: 1, sx: FACE_W / 2, by: 76, scale: 1 });
+      const fctx = btn.firstChild.getContext('2d');
+      fctx.fillStyle = '#262b44';
+      fctx.fillRect(0, 0, FACE_W, FACE_H);
+      p.draw(fctx);
+      btn.setAttribute('aria-pressed', String(i === pick));
+      btn.setAttribute('aria-label', `Pick ${game.team[i].name}`);
+      btn.title = game.team[i].name;
+    }
+  }
+
+  function setPick(i) {
+    pick = i;
+    preview.setLook(lookOf(pick));
+    syncControls();
+    syncUpgradeView();
+    drawFaces();
+  }
+
+  // A random skin tone (one of the recommended), hair style, hair color and number; the team kit stays.
+  function randomLook() {
+    const any = (list) => list[Math.floor(Math.random() * list.length)];
+    return {
+      ...lookOf(pick),
+      skin: any(SKINS),
+      hairStyle: any(HAIR_STYLE_NAMES),
+      hair: any(RANDOM_HAIR),
+      number: String(Math.floor(Math.random() * 100)),
+    };
   }
 
   // Tabs: each shows its panel, plus the footer buttons tagged for it (data-for).
@@ -238,13 +323,12 @@ const Menu = (() => {
     show(tabs[0]);
   }
 
-  // Upgrades: pick one of the user's team (< >, name editable in place), then +/- per stat for that player, shown
-  // as pips with what the current level does.
+  // Upgrades: the picked player (faces at the top, name editable in place) with +/- per stat, shown as pips with
+  // what the current level does.
   function initUpgradeView() {
     const rows = [...panel.querySelectorAll('.upgrade')];
     const nameInput = document.getElementById('player-name');
     const numberTag = document.getElementById('player-num');
-    let pick = 0;
     const picked = () => game.team[pick];
     const effects = {
       speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
@@ -262,7 +346,7 @@ const Menu = (() => {
     };
     const sync = () => {
       if (document.activeElement !== nameInput) nameInput.value = picked().name;
-      numberTag.textContent = `#${pick === 0 ? look.number : ROSTER[0][pick].number}`;
+      numberTag.textContent = `#${lookOf(pick).number}`;
       for (const row of rows) {
         const key = row.dataset.upgrade;
         const n = picked().upgrades[key];
@@ -287,21 +371,17 @@ const Menu = (() => {
         });
       }
     }
-    for (const step of panel.querySelectorAll('.step[data-pick]')) {
-      step.addEventListener('click', () => {
-        const n = game.team.length;
-        pick = (pick + Number(step.dataset.pick) + n) % n;
-        nameInput.blur();
-        sync();
-      });
-    }
     nameInput.addEventListener('input', () => {
       nameInput.value = cleanName(nameInput.value);
       picked().name = nameInput.value.trim() || defaultName(pick);
       saveTeam(game.team);
+      drawFaces(); // their face's tooltip shows the name
     });
     nameInput.addEventListener('change', sync);
-    syncUpgradeView = sync; // player 1's number follows the look
+    syncUpgradeView = () => {
+      nameInput.blur();
+      sync();
+    };
     // Reset clears the picked player's levels; their name stays.
     document.getElementById('reset-upgrades').addEventListener('click', () => {
       for (const key of UPGRADE_KEYS) picked().upgrades[key] = 0;
@@ -518,25 +598,36 @@ const Menu = (() => {
     sync();
   }
 
+  // `next` is the picked player's whole look. For a teammate, their own skin/hair/number stay with them and the kit
+  // colors go to the whole team (kept in player 1's look).
   function applyLook(next) {
-    look = next;
+    if (pick === 0) {
+      look = next;
+    } else {
+      look = { ...look };
+      for (const key of LOOK_KIT_KEYS) look[key] = next[key];
+      game.team[pick].look = cleanPersonalLook(next, game.team[pick].look);
+      saveTeam(game.team);
+    }
     game.setLook(look);
-    preview.setLook(look);
+    preview.setLook(lookOf(pick));
     saveLook(look);
     syncControls();
     syncUpgradeView();
+    drawFaces();
   }
 
   function syncControls() {
+    const shown = lookOf(pick);
     for (const key of LOOK_COLOR_KEYS) {
-      document.getElementById(key).value = look[key];
+      document.getElementById(key).value = shown[key];
       const hex = panel.querySelector(`.hex[data-key="${key}"]`);
-      if (document.activeElement !== hex) hex.value = look[key];
+      if (document.activeElement !== hex) hex.value = shown[key];
     }
-    if (document.activeElement !== numberInput) numberInput.value = look.number;
-    hairStyleName.textContent = look.hairStyle;
+    if (document.activeElement !== numberInput) numberInput.value = shown.number;
+    hairStyleName.textContent = shown.hairStyle;
     for (const swatch of presetRow.querySelectorAll('.swatch')) {
-      swatch.setAttribute('aria-pressed', String(swatch.dataset.skin === look.skin));
+      swatch.setAttribute('aria-pressed', String(swatch.dataset.skin === shown.skin));
     }
   }
 

@@ -240,6 +240,40 @@ input {
   color: #94b0c2;
 }
 
+/* Player tab: preview, the team's faces and the randomize button in one column */
+.preview-col {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+}
+
+/* Faces of the user's team: click one to customize / upgrade that player */
+.faces {
+  display: flex;
+  gap: calc(var(--px) * 2);
+}
+
+.face {
+  padding: 0;
+  background: #262b44;
+  border: var(--px) solid #566c86;
+  cursor: pointer;
+}
+
+.face canvas {
+  display: block;
+  width: calc(var(--px) * 24);
+  height: calc(var(--px) * 26);
+}
+
+.face:hover {
+  border-color: #f4f4f4;
+}
+
+.face[aria-pressed="true"] {
+  border-color: #ffcd75;
+}
+
 /* Upgrades: which player's levels are shown, with their name editable in place */
 .player-pick {
   margin-bottom: calc(var(--px) * 2);

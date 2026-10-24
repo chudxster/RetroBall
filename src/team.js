@@ -1,6 +1,7 @@
 // The two 3-player teams. Home (team 0) is the user's side and attacks the right hoop; away (team 1) attacks the
-// left. Home player 0 is the user's own customized player; everyone else gets a skin, hair and number from the
-// roster below, wearing their team's colors: home in the user's colors, away in the inverse.
+// left. Home player 0 is the user's own customized player; the other home players start from the skin, hair and
+// number below and can be customized too (loadTeam); the away team uses theirs. Everyone wears their team's colors:
+// home in the user's kit, away in the inverse.
 const ROSTER = [
   [
     null, // the user's look
@@ -27,18 +28,21 @@ function defendHoop(team) {
   return attackHoop(1 - team);
 }
 
-function playerLook(look, team, role) {
+// `look` is the user's player's look (and the home kit); `home` is the user's team (loadTeam), whose players 2 and
+// 3 have their own skin, hair and number.
+function playerLook(look, team, role, home) {
   const kit = team === 0
     ? { jersey: look.jersey, shorts: look.shorts, shoe: look.shoe, laces: look.laces }
     : { jersey: invertColor(look.jersey), shorts: invertColor(look.shorts), shoe: invertColor(look.shoe), laces: invertColor(look.laces) };
-  return { ...look, ...(ROSTER[team][role] || {}), ...kit };
+  const own = team === 0 ? home[role].look : ROSTER[team][role];
+  return { ...look, ...(own || {}), ...kit };
 }
 
-function makePlayers(look) {
+function makePlayers(look, home) {
   const players = [];
   for (let team = 0; team < 2; team++) {
     for (let role = 0; role < ROSTER[team].length; role++) {
-      const p = new Player({ x: 0, y: 0, look: playerLook(look, team, role) });
+      const p = new Player({ x: 0, y: 0, look: playerLook(look, team, role, home) });
       p.team = team;
       p.role = role;
       players.push(p);
@@ -72,9 +76,9 @@ function rollAIUpgrades(players, team) {
   }
 }
 
-// Re-dress everyone after the user changes their look (team colors follow the user's kit).
-function setTeamLooks(players, look) {
-  for (const p of players) p.setLook(playerLook(look, p.team, p.role));
+// Re-dress everyone after the user changes a look (team colors follow the user's kit).
+function setTeamLooks(players, look, home) {
+  for (const p of players) p.setLook(playerLook(look, p.team, p.role, home));
 }
 
 // Lined up for a jump ball: each team on its own half (the half it defends), the first player by the circle.

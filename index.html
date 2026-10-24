@@ -27,7 +27,11 @@
       </div>
 
       <div class="menu-body tab-panel" id="player-view" role="tabpanel">
-        <canvas id="preview" width="80" height="92" aria-label="Player preview"></canvas>
+        <div class="preview-col">
+          <canvas id="preview" width="80" height="92" aria-label="Player preview"></canvas>
+          <div class="faces" role="group" aria-label="Pick a player to customize"></div>
+          <button type="button" class="btn btn-quiet" id="randomize-look">Randomize</button>
+        </div>
 
         <div class="controls">
           <div class="row">
@@ -80,10 +84,9 @@
       <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
         <p class="test-note">Free while testing. Each AI opponent gets as many levels as your player in the same spot, at random.</p>
         <div class="row player-pick">
-          <button type="button" class="step" data-pick="-1" aria-label="Previous player">&lt;</button>
+          <div class="faces" role="group" aria-label="Pick a player to upgrade"></div>
           <input id="player-name" class="name" maxlength="12" spellcheck="false" autocomplete="off" aria-label="Player name">
           <span class="player-num" id="player-num"></span>
-          <button type="button" class="step" data-pick="1" aria-label="Next player">&gt;</button>
         </div>
         <div class="row upgrade" data-upgrade="speed">
           <span class="label">Speed</span>

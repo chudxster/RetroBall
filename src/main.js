@@ -39,7 +39,7 @@ const state = {
 // A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball.
 function newGame(mode) {
   state.mode = mode;
-  state.roster = makePlayers(state.look);
+  state.roster = makePlayers(state.look, state.team);
   const star = state.roster[0];
   rollAIUpgrades(state.roster, state.team);
   state.players = mode === 'free' ? [star] : state.roster;
@@ -398,7 +398,7 @@ Menu.init({
   look: state.look,
   setLook(look) {
     state.look = look;
-    setTeamLooks(state.roster, look);
+    setTeamLooks(state.roster, look, state.team);
   },
   team: state.team,
   upgradesChanged: () => rollAIUpgrades(state.roster, state.team),

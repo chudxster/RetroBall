@@ -95,6 +95,8 @@ function plotPixels(ctx, pixels, x, y, color, h = null) {
   }
 }
 
+const PAD_SHINE = mix(COLORS.padTop, COLORS.line, 0.25);
+
 function drawHoopBack(ctx, h) {
   const d = h.dir;
 
@@ -108,7 +110,7 @@ function drawHoopBack(ctx, h) {
   ctx.fillRect(bx - 16, by - 15, 32, 15);
   ctx.fillStyle = COLORS.padTop;
   ctx.fillRect(bx - 16, by - 20, 32, 5);
-  ctx.fillStyle = mix(COLORS.padTop, COLORS.line, 0.25);
+  ctx.fillStyle = PAD_SHINE;
   ctx.fillRect(bx - 15, by - 19, 30, 1);
   ctx.fillStyle = COLORS.padSeam;
   ctx.fillRect(bx - 16, by - 15, 32, 1);

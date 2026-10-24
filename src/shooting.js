@@ -122,13 +122,13 @@ const Shooting = (() => {
   // baseline, or null): outside the green only a SHOT.deepLuck chance.
   function grade(fill, lo, hi, deep) {
     if (fill >= lo && fill <= hi) return { label: 'PERFECT', color: COLORS.good, make: true };
-    deep = deep !== null;
-    if (deep && Math.random() < SHOT.deepLuck) return { label: 'LUCKY!', color: COLORS.okay, make: true };
+    const heave = deep !== null;
+    if (heave && Math.random() < SHOT.deepLuck) return { label: 'LUCKY!', color: COLORS.okay, make: true };
     const early = fill < lo;
     const off = early ? lo - fill : fill - hi;
     if (off <= SHOT.goodMargin) {
       const label = early ? 'SLIGHTLY EARLY' : 'SLIGHTLY LATE';
-      return { label, color: COLORS.okay, make: !deep && Math.random() < SHOT.slightMakeChance, early };
+      return { label, color: COLORS.okay, make: !heave && Math.random() < SHOT.slightMakeChance, early };
     }
     if (early && fill < SHOT.airballFill) return { label: 'WAY EARLY', color: COLORS.bad, make: false, early, airball: true };
     return { label: early ? 'EARLY' : 'LATE', color: COLORS.bad, make: false, early };
@@ -189,7 +189,8 @@ const Shooting = (() => {
     ball.launch(from.x, from.y, from.z, target, SHOT.baseTime + dist / SHOT.flightSpeed, { hoop, points, dist, team: p.team, ft });
     ball.thrower = p;
     ball.lastTeam = p.team;
-    if (p === game.user || p.team === 0) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);
+    // The release grade shows for the user's team (the user always plays a home player).
+    if (p.team === 0) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);
   }
 
   // Dunk range grows with speed toward the hoop: a standing dunk needs to be under the rim, a run at top speed

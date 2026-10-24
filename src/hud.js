@@ -2,6 +2,8 @@ const POPUP_LIFE = 1.1;
 const METER_H = 48;
 const METER_W = 8;
 const TEXT_SCALE = 2; // the 3x5 font is drawn with 2px pixels at 640x360
+const PASS_DOT_SHINE = mix(COLORS.good, COLORS.line, 0.5);
+const METER_GREEN_SHINE = mix(COLORS.good, COLORS.line, 0.4);
 
 function drawHud(ctx, game) {
   const free = game.mode !== '3v3';
@@ -11,10 +13,7 @@ function drawHud(ctx, game) {
     const s = game.stats[0];
     const score = free ? `PTS ${s.pts}` : `HOME ${game.score[0]}  AWAY ${game.score[1]}`;
     const ft = !free && game.rules.freeThrows ? `  FT ${s.ftm}/${s.fta}` : '';
-    const line = `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}${ft}`;
-    ctx.fillStyle = COLORS.outline;
-    ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
-    drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });
+    drawInfoBox(ctx, `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}${ft}`);
   }
 
   ctx.fillStyle = COLORS.bg;
@@ -26,6 +25,13 @@ function drawHud(ctx, game) {
     ? `${Input.moveLabel()} MOVE  2X TAP DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK  ${k('pass')} GET BALL`
     : `${Input.moveLabel()} MOVE  2X TAP DASH  ${k('shoot')} SHOOT/BLOCK  ${k('action')} DUNK/STEAL  ${k('pass')} PASS/SWITCH`;
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+}
+
+// One line of text on a dark box in the top left (the stats, or the drill's progress).
+function drawInfoBox(ctx, line) {
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
+  drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });
 }
 
 // Game clock (period and time left) and shot clock, top right beside the pause button (3v3). The game clock turns
@@ -51,10 +57,7 @@ function drawClock(ctx, game) {
 // in a banner with how to go again.
 function drawDrill(ctx, d) {
   const best = d.best === null ? '--' : Practice.format(d.best);
-  const line = `AROUND THE WORLD  ${Math.min(d.i + 1, Practice.spots)}/${Practice.spots}  ${Practice.format(d.t)}  BEST ${best}`;
-  ctx.fillStyle = COLORS.outline;
-  ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
-  drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });
+  drawInfoBox(ctx, `AROUND THE WORLD  ${Math.min(d.i + 1, Practice.spots)}/${Practice.spots}  ${Practice.format(d.t)}  BEST ${best}`);
   if (!d.done) return;
   drawBanner(ctx, `DONE ${Practice.format(d.t)}`);
   const y = VIEW_H / 2 + 34;
@@ -170,7 +173,7 @@ function drawPassTarget(ctx, p) {
   ctx.fillRect(x - 1, y - 3, 3, 7);
   ctx.fillRect(x - 3, y - 1, 7, 3);
   ctx.fillRect(x - 2, y - 2, 5, 5);
-  ctx.fillStyle = mix(COLORS.good, COLORS.line, 0.5);
+  ctx.fillStyle = PASS_DOT_SHINE;
   ctx.fillRect(x - 1, y - 2, 2, 1);
 }
 
@@ -211,7 +214,7 @@ function drawShotMeter(ctx, meter, player) {
   if (!meter.hidden) {
     ctx.fillStyle = COLORS.good;
     ctx.fillRect(x, top + METER_H - hiPx, METER_W, hiPx - loPx);
-    ctx.fillStyle = mix(COLORS.good, COLORS.line, 0.4);
+    ctx.fillStyle = METER_GREEN_SHINE;
     ctx.fillRect(x, top + METER_H - hiPx, 2, hiPx - loPx);
   }
   // Release marker: where the fill stopped.

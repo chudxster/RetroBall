@@ -15,7 +15,7 @@ const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0
 
 const state = {
   time: 0,
-  mode: loadMode(),  // '3v3' or 'free' (free shot: just the user, no AI)
+  mode: loadMode(),  // '3v3', 'free' (free shot) or 'world' (Around the World): the last two just the user
   look: loadLook(),  // the user's custom look; team colors come from it
   team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
   rules: loadPrefs(RULES_STORAGE_KEY, DEFAULT_RULES), // { freeThrows }

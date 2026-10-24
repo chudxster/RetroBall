@@ -17,6 +17,15 @@ function drawRects(ctx, parts, ox, oy, facing = 1, scale = 1) {
   }
 }
 
+// A ball's rounded shadow, `w` pixels wide, centered on (cx, sy). Drawn into the shared shadow layer.
+function drawBallShadow(ctx, cx, sy, w) {
+  const left = cx - (w >> 1);
+  ctx.fillStyle = COLORS.shadow;
+  ctx.fillRect(left + 2, sy - 2, w - 4, 1);
+  ctx.fillRect(left, sy - 1, w, 2);
+  ctx.fillRect(left + 2, sy + 1, w - 4, 1);
+}
+
 // A ball `size` pixels across with its top-left at (x, top), rasterized as a circle so it stays round at any size.
 // `spin` rolls the vertical seams across the ball; there's a shaded lower edge and a shine top-left.
 const BALL_SIZE = 12;

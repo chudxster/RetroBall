@@ -90,12 +90,14 @@ input {
   text-transform: uppercase;
 }
 
-#menu[hidden] {
+#menu[hidden],
+#menu [hidden] {
   display: none;
 }
 
 .menu-head,
-.menu-foot {
+.menu-foot,
+.tuning-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -107,10 +109,6 @@ input {
 
 .menu-foot {
   margin-top: calc(var(--px) * 3);
-}
-
-#menu [hidden] {
-  display: none;
 }
 
 .stack-view {
@@ -136,12 +134,6 @@ input {
 }
 
 /* Player tuning: a scrolling list of label + number + reset, with a tip under each */
-.tuning-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .tuning-head .test-note {
   margin: 0;
 }

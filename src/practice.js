@@ -1,5 +1,5 @@
-// Practice drills (Gamemode tab, under Practice). Around the World: 15 shots at the right hoop in order - three spots across under
-// the hoop, two from each elbow, three free throws, then five threes around the arc from corner to corner. The
+// Practice drills (Gamemode tab, under Practice). Around the World: 15 shots at the right hoop in order - three
+// spots across under the hoop, two from each elbow, three free throws, then five threes around the arc from corner to corner. The
 // player is put on each spot with the ball and can only shoot; a make moves on to the next spot, a miss means
 // shooting from the same spot again. The clock starts with the first shot; the best time is saved.
 const WORLD_RECORD_KEY = 'retroball.records';
@@ -20,20 +20,8 @@ const Practice = (() => {
   const WAIT = 0.5; // seconds after a shot is decided before the player is put on the next spot
 
   function best() {
-    try {
-      const v = (JSON.parse(localStorage.getItem(WORLD_RECORD_KEY)) || {}).world;
-      return Number.isFinite(v) ? v : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function saveBest(t) {
-    try {
-      localStorage.setItem(WORLD_RECORD_KEY, JSON.stringify({ world: t }));
-    } catch (e) {
-      // Not fatal; the record just won't persist.
-    }
+    const v = (loadStored(WORLD_RECORD_KEY) || {}).world;
+    return Number.isFinite(v) ? v : null;
   }
 
   function start(game) {
@@ -103,7 +91,7 @@ const Practice = (() => {
     d.record = d.best === null || d.t < d.best;
     if (d.record) {
       d.best = d.t;
-      saveBest(d.t);
+      saveStored(WORLD_RECORD_KEY, { world: d.t });
     }
   }
 

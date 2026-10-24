@@ -89,11 +89,12 @@ function drawCrowdRow(ctx, row, top, time) {
     const hop = holdsSign ? 1 : 3;
     const y = top - (hyped ? Math.round(Math.abs(Math.sin(time * 8 + h * 40)) * hop) + 1 : cheering ? 2 : 0);
     const skin = SKINS[Math.floor(h * 31) % SKINS.length];
-    const shirt = CROWD_SHIRTS[Math.floor(h * 97) % CROWD_SHIRTS.length];
+    const shirtIndex = Math.floor(h * 97) % CROWD_SHIRTS.length;
+    const shirt = CROWD_SHIRTS[shirtIndex];
 
     ctx.fillStyle = shirt;
     ctx.fillRect(sx, y + 7, 7, 6);
-    ctx.fillStyle = shade(shirt, 0.8);
+    ctx.fillStyle = CROWD_SHIRT_SHADES[shirtIndex];
     ctx.fillRect(sx, y + 7, 1, 6);
     ctx.fillStyle = skin;
     ctx.fillRect(sx + 1, y + 1, 5, 5);

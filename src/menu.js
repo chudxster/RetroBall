@@ -1,17 +1,11 @@
 const LOOK_STORAGE_KEY = 'retroball.look';
 const LOOK_COLOR_KEYS = ['skin', 'hair', 'jersey', 'shorts', 'shoe', 'laces'];
-const LOOK_KIT_KEYS = ['jersey', 'shorts', 'shoe', 'laces']; // the team's kit: the same for every home player
 const RANDOM_HAIR = ['#1a1c2c', '#3b2a20', '#7a4a32', '#5d275d', '#b13e53', '#ffcd75', '#94b0c2', '#f4f4f4'];
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 // Saved look merged over the defaults; anything missing or malformed falls back to DEFAULT_LOOK.
 function loadLook() {
-  let saved = {};
-  try {
-    saved = JSON.parse(localStorage.getItem(LOOK_STORAGE_KEY)) || {};
-  } catch (e) {
-    // Storage blocked or corrupt: just use the defaults.
-  }
+  const saved = loadStored(LOOK_STORAGE_KEY) || {};
   const look = { ...DEFAULT_LOOK };
   for (const key of LOOK_COLOR_KEYS) {
     if (HEX_RE.test(saved[key])) look[key] = saved[key].toLowerCase();
@@ -21,14 +15,6 @@ function loadLook() {
   if (HAIR_STYLE_NAMES.includes(saved.hairStyle)) look.hairStyle = saved.hairStyle;
   if (/^\d{1,2}$/.test(saved.number)) look.number = saved.number;
   return look;
-}
-
-function saveLook(look) {
-  try {
-    localStorage.setItem(LOOK_STORAGE_KEY, JSON.stringify(look));
-  } catch (e) {
-    // Not fatal; the look just won't persist.
-  }
 }
 
 const TEAM_STORAGE_KEY = 'retroball.team';
@@ -45,26 +31,13 @@ const DEFAULT_UI = { stats: true };
 // Settings saved as one object of on/off switches and numbers: anything saved that isn't the same kind as its
 // default (or isn't a finite number) falls back to `defaults`.
 function loadPrefs(key, defaults) {
-  let saved = {};
-  try {
-    saved = JSON.parse(localStorage.getItem(key)) || {};
-  } catch (e) {
-    // Storage blocked or corrupt: use the defaults.
-  }
+  const saved = loadStored(key) || {};
   const prefs = { ...defaults };
   for (const k of Object.keys(defaults)) {
     const v = saved[k];
     if (typeof v === typeof defaults[k] && (typeof v !== 'number' || Number.isFinite(v))) prefs[k] = v;
   }
   return prefs;
-}
-
-function savePrefs(key, prefs) {
-  try {
-    localStorage.setItem(key, JSON.stringify(prefs));
-  } catch (e) {
-    // Not fatal; the settings just won't persist.
-  }
 }
 
 // Upgrade levels, each a whole number from 0 to UPGRADES.max (anything else counts as 0).
@@ -100,29 +73,14 @@ function cleanPersonalLook(saved, fallback) {
 // The user's team: a name, upgrade levels and (for players 2 and 3) their own look, by role. Player 1's look is
 // the saved look itself (loadLook). Levels saved before players had their own carry over to player 1.
 function loadTeam() {
-  let saved = null;
-  let old = null;
-  try {
-    saved = JSON.parse(localStorage.getItem(TEAM_STORAGE_KEY));
-    old = JSON.parse(localStorage.getItem(OLD_UPGRADE_STORAGE_KEY));
-  } catch (e) {
-    // Storage blocked or corrupt: start from nothing.
-  }
-  if (!Array.isArray(saved)) saved = [{ upgrades: old }];
+  let saved = loadStored(TEAM_STORAGE_KEY);
+  if (!Array.isArray(saved)) saved = [{ upgrades: loadStored(OLD_UPGRADE_STORAGE_KEY) }];
   return ROSTER[0].map((_, i) => {
     const s = saved[i] || {};
     const name = typeof s.name === 'string' ? cleanName(s.name).trim() : '';
     const look = i === 0 ? null : cleanPersonalLook(s.look, ROSTER[0][i]);
     return { name: name || defaultName(i), upgrades: cleanLevels(s.upgrades), look };
   });
-}
-
-function saveTeam(team) {
-  try {
-    localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(team));
-  } catch (e) {
-    // Not fatal; names and levels just won't persist.
-  }
 }
 
 function loadMode() {
@@ -166,8 +124,8 @@ const Menu = (() => {
   const POSE_SECONDS = 0.8;
 
   // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), rules, ui, mode(),
-  // setMode(mode) }, where team is the user's team as loadTeam() returns it, rules is { freeThrows } and ui is
-  // { stats }.
+  // setMode(mode) }, where team is the user's team as loadTeam() returns it, rules is DEFAULT_RULES' shape and ui
+  // is { stats }.
   let game = null;
   let syncUpgradeView = () => {};
   let syncModeView = () => {};
@@ -345,7 +303,7 @@ const Menu = (() => {
       dash: (n) => `+${Math.round(UPGRADES.dashDistance * n * 100)}% dash distance`,
     };
     const changed = () => {
-      saveTeam(game.team);
+      saveStored(TEAM_STORAGE_KEY, game.team);
       game.upgradesChanged();
       sync();
     };
@@ -379,7 +337,7 @@ const Menu = (() => {
     nameInput.addEventListener('input', () => {
       nameInput.value = cleanName(nameInput.value);
       picked().name = nameInput.value.trim() || defaultName(pick);
-      saveTeam(game.team);
+      saveStored(TEAM_STORAGE_KEY, game.team);
       drawFaces(); // their face's tooltip shows the name
     });
     nameInput.addEventListener('change', sync);
@@ -403,7 +361,7 @@ const Menu = (() => {
     };
     button.addEventListener('click', () => {
       prefs[key] = !prefs[key];
-      savePrefs(storageKey, prefs);
+      saveStored(storageKey, prefs);
       sync();
     });
     sync();
@@ -419,7 +377,7 @@ const Menu = (() => {
       const v = Number(input.value);
       if (Number.isFinite(v)) {
         prefs[key] = clamp(Math.round(v / step) * step, Number(input.min), Number(input.max));
-        savePrefs(storageKey, prefs);
+        saveStored(storageKey, prefs);
       }
       sync();
     });
@@ -651,11 +609,11 @@ const Menu = (() => {
       look = { ...look };
       for (const key of LOOK_KIT_KEYS) look[key] = next[key];
       game.team[pick].look = cleanPersonalLook(next, game.team[pick].look);
-      saveTeam(game.team);
+      saveStored(TEAM_STORAGE_KEY, game.team);
     }
     game.setLook(look);
     preview.setLook(lookOf(pick));
-    saveLook(look);
+    saveStored(LOOK_STORAGE_KEY, look);
     syncControls();
     syncUpgradeView();
     drawFaces();

@@ -1,7 +1,7 @@
 // Player tuning: the config values that shape how players move, shoot, dunk, dash, pass and defend, editable in
 // the pause menu (bottom of the Gamemode tab), most important first. Every one applies to all players, the user's
-// and the AI's alike (the user and the AI have their own steal/block/intercept/stuff odds, so those are scaled). Each entry names a value by its path in the
-// config (`also` lists values that must follow it), with a short tip. Changes are saved; anything left at its
+// and the AI's alike (the user and the AI have their own steal/block/intercept/stuff odds, so those are scaled).
+// Each entry names a value by its path in the config (`also` lists values that must follow it), with a short tip. Changes are saved; anything left at its
 // default isn't.
 const TUNING_STORAGE_KEY = 'retroball.tuning';
 
@@ -103,20 +103,11 @@ const Tuning = (() => {
   function save() {
     const changed = {};
     for (const e of TUNING) if (get(e.path) !== defaults.get(e.path)) changed[e.path] = get(e.path);
-    try {
-      localStorage.setItem(TUNING_STORAGE_KEY, JSON.stringify(changed));
-    } catch (e) {
-      // Not fatal; the changes just won't persist.
-    }
+    saveStored(TUNING_STORAGE_KEY, changed);
   }
 
   function load() {
-    let saved = {};
-    try {
-      saved = JSON.parse(localStorage.getItem(TUNING_STORAGE_KEY)) || {};
-    } catch (e) {
-      // Storage blocked or corrupt: keep the defaults.
-    }
+    const saved = loadStored(TUNING_STORAGE_KEY) || {};
     for (const e of TUNING) {
       if (!(e.path in saved)) continue;
       const v = clean(e, saved[e.path]);

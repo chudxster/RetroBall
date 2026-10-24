@@ -1,5 +1,5 @@
 // Computer players. Each tick every AI player fills in a control object, the same shape as the user's:
-// { move, shoot, dunk, pass, steal, jump, switch, face }. Their memory lives on `p.mind`.
+// { move, dash, shoot, dunk, pass, steal, jump, switch, face } (see blank). Their memory lives on `p.mind`.
 //
 // With the ball: drive at the rim when the lane is open, dunk in range, shoot when open (or when held too long),
 // pass out of pressure. Off the ball on offense: spread to spots around the arc, sometimes cutting to the rim.
@@ -30,13 +30,6 @@ const AIBrain = (() => {
     }
   }
 
-  // What the AI would do as `p` this tick (also lets the user's player be played by the AI, e.g. in tests).
-  function controlFor(dt, game, p) {
-    const ctl = blank();
-    decide(dt, game, p, ctl);
-    return ctl;
-  }
-
   function decide(dt, game, p, ctl) {
     const { ball } = game;
     if (p.sitting) return;
@@ -61,7 +54,7 @@ const AIBrain = (() => {
   // the middle of the green, give or take the AI level's error.
   function inShot(dt, p, ctl) {
     const shot = p.shot;
-    // Hanging on the rim until told to let go (only when playing the user's player): tap the button.
+    // Hanging on the rim until told to let go (only the user's player hangs like that; a safety net): tap the button.
     if (shot.dunk && shot.hang === Infinity && shot.released && shot.t > shot.rise + 1.2) ctl.dunk = !p.prevDunk;
     if (shot.dunk || shot.released) return;
     const m = p.mind;
@@ -327,5 +320,5 @@ const AIBrain = (() => {
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
   }
 
-  return { think, controlFor, blank };
+  return { think, blank };
 })();

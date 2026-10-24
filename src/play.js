@@ -332,5 +332,5 @@ const Play = (() => {
     }
   }
 
-  return { act, pass, passTarget, callBall, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, nearestTo, switchPlayer, pickups, separate };
+  return { act, passTarget, callBall, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, switchPlayer, pickups, separate };
 })();

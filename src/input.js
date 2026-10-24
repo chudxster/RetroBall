@@ -16,26 +16,22 @@ const Input = (() => {
   // Left and right Shift/Ctrl/Alt/Meta count as the same key.
   const family = (code) => code.replace(/^(Shift|Control|Alt|Meta)(Left|Right)$/, '$1');
   const isBound = (name, code) => family(binds[name]) === family(code) || ARROWS[name] === code;
-  const held = (name) => [...down].some((code) => isBound(name, code));
+  function held(name) {
+    for (const code of down) if (isBound(name, code)) return true;
+    return false;
+  }
 
+  // Anything missing or malformed keeps its default.
   function load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-      for (const name of Object.keys(DEFAULT_BINDS)) {
-        if (typeof saved.binds?.[name] === 'string' && saved.binds[name]) binds[name] = saved.binds[name];
-      }
-      if (Number.isFinite(saved.doubleTap)) settings.doubleTap = clamp(saved.doubleTap, 0.05, 0.4);
-    } catch (e) {
-      // Storage blocked or corrupt: keep the defaults.
+    const saved = loadStored(STORAGE_KEY) || {};
+    for (const name of Object.keys(DEFAULT_BINDS)) {
+      if (typeof saved.binds?.[name] === 'string' && saved.binds[name]) binds[name] = saved.binds[name];
     }
+    if (Number.isFinite(saved.doubleTap)) settings.doubleTap = clamp(saved.doubleTap, 0.05, 0.4);
   }
 
   function save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ binds, doubleTap: settings.doubleTap }));
-    } catch (e) {
-      // Not fatal; the controls just won't persist.
-    }
+    saveStored(STORAGE_KEY, { binds, doubleTap: settings.doubleTap });
   }
 
   // Bind `code` to `name`; whatever action had that key takes this action's old key instead (a swap).
@@ -104,14 +100,11 @@ const Input = (() => {
   load();
 
   return {
-    binds: () => binds,
     settings,
-    defaults: DEFAULT_BINDS,
     isBound,
     setBind,
     reset,
     save,
-    label,
     keyLabel: (name) => label(binds[name]),
     moveLabel,
     move() {

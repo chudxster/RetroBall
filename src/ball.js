@@ -205,10 +205,7 @@ class Ball {
 
   drawShadow(ctx) {
     const w = Math.max(4, Math.round((this.z > 30 ? 6 : this.z > 10 ? 8 : 12) * this.depthScale));
-    ctx.fillStyle = COLORS.shadow;
-    ctx.fillRect(this.sx - (w >> 1) + 2, this.sy - 2, w - 4, 1);
-    ctx.fillRect(this.sx - (w >> 1), this.sy - 1, w, 2);
-    ctx.fillRect(this.sx - (w >> 1) + 2, this.sy + 1, w - 4, 1);
+    drawBallShadow(ctx, this.sx, this.sy, w);
   }
 
   draw(ctx) {

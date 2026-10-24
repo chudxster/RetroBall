@@ -34,9 +34,7 @@ function defendHoop(team) {
 // `look` is the user's player's look (and the home kit); `home` is the user's team (loadTeam), whose players 2 and
 // 3 have their own skin, hair and number.
 function playerLook(look, team, role, home) {
-  const kit = team === 0
-    ? { jersey: look.jersey, shorts: look.shorts, shoe: look.shoe, laces: look.laces }
-    : { jersey: invertColor(look.jersey), shorts: invertColor(look.shorts), shoe: invertColor(look.shoe), laces: invertColor(look.laces) };
+  const kit = Object.fromEntries(LOOK_KIT_KEYS.map((k) => [k, team === 0 ? look[k] : invertColor(look[k])]));
   const own = team === 0 ? home[role].look : ROSTER[team][role];
   return { ...look, ...(own || {}), ...kit };
 }
@@ -94,8 +92,8 @@ function formationSpot(team, role) {
   return { x: cx + side * dx, y: cy + dy };
 }
 
-// An AI tuning value blended between its [easy, hard] ends: the opponents use the AI level from the Test panel,
-// the user's teammates a fixed one.
+// An AI tuning value blended between its [easy, hard] ends: the opponents use the AI level (a testing slider
+// in the Gamemode tab), the user's teammates a fixed one.
 function aiValue(p, [easy, hard]) {
   return lerp(easy, hard, p.team === 0 ? AI.teammateLevel : AI.level);
 }

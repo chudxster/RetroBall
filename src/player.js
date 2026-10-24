@@ -269,10 +269,7 @@ class Player {
 
     if (this.hasBall && !this.shot) {
       const bw = w(this.ballZ() > DRIBBLE_HEIGHT / 2 ? 8 : 12);
-      const center = sx + this.facing * w(this.dribbleBallX() + BALL_SIZE / 2);
-      ctx.fillRect(center - (bw >> 1) + 2, sy - 2, bw - 4, 1);
-      ctx.fillRect(center - (bw >> 1), sy - 1, bw, 2);
-      ctx.fillRect(center - (bw >> 1) + 2, sy + 1, bw - 4, 1);
+      drawBallShadow(ctx, sx + this.facing * w(this.dribbleBallX() + BALL_SIZE / 2), sy, bw);
     }
   }
 
@@ -474,11 +471,7 @@ class Player {
     // Faces kept simple: ear, eye(s), nose. Side-on shows one eye; three-quarter front shows both with the ear
     // further back; three-quarter back shows the back of the hair and just the near ear.
     const face = {
-      side: [
-        [5, 7, 2, 3, c.skinDark],
-        ...this.eye(11, 6, 2),
-        [16, 8, 1, 2, c.skin],
-      ],
+      side: this.sideFace(),
       frontQ: [
         [2, 7, 2, 3, c.skinDark],
         ...this.eye(5, 6, 2),
@@ -530,25 +523,51 @@ class Player {
             [-10, -22 + u, 20, 2, c.shortsTrim],
           ]),
 
-      // Jersey: darker back, lit front edge, V-neck collar, hem and number.
-      [-10, -52 + u, 20, 20, c.jersey],
-      [-10, -52 + u, 4, 20, c.jerseyDark],
-      [5, -48 + u, 2, 14, c.jerseyLight],
-      [-10, -34 + u, 20, 1, c.jerseyDark],
-      ...(turn < 0
-        ? [[-4, -52 + u, 8, 1, c.trim]]
-        : [[-4, -52 + u, 8, 2, c.trim], [-2, -52 + u, 4, 1, c.skinDark], [-1, -50 + u, 2, 1, c.trim]]),
-      ...this.numberParts(numberLeft, -47 + u, c.trim),
-
+      ...this.sideJerseyParts(u, turn < 0, numberLeft),
       ...this.headParts(u, turn < 0 ? 'back' : 'side', face),
 
       // Near arm goes in front of the body.
       ...(armsInFront ? [...backArm, ...frontArm] : backNear ? backArm : frontArm),
 
-      // Armhole straps on both sides of the jersey go last so the arms never cover them.
-      [8, -52 + u, 2, 6, c.trim],
-      [-10, -52 + u, 2, 6, c.trim],
+      ...this.strapParts(u),
     ];
+  }
+
+  // Ear, eye and nose, side-on.
+  sideFace() {
+    const c = this.colors;
+    return [
+      [5, 7, 2, 3, c.skinDark],
+      ...this.eye(11, 6, 2),
+      [16, 8, 1, 2, c.skin],
+    ];
+  }
+
+  // Neckline: a V-neck seen from the front or side, a plain band from behind.
+  collarParts(u, fromBehind) {
+    const c = this.colors;
+    return fromBehind
+      ? [[-4, -52 + u, 8, 1, c.trim]]
+      : [[-4, -52 + u, 8, 2, c.trim], [-2, -52 + u, 4, 1, c.skinDark], [-1, -50 + u, 2, 1, c.trim]];
+  }
+
+  // Side-on jersey: darker back, lit front edge, hem, collar and number.
+  sideJerseyParts(u, fromBehind, numberLeft) {
+    const c = this.colors;
+    return [
+      [-10, -52 + u, 20, 20, c.jersey],
+      [-10, -52 + u, 4, 20, c.jerseyDark],
+      [5, -48 + u, 2, 14, c.jerseyLight],
+      [-10, -34 + u, 20, 1, c.jerseyDark],
+      ...this.collarParts(u, fromBehind),
+      ...this.numberParts(numberLeft, -47 + u, c.trim),
+    ];
+  }
+
+  // Armhole straps on both sides of the jersey, drawn last so the arms never cover them.
+  strapParts(u) {
+    const c = this.colors;
+    return [[8, -52 + u, 2, 6, c.trim], [-10, -52 + u, 2, 6, c.trim]];
   }
 
   // Shorts that follow kicked-out legs: a rounded seat at the back, and the front wrapping down and forward over
@@ -586,11 +605,6 @@ class Player {
       [x + 26, -12 + dy, 6, 10, c.shoe],
       [x + 32, -12 + dy, 2, 10, c.sole],
     ];
-    const face = [
-      [5, 7, 2, 3, c.skinDark],
-      ...this.eye(11, 6, 2),
-      [16, 8, 1, 2, c.skin],
-    ];
     return [
       // Back arm, propped on the floor behind.
       [-14, -32, 6, 8, c.skinDark],
@@ -606,15 +620,8 @@ class Player {
       ...this.curvedShorts(-32, ...LEGS_OUT_SHORTS, d),
 
       // Jersey and head, lowered.
-      [-10, -52 + d, 20, 20, c.jersey],
-      [-10, -52 + d, 4, 20, c.jerseyDark],
-      [5, -48 + d, 2, 14, c.jerseyLight],
-      [-10, -34 + d, 20, 1, c.jerseyDark],
-      [-4, -52 + d, 8, 2, c.trim],
-      [-2, -52 + d, 4, 1, c.skinDark],
-      [-1, -50 + d, 2, 1, c.trim],
-      ...this.numberParts(-6, -47 + d, c.trim),
-      ...this.headParts(d, 'side', face),
+      ...this.sideJerseyParts(d, false, -6),
+      ...this.headParts(d, 'side', this.sideFace()),
 
       // Front arm resting forward on the knee.
       [8, -32, 6, 8, c.skin],
@@ -622,8 +629,7 @@ class Player {
       [12, -20, 6, 2, c.trim],
       [14, -14, 6, 4, c.skin],
 
-      [8, -52 + d, 2, 6, c.trim],
-      [-10, -52 + d, 2, 6, c.trim],
+      ...this.strapParts(d),
     ];
   }
 
@@ -688,9 +694,7 @@ class Player {
       [-10, -52 + u, 2, 20, c.jerseyDark],
       [8, -52 + u, 2, 20, c.jerseyDark],
       [-10, -34 + u, 20, 1, c.jerseyDark],
-      ...(fromFront
-        ? [[-4, -52 + u, 8, 2, c.trim], [-2, -52 + u, 4, 1, c.skinDark], [-1, -50 + u, 2, 1, c.trim]]
-        : [[-4, -52 + u, 8, 1, c.trim]]),
+      ...this.collarParts(u, !fromFront),
       ...this.numberParts(-7, -47 + u, c.trim),
 
       ...this.headParts(u, fromFront ? 'front' : 'back', face),
@@ -698,9 +702,7 @@ class Player {
       ...arm(-16, swing, 0),
       ...arm(10, -swing, dip),
 
-      // Armhole straps on both sides.
-      [8, -52 + u, 2, 6, c.trim],
-      [-10, -52 + u, 2, 6, c.trim],
+      ...this.strapParts(u),
     ];
   }
 

@@ -236,7 +236,8 @@ const DEFENSE = {
   retreatSpeed: 1.6,  // defenders still in the offense's half run back to their own this much faster
 };
 
-// Upgrades for the user's own player, bought in the pause menu (free +/- for now). Effects per level:
+// Upgrades, set per player on the user's team in the pause menu (free +/- for now; each AI opponent gets the same
+// total at random). Effects per level:
 const UPGRADES = {
   max: 5,
   speed: 0.04,         // +4% speed
@@ -250,7 +251,8 @@ const UPGRADES = {
   dashDistance: 0.15,  // +15% dash distance (+75% at max)
 };
 
-// Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set in the Test panel.
+// Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set with the
+// Gamemode tab's testing sliders.
 // The user's teammates play at a fixed level.
 const AI = {
   level: 0.5,
@@ -386,7 +388,8 @@ const CROWD = {
   signChance: 0.5, // chance a basket brings out signs with the scorer's number (always for rare dunks)
   signShare: 0.15, // share of cheering fans holding up a sign
 };
-const CROWD_SHIRTS =['#b13e53', '#3b5dc9', '#f4f4f4', '#ffcd75', '#38b764', '#41a6f6', '#ef7d57', '#5d275d'];
+const CROWD_SHIRTS = ['#b13e53', '#3b5dc9', '#f4f4f4', '#ffcd75', '#38b764', '#41a6f6', '#ef7d57', '#5d275d'];
+const CROWD_SHIRT_SHADES = CROWD_SHIRTS.map((c) => shade(c, 0.8));
 const CROWD_HAIR = ['#1a1c2c', '#1a1c2c', '#5d275d', '#7a4a32', '#ffcd75', '#94b0c2'];
 
 // The player's customizable appearance. Colors are #rrggbb; number is a 1-2 digit string.
@@ -400,6 +403,7 @@ const DEFAULT_LOOK = {
   shoe: '#f4f4f4',
   laces: '#b13e53',
 };
+const LOOK_KIT_KEYS = ['jersey', 'shorts', 'shoe', 'laces']; // the team's kit: the same for every home player
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
@@ -428,6 +432,24 @@ function invertColor(hex) {
 function isLightColor(hex) {
   const n = parseInt(hex.slice(1), 16);
   return 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160;
+}
+
+// Saved settings are JSON in localStorage. Reading gives null when nothing is saved, it's corrupt or storage is
+// blocked; a failed write just means the value won't persist.
+function loadStored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveStored(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    // Not fatal.
+  }
 }
 
 function clamp(v, lo, hi) {

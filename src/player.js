@@ -86,6 +86,7 @@ class Player {
     this.jump = null;  // { t } while jumping to contest or block
     this.reachT = 0;   // seconds left of a steal reach (arm out)
     this.stunT = 0;    // seconds left slowed after a missed reach or losing the ball
+    this.dazedT = 0;   // seconds left of stars circling the head after having the ball stolen
     this.stealCD = 0;
     this.prevShoot = false; // last tick's shoot / dunk buttons, so Shooting can spot presses
     this.prevDunk = false;
@@ -129,6 +130,7 @@ class Player {
     this.prevZ = this.z;
     this.reachT = Math.max(0, this.reachT - dt);
     this.stunT = Math.max(0, this.stunT - dt);
+    this.dazedT = Math.max(0, this.dazedT - dt);
     this.stealCD = Math.max(0, this.stealCD - dt);
 
     // No steering in the air during a jump shot or a contest jump, or while sitting on the floor.

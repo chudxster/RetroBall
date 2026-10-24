@@ -53,8 +53,9 @@ const Play = (() => {
     return best || (len > 0.3 ? passTarget(game, from, { x: 0, y: 0 }) : null);
   }
 
-  // Reach for the ball. Close enough to the ball side of the handler, it may come loose into the defender's hands;
-  // a miss leaves them off balance for a moment.
+  // Reach for the ball. Close enough to the ball side of the handler, it may get knocked loose onto the floor and
+  // the handler is left stunned; a miss leaves the defender off balance for a moment instead. A handler still in
+  // their own backcourt (not yet over half court) can't be stolen from.
   function trySteal(game, p) {
     if (p.stealCD > 0 || p.hasBall || p.airborne() || p.sitting) return;
     p.stealCD = DEFENSE.stealCooldown;
@@ -64,15 +65,35 @@ const Play = (() => {
     if (Math.abs(h.x - p.x) > 1) p.facing = Math.sign(h.x - p.x);
     const ballX = h.x + h.facing * 8;
     const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= DEFENSE.stealRange;
+    const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
     const chance = p === game.user ? lerp(...DEFENSE.userStealChance, AI.level) : aiValue(p, AI.stealChance);
-    if (inRange && Math.random() < chance) {
-      h.hasBall = false;
-      h.stunT = DEFENSE.stealStun;
-      give(game, p);
+    if (inRange && !backcourt && Math.random() < chance) {
+      poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
     } else {
       p.stunT = DEFENSE.stealStun;
     }
+  }
+
+  // Knock the ball out of `h`'s hands onto the floor, roughly toward `by`, and stun `h`.
+  function poke(game, h, by) {
+    const { ball } = game;
+    const fromX = h.x + h.facing * 8;
+    let dx = by.x - fromX;
+    let dy = by.y - h.y;
+    const l = Math.hypot(dx, dy) || 1;
+    const a = Math.atan2(dy / l, dx / l) + rand(-0.6, 0.6);
+    const d = rand(...DEFENSE.pokeDist);
+    dx = Math.cos(a) * d;
+    dy = Math.sin(a) * d;
+    h.hasBall = false;
+    h.stunT = DEFENSE.stolenStun;
+    h.dazedT = DEFENSE.stolenStun;
+    h.vx = 0;
+    h.vy = 0;
+    ball.launch(fromX, h.y, 12, { x: fromX + dx, y: clamp(h.y + dy, 0, COURT.width), z: 0 }, 0.4, null);
+    ball.thrower = h;
+    ball.noPickup = DEFENSE.stolenStun;
   }
 
   function startJump(p) {

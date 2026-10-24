@@ -184,7 +184,7 @@ function lineUp() {
     Object.assign(p, {
       x: at.x, y: at.y, prevX: at.x, prevY: at.y, z: 0, prevZ: 0, vx: 0, vy: 0,
       shot: null, jump: null, meter: null, hasBall: false, hangSway: 0, pose: null, sitting: false,
-      stunT: 0, reachT: 0, runT: 0, mind: {},
+      stunT: 0, dazedT: 0, reachT: 0, runT: 0, mind: {},
     });
     if (Math.abs(at.x - cx) > 1) p.facing = at.x < cx ? 1 : -1;
   }
@@ -259,6 +259,7 @@ function render(alpha) {
   const layers = [...benchLayers(jersey), tableLayer(jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
+  for (const p of state.players) if (p.dazedT > 0) drawDazed(ctx, p, state.time);
   if (state.players.length > 1) drawUserMarker(ctx, user);
   if (user.meter) drawShotMeter(ctx, user.meter, user);
   if (user.shot && user.shot.dunk && user.shot.hang === Infinity && user.shot.released) {

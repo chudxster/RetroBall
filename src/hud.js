@@ -20,6 +20,23 @@ function drawHud(ctx, game) {
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
+// Three little stars circling over the head of a player who just had the ball stolen.
+function drawDazed(ctx, p, time) {
+  const cx = p.sx;
+  const cy = p.by - Math.round(80 * p.scale);
+  for (let i = 0; i < 3; i++) {
+    const a = time * 8 + (i * 2 * Math.PI) / 3;
+    const x = Math.round(cx + Math.cos(a) * 9);
+    const y = Math.round(cy + Math.sin(a) * 3);
+    ctx.fillStyle = COLORS.outline;
+    ctx.fillRect(x - 2, y - 1, 5, 3);
+    ctx.fillRect(x - 1, y - 2, 3, 5);
+    ctx.fillStyle = COLORS.okay;
+    ctx.fillRect(x - 1, y, 3, 1);
+    ctx.fillRect(x, y - 1, 1, 3);
+  }
+}
+
 // A small arrow over the head of the player the user is controlling.
 function drawUserMarker(ctx, p) {
   const x = p.sx;

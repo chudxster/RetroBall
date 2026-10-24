@@ -163,6 +163,8 @@ const DEFENSE = {
   reachTime: 0.2,     // seconds the arm stays out on a steal attempt
   stealStun: 0.4,     // a missed reach leaves the defender slowed this long...
   stunSpeed: 0.4,     // ...to this fraction of their speed
+  stolenStun: 0.9,    // losing the ball to a steal slows the ball handler this long (and they can't grab it back)
+  pokeDist: [18, 34], // a steal knocks the ball loose this far, roughly toward the stealer
   userStealChance: [0.5, 0.25], // the user's odds at the easiest..hardest AI level
   jumpHeight: 18,
   jumpTime: 0.5,

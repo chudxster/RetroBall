@@ -1,27 +1,25 @@
 // Team benches along the far sideline: a row of chairs per team, with towels and water bottles left lying around.
-// Placement is pseudo-random from hash2, so the mess is the same every frame.
+// Placement is pseudo-random from hash2, so the mess is the same every frame. Colors are picked when drawing:
+// the home bench (team 0) wears the player's jersey color, the away bench its inverse.
 const BENCH = {
   y: -9,          // depth of the chair row, on the floor between the court and the crowd
   spacing: 15,    // world units between chairs
   chairs: 6,
-  teams: [
-    { from: 125, color: '#3b5dc9' },
-    { from: 270, color: '#b13e53' },
-  ],
+  teams: [{ from: 125 }, { from: 270 }],
 };
 const BOTTLE_COLORS = ['#38b764', '#ffcd75', '#41a6f6', '#ef7d57'];
 
 const BENCH_STUFF = (() => {
   const items = [];
   let k = 0;
-  for (const team of BENCH.teams) {
+  BENCH.teams.forEach((bench, team) => {
     for (let i = 0; i < BENCH.chairs; i++, k++) {
-      const x = team.from + i * BENCH.spacing;
+      const x = bench.from + i * BENCH.spacing;
       const flip = hash2(k, 5) < 0.5 ? -1 : 1;
-      items.push({ kind: 'chair', x, y: BENCH.y, color: team.color, towel: hash2(k, 1) < 0.4, flip });
+      items.push({ kind: 'chair', x, y: BENCH.y, team, towel: hash2(k, 1) < 0.4, flip });
       // A towel tossed on the floor nearby...
       if (hash2(k, 2) < 0.45) {
-        items.push({ kind: 'towel', x: x + (hash2(k, 3) - 0.5) * 14, y: BENCH.y + 2 + hash2(k, 4) * 5, color: team.color, flip });
+        items.push({ kind: 'towel', x: x + (hash2(k, 3) - 0.5) * 14, y: BENCH.y + 2 + hash2(k, 4) * 5, team, flip });
       }
       // ...and a couple of water bottles, some knocked over.
       const bottles = Math.floor(hash2(k, 6) * 3);
@@ -35,13 +33,14 @@ const BENCH_STUFF = (() => {
         });
       }
     }
-  }
+  });
   return items;
 })();
 
 // Sprites as [dx, dy, w, h, color] rects relative to the item's spot on the floor (see drawRects).
-function benchSprite(item) {
-  const c = item.color;
+// `teamColors[item.team]` colors chairs and towel stripes; bottles carry their own color.
+function benchSprite(item, teamColors) {
+  const c = item.team === undefined ? item.color : teamColors[item.team];
   switch (item.kind) {
     case 'chair':
       return [
@@ -93,13 +92,14 @@ function benchOnScreen(item) {
   return x > -40 && x < VIEW_W + 40;
 }
 
-// Depth-sorted drawables, like the hoop layers.
-function benchLayers() {
+// Depth-sorted drawables, like the hoop layers. `jersey` is the player's jersey color.
+function benchLayers(jersey) {
+  const teamColors = [jersey, invertColor(jersey)];
   return BENCH_STUFF.filter(benchOnScreen).map((item) => ({
     y: item.y,
     draw(ctx) {
       const p = project(item.x, item.y);
-      drawRects(ctx, benchSprite(item), Math.round(p.x), Math.round(p.y), item.flip, spriteScale(item.y));
+      drawRects(ctx, benchSprite(item, teamColors), Math.round(p.x), Math.round(p.y), item.flip, spriteScale(item.y));
     },
   }));
 }

@@ -167,7 +167,7 @@ function render(alpha) {
   ctx.drawImage(shadowLayer, 0, 0);
   ctx.globalAlpha = 1;
 
-  const layers = [...benchLayers(), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
+  const layers = [...benchLayers(player.look.jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
   if (state.meter) drawShotMeter(ctx, state.meter, player);

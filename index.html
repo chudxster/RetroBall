@@ -128,20 +128,25 @@
       <!-- Game mode (switching starts a new game) and rule toggles (saved, apply right away). -->
       <div class="tab-panel stack-view" id="mode-view" role="tabpanel" hidden>
         <p class="test-note">Game mode (switching starts a new game)</p>
-        <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
-          <span class="mode-name">3v3 Casual</span>
-          <span class="mode-desc">Full court with AI teammates and opponents</span>
-        </button>
+        <div class="mode-row">
+          <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
+            <span class="mode-name">3v3 Casual</span>
+            <span class="mode-desc">Full court with AI teammates and opponents</span>
+          </button>
+          <button type="button" class="mode-expand" aria-expanded="false" aria-controls="options-3v3" aria-label="3v3 game options"><span class="chevron">&gt;</span></button>
+        </div>
+        <div class="mode-settings" id="options-3v3" hidden>
+          <p class="test-note">Game options</p>
+          <div class="row">
+            <span class="label">Free throws</span>
+            <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
+            <span class="upgrade-effect">1 shot after a reach-in foul</span>
+          </div>
+        </div>
         <button type="button" class="mode-option" data-mode="free" aria-pressed="false">
           <span class="mode-name">Free shot</span>
           <span class="mode-desc">Just you and the ball, either hoop</span>
         </button>
-        <p class="test-note">Rules (3v3)</p>
-        <div class="row">
-          <span class="label">Free throws</span>
-          <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
-          <span class="upgrade-effect">1 shot after a reach-in foul</span>
-        </div>
 
         <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
         <div class="stack-view test-section" id="test-view">

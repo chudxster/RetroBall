@@ -10,7 +10,7 @@ Two modes, picked in the pause menu's Gamemode tab: **3v3 Casual** (full court, 
 defense) and **Free shot** (just you).
 
 Reaching for a steal can be called a foul, more likely the closer you are to the ball handler. With **free throws** on
-(Gamemode tab) the fouled player shoots one from the line for a point: the ref hands them the ball after two seconds.
+(Gamemode tab: the arrow beside 3v3 Casual opens its game options) the fouled player shoots one from the line for a point: the ref hands them the ball after two seconds.
 With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of the
 scorer's table, following the play.
 

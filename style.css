@@ -353,6 +353,42 @@ input {
   border-color: #ffcd75;
 }
 
+/* A mode with options: the arrow beside it opens them underneath */
+.mode-row {
+  display: flex;
+  gap: calc(var(--px) * 2);
+}
+
+.mode-row .mode-option {
+  flex: 1;
+}
+
+.mode-expand {
+  width: calc(var(--px) * 14);
+  padding: 0;
+  background: #262b44;
+  border: var(--px) solid #566c86;
+  cursor: pointer;
+}
+
+.mode-expand:hover {
+  border-color: #f4f4f4;
+}
+
+.mode-expand .chevron {
+  display: inline-block;
+}
+
+.mode-expand[aria-expanded="true"] .chevron {
+  transform: rotate(90deg);
+}
+
+.mode-settings {
+  margin-left: calc(var(--px) * 4);
+  padding-left: calc(var(--px) * 4);
+  border-left: var(--px) solid #333c57;
+}
+
 .mode-name {
   color: #ffcd75;
 }

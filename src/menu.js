@@ -408,6 +408,14 @@ const Menu = (() => {
   function initModeView() {
     const options = [...panel.querySelectorAll('.mode-option')];
     initToggle(document.getElementById('free-throws'), game.rules, 'freeThrows', RULES_STORAGE_KEY);
+    // The arrow beside a mode opens its game options underneath.
+    for (const arrow of panel.querySelectorAll('.mode-expand')) {
+      const settings = document.getElementById(arrow.getAttribute('aria-controls'));
+      arrow.addEventListener('click', () => {
+        settings.hidden = !settings.hidden;
+        arrow.setAttribute('aria-expanded', String(!settings.hidden));
+      });
+    }
     const sync = () => {
       for (const o of options) o.setAttribute('aria-pressed', String(o.dataset.mode === game.mode()));
     };

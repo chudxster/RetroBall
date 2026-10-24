@@ -262,11 +262,12 @@ class Player {
     ];
   }
 
-  // An eye: mostly white with a small pupil at column `pupil` (relative to the eye's left edge).
-  eye(x, y, pupil, w = 3) {
+  // An eye: a 4x3 white with a 2x2 pupil at column `pupil` (relative to the eye's left edge). Both stay at least
+  // 2x2 on screen however small the sprite is drawn.
+  eye(x, y, pupil) {
     return [
-      [x, y, w, 2, COLORS.line],
-      [x + pupil, y, 1, 2, COLORS.eye],
+      [x, y, 4, 3, COLORS.line, 2],
+      [x + pupil, y + 1, 2, 2, COLORS.eye, 2],
     ];
   }
 
@@ -350,7 +351,7 @@ class Player {
       ],
       frontQ: [
         [2, 7, 2, 3, c.skinDark],
-        ...this.eye(6, 6, 2),
+        ...this.eye(5, 6, 2),
         ...this.eye(11, 6, 2),
         [10, 9, 1, 2, c.skinDark],
         [16, 8, 1, 1, c.skin],
@@ -431,7 +432,7 @@ class Player {
           [-2, 6, 2, 4, c.skinDark],
           [16, 6, 2, 4, c.skinDark],
           ...this.eye(3, 7, 1),
-          ...this.eye(10, 7, 1),
+          ...this.eye(9, 7, 1),
           [7, 10, 2, 1, c.skinDark],
         ]
       : [

@@ -1,12 +1,12 @@
-// Sprites are lists of [dx, dy, w, h, color] rects relative to an origin, drawn facing right.
-// Scaling rounds each rect's edges to whole pixels (never below 1px), so details survive at any size.
+// Sprites are lists of [dx, dy, w, h, color, min?] rects relative to an origin, drawn facing right.
+// Scaling rounds each rect's edges to whole pixels, never below `min` (default 1px), so details survive at any size.
 // Every rect gets a 1px outline in a first pass, then the colors go on top.
 function drawRects(ctx, parts, ox, oy, facing = 1, scale = 1) {
-  const boxes = parts.map(([dx, dy, w, h, color]) => {
+  const boxes = parts.map(([dx, dy, w, h, color, min = 1]) => {
     const x0 = Math.round(dx * scale);
     const y0 = Math.round(dy * scale);
-    const x1 = Math.max(x0 + 1, Math.round((dx + w) * scale));
-    const y1 = Math.max(y0 + 1, Math.round((dy + h) * scale));
+    const x1 = Math.max(x0 + min, Math.round((dx + w) * scale));
+    const y1 = Math.max(y0 + min, Math.round((dy + h) * scale));
     return [facing === 1 ? ox + x0 : ox - x1, oy + y0, x1 - x0, y1 - y0, color];
   });
   ctx.fillStyle = COLORS.outline;

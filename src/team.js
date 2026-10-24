@@ -18,6 +18,21 @@ const ROSTER = [
 // Which end each team attacks: home starts on the right hoop; after halftime the teams switch (see Clock).
 let endsSwapped = false;
 
+// A career opponent's own kit and AI level (see Career.setup); null outside career: the away team wears the inverse
+// of the home kit and plays at the AI level slider's setting.
+let awayKit = null;
+let opponentAILevel = null;
+
+// A full game (3v3 Casual or a career game): both teams, the ref and the clocks.
+function isFullGame(game) {
+  return game.mode === '3v3' || game.mode === 'career';
+}
+
+// The away team's jersey color, given the home team's (benches and the scorer's table wear it too).
+function awayJersey(homeJersey) {
+  return awayKit ? awayKit.jersey : invertColor(homeJersey);
+}
+
 function attackHoop(team) {
   return (team === 0) !== endsSwapped ? HOOPS[1] : HOOPS[0];
 }
@@ -34,7 +49,8 @@ function defendHoop(team) {
 // `look` is the user's player's look (and the home kit); `home` is the user's team (loadTeam), whose players 2 and
 // 3 have their own skin, hair and number.
 function playerLook(look, team, role, home) {
-  const kit = Object.fromEntries(LOOK_KIT_KEYS.map((k) => [k, team === 0 ? look[k] : invertColor(look[k])]));
+  const away = (k) => (awayKit ? awayKit[k] : invertColor(look[k]));
+  const kit = Object.fromEntries(LOOK_KIT_KEYS.map((k) => [k, team === 0 ? look[k] : away(k)]));
   const own = team === 0 ? home[role].look : ROSTER[team][role];
   return { ...look, ...(own || {}), ...kit };
 }
@@ -65,14 +81,14 @@ function randomUpgrades(total) {
 }
 
 // The user's team plays with the levels set for each of them; every opponent gets as many levels as the home
-// player in the same spot, at random.
-function rollAIUpgrades(players, team) {
+// player in the same spot (or `opponentTotal` each, in a career game), at random.
+function rollAIUpgrades(players, team, opponentTotal = null) {
   for (const p of players) {
     if (p.team === 0) {
       p.upgrades = team[p.role].upgrades;
       continue;
     }
-    const total = Object.values(team[p.role].upgrades).reduce((a, b) => a + b, 0);
+    const total = opponentTotal ?? Object.values(team[p.role].upgrades).reduce((a, b) => a + b, 0);
     p.upgrades = randomUpgrades(total);
   }
 }
@@ -95,7 +111,7 @@ function formationSpot(team, role) {
 // An AI tuning value blended between its [easy, hard] ends: the opponents use the AI level (a testing slider
 // in the Gamemode tab), the user's teammates a fixed one.
 function aiValue(p, [easy, hard]) {
-  return lerp(easy, hard, p.team === 0 ? AI.teammateLevel : AI.level);
+  return lerp(easy, hard, p.team === 0 ? AI.teammateLevel : opponentAILevel ?? AI.level);
 }
 
 function teammates(game, p) {

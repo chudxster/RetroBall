@@ -6,14 +6,23 @@ const PASS_DOT_SHINE = mix(COLORS.good, COLORS.line, 0.5);
 const METER_GREEN_SHINE = mix(COLORS.good, COLORS.line, 0.4);
 
 function drawHud(ctx, game) {
-  const free = game.mode !== '3v3';
+  const free = !isFullGame(game);
   if (game.drill) drawDrill(ctx, game.drill);
   // The stats box in the top left can be turned off in the pause menu's UI tab.
   else if (game.ui.stats) {
     const s = game.stats[0];
-    const score = free ? `PTS ${s.pts}` : `HOME ${game.score[0]}  AWAY ${game.score[1]}`;
+    const [home, away] = game.abbrs;
+    const score = free ? `PTS ${s.pts}` : `${home} ${game.score[0]}  ${away} ${game.score[1]}`;
     const ft = !free && game.rules.freeThrows ? `  FT ${s.ftm}/${s.fta}` : '';
     drawInfoBox(ctx, `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}${ft}`);
+  }
+  // A career game's challenge and how it stands, green once it's met.
+  if (game.challenge && !(game.clock && game.clock.over)) {
+    const ch = game.challenge;
+    const now = Career.challengeState(ch, game);
+    const tier = CAREER.tiers[ch.tier];
+    const line = `${tier.name} X${tier.mult}  ${Career.challengeText(ch)}  ${now.text}`;
+    drawInfoBox(ctx, line, game.ui.stats ? 26 : 4, now.done ? COLORS.good : COLORS.okay);
   }
 
   ctx.fillStyle = COLORS.bg;
@@ -27,11 +36,11 @@ function drawHud(ctx, game) {
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
-// One line of text on a dark box in the top left (the stats, or the drill's progress).
-function drawInfoBox(ctx, line) {
+// One line of text on a dark box at the left edge, `y` down (the stats, the drill's progress, a challenge).
+function drawInfoBox(ctx, line, y = 4, color = COLORS.line) {
   ctx.fillStyle = COLORS.outline;
-  ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
-  drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });
+  ctx.fillRect(4, y, textWidth(line, TEXT_SCALE) + 12, 18);
+  drawText(ctx, line, 10, y + 4, color, { scale: TEXT_SCALE });
 }
 
 // Game clock (period and time left) and shot clock, top right beside the pause button (3v3). The game clock turns
@@ -83,7 +92,8 @@ function drawGameOver(ctx, game) {
   const mid = VIEW_W / 2;
   drawText(ctx, won ? 'YOU WIN!' : 'YOU LOSE', mid, 40, won ? COLORS.good : COLORS.bad, { align: 'center', scale: TEXT_SCALE * 3, shadow: COLORS.outline });
   drawText(ctx, `FINAL${ot}`, mid, 82, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
-  drawText(ctx, `HOME ${home} - ${away} AWAY`, mid, 100, COLORS.line, { align: 'center', scale: TEXT_SCALE * 2 });
+  const [homeName, awayName] = game.abbrs;
+  drawText(ctx, `${homeName} ${home} - ${away} ${awayName}`, mid, 100, COLORS.line, { align: 'center', scale: TEXT_SCALE * 2 });
 
   // Stat table: label, home, away.
   const rows = [
@@ -94,17 +104,32 @@ function drawGameOver(ctx, game) {
     ['BLK', (s) => String(s.blk)],
   ];
   const top = 136;
-  drawText(ctx, 'HOME', mid - 10, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
-  drawText(ctx, 'AWAY', mid + 90, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  drawText(ctx, homeName, mid - 10, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  drawText(ctx, awayName, mid + 90, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
   rows.forEach(([label, value], i) => {
     const y = top + 20 + i * 18;
     drawText(ctx, label, mid - 110, y, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
     drawText(ctx, value(game.stats[0]), mid - 10, y, COLORS.line, { align: 'center', scale: TEXT_SCALE });
     drawText(ctx, value(game.stats[1]), mid + 90, y, COLORS.line, { align: 'center', scale: TEXT_SCALE });
   });
+  const r = game.careerResult;
+  if (r) drawCareerResult(ctx, r, mid, 254);
   if (game.clock.overT > 1 && Math.floor(game.time * 2) % 2 === 0) {
-    drawText(ctx, `PRESS ${Input.keyLabel('shoot')} TO PLAY AGAIN`, mid, VIEW_H - 46, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
+    const next = r ? 'FOR THE NEXT GAME' : 'TO PLAY AGAIN';
+    drawText(ctx, `PRESS ${Input.keyLabel('shoot')} ${next}`, mid, VIEW_H - 46, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
   }
+}
+
+// A career game's payout: the challenge (made or missed), then points x the result's and the challenge's multipliers.
+function drawCareerResult(ctx, r, mid, y) {
+  if (r.challenge) {
+    const tier = CAREER.tiers[r.tier];
+    const text = `${tier.name} X${tier.mult}: ${r.challenge} - ${r.done ? 'DONE!' : 'MISSED'}`;
+    drawText(ctx, text, mid, y, r.done ? COLORS.good : COLORS.bad, { align: 'center', scale: TEXT_SCALE });
+  }
+  const parts = [`${r.points} PTS`, `X${r.resultMult} ${r.won ? 'WIN' : 'LOSS'}`];
+  if (r.done) parts.push(`X${r.challengeMult}`);
+  drawText(ctx, `${parts.join(' ')} = +${r.tokens} TOKENS`, mid, y + 18, COLORS.okay, { align: 'center', scale: TEXT_SCALE, shadow: COLORS.outline });
 }
 
 // Speed lines trailing a dashing player: horizontal streaks behind a sideways dash, vertical ones above or below

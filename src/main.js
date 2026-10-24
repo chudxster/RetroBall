@@ -11,11 +11,13 @@ shadowLayer.width = VIEW_W;
 shadowLayer.height = VIEW_H;
 const shadowCtx = shadowLayer.getContext('2d');
 
-const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, stl: 0, blk: 0 });
+const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, stl: 0, blk: 0, dnk: 0 });
 
 const state = {
   time: 0,
-  mode: loadMode(),  // '3v3', 'free' (free shot) or 'world' (Around the World): the last two just the user
+  // '3v3', 'career' (a career game, see career.js), 'free' (free shot) or 'world' (Around the World): the last two
+  // just the user
+  mode: loadMode(),
   look: loadLook(),  // the user's custom look; team colors come from it
   team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
   rules: loadPrefs(RULES_STORAGE_KEY, DEFAULT_RULES), // { freeThrows }
@@ -37,16 +39,28 @@ const state = {
   clock: null,     // the 3v3 game and shot clocks (see clock.js)
   drill: null,     // Around the World progress (see practice.js)
   replayReady: false, // after the final buzzer: the shoot key has been let go, so pressing it starts a new game
+  abbrs: ['HOME', 'AWAY'], // the teams' names on the HUD
+  challenge: null,    // a career game's picked challenge
+  careerResult: null, // a finished career game's tokens and result (see Career.finish)
 };
 
 // A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball.
 function newGame(mode) {
   state.mode = mode;
   endsSwapped = false;
+  // A career game: the opponent's kit (unless it's too close to the home jersey), AI level and upgrades, and the
+  // career team's own levels.
+  const career = mode === 'career' ? Career.setup() : null;
+  awayKit = career && !colorsClash(career.kit.jersey, state.look.jersey) ? career.kit : null;
+  opponentAILevel = career ? career.aiLevel : null;
+  state.abbrs = career ? career.abbrs : ['HOME', 'AWAY'];
+  state.challenge = career ? career.challenge : null;
+  state.careerResult = null;
   state.roster = makePlayers(state.look, state.team);
   const star = state.roster[0];
-  rollAIUpgrades(state.roster, state.team);
-  const solo = mode !== '3v3'; // free shot and the practice drills: just the user's player
+  if (career) rollAIUpgrades(state.roster, Career.team(), career.upgrades);
+  else rollAIUpgrades(state.roster, state.team);
+  const solo = !isFullGame(state); // free shot and the practice drills: just the user's player
   state.players = solo ? [star] : state.roster;
   state.ref = solo ? null : Ref.make();
   state.user = star;
@@ -63,7 +77,7 @@ function newGame(mode) {
   Play.give(state, star);
   camera.snap(star.x);
   state.replayReady = false;
-  if (mode === '3v3') Clock.start(state);
+  if (!solo) Clock.start(state);
   else state.clock = null;
   state.drill = null;
   if (mode === 'world') Practice.start(state);
@@ -80,11 +94,14 @@ function update(dt) {
 
   // Hold still while the camera pans back to center, the screen fades for a reset, or between periods.
   const frozen = !!(camera.pan || state.fade) || Clock.stopped(state);
-  // After the final buzzer, a fresh press of the shoot key starts a new game.
+  // After the final buzzer, a fresh press of the shoot key starts a new game (in career, opens the career menu to
+  // pick the next one).
   if (state.clock && state.clock.over && state.clock.overT > 1) {
     if (!Input.shoot()) state.replayReady = true;
     else if (state.replayReady) {
-      newGame(state.mode);
+      state.replayReady = false;
+      if (state.mode === 'career') Menu.openCareer();
+      else newGame(state.mode);
       return;
     }
   }
@@ -113,6 +130,8 @@ function update(dt) {
   handleBallEvents();
   Play.pickups(state);
   Clock.update(dt, state, frozen);
+  // A career game's final buzzer: tokens, standings and the next game are settled right away.
+  if (state.mode === 'career' && state.clock.over && !state.careerResult) state.careerResult = Career.finish(state);
   Practice.update(dt, state);
   // The out-of-bounds count waits while anyone is dunking (or hanging on the rim). The drill hands the ball back
   // itself.
@@ -181,7 +200,7 @@ function checkBallBehindHoop(dt) {
     state.outFor = 0;
     const outOn = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
     resetToCenter();
-    if (state.mode === '3v3' || outOn === 0) {
+    if (isFullGame(state) || outOn === 0) {
       const text = outOn === 0 ? 'OUT ON PLAYER' : 'OUT ON AI';
       const at = ball.holder || ball;
       addPopup(state, text, outOn === 0 ? COLORS.bad : COLORS.okay, at.x, at.y, RESET.outTextZ, RESET.outTextTime);
@@ -249,7 +268,7 @@ function resetToCenter(instant = false) {
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
   const lastTeam = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
-  if (state.mode === '3v3') {
+  if (isFullGame(state)) {
     restartPlay(1 - lastTeam, instant);
     return;
   }
@@ -319,6 +338,7 @@ function handleBallEvents() {
       stats.pts += e.points;
       if (e.ft) stats.ftm++;
       else stats.fgm++;
+      if (e.dunk) stats.dnk++;
       if (e.points === 3) stats.tpm++;
       const { hype } = CROWD;
       const cheer = e.dunk ? (e.rare ? hype.rareDunk : hype.dunk) : e.ft ? hype.freeThrow : e.points === 3 ? hype.three : hype.score;
@@ -443,11 +463,19 @@ Menu.init({
     setTeamLooks(state.roster, look, state.team);
   },
   team: state.team,
-  upgradesChanged: () => rollAIUpgrades(state.roster, state.team),
+  // Free upgrades re-roll the opponents to match; career levels are bought in place and opponents keep theirs.
+  upgradesChanged: () => {
+    if (state.mode !== 'career') rollAIUpgrades(state.roster, state.team);
+  },
   rules: state.rules,
   ui: state.ui,
   mode: () => state.mode,
   setMode: newGame,
+  // Career: the picked challenge (0..2) starts the next game.
+  startCareerGame(choice) {
+    Career.begin(choice);
+    newGame('career');
+  },
 });
 fitCanvas();
 requestAnimationFrame(frame);

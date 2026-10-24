@@ -82,7 +82,7 @@
 
       <!-- Upgrades and names for each player on the user's team. Free to set for now; saved between visits. -->
       <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
-        <p class="test-note">Free while testing. Each AI opponent gets as many levels as your player in the same spot, at random.</p>
+        <p class="test-note" id="upgrade-note"></p>
         <div class="row player-pick">
           <div class="faces" role="group" aria-label="Pick a player to upgrade"></div>
           <input id="player-name" class="name" maxlength="12" spellcheck="false" autocomplete="off" aria-label="Player name">
@@ -128,6 +128,16 @@
       <!-- Game mode (switching starts a new game) and rule toggles (saved, apply right away). -->
       <div class="tab-panel stack-view" id="mode-view" role="tabpanel" hidden>
         <p class="test-note">Game mode (switching starts a new game)</p>
+        <!-- Career: seasons against a league, upgrades bought with tokens. The panel is built by menu.js; picking a
+             challenge there starts the next game. -->
+        <div class="mode-row">
+          <button type="button" class="mode-option" data-mode="career" aria-pressed="false" aria-controls="career-panel">
+            <span class="mode-name">Career</span>
+            <span class="mode-desc">Seasons, playoffs and upgrades bought with tokens</span>
+          </button>
+          <button type="button" class="mode-expand" aria-expanded="false" aria-controls="career-panel" aria-label="Career"><span class="chevron">&gt;</span></button>
+        </div>
+        <div class="mode-settings career-panel" id="career-panel" hidden></div>
         <div class="mode-row">
           <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
             <span class="mode-name">3v3 Casual</span>
@@ -273,6 +283,7 @@
   <script src="src/practice.js"></script>
   <script src="src/tuning.js"></script>
   <script src="src/menu.js"></script>
+  <script src="src/career.js"></script>
   <script src="src/main.js"></script>
 </body>
 </html>

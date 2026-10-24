@@ -72,7 +72,7 @@ function tableLayer(jersey) {
       const ox = Math.round(p.x);
       const oy = Math.round(p.y);
       const k = spriteScale(TABLE.y);
-      drawRects(ctx, tableParts(jersey, invertColor(jersey)), ox, oy, 1, k);
+      drawRects(ctx, tableParts(jersey, awayJersey(jersey)), ox, oy, 1, k);
       scoreboard.cards.forEach((card, i) => drawFlapCard(ctx, card, ox, oy, k, CARD_X[i], CARD.top));
     },
   };

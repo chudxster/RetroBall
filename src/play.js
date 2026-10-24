@@ -86,7 +86,7 @@ const Play = (() => {
     const ballX = h.x + h.facing * 8;
     const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p);
     const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
-    const chance = (p === game.user ? lerp(...DEFENSE.userStealChance, AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
+    const chance = (p === game.user ? lerp(...DEFENSE.userStealChance, opponentAILevel ?? AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);

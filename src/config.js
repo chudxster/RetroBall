@@ -151,6 +151,34 @@ const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9, outTextZ: 36
 // throws, resets and the breaks, which last breakTime. The defaults here can be changed in the 3v3 game options.
 const GAME = { halfMinutes: 2.5, otMinutes: 1, shotClock: 14, breakTime: 2.5, shotWarn: 5 };
 
+// Career (see career.js): a league of `teams` (the user's plus AI teams), a round-robin season, then the top
+// `playoffTeams` play semifinals and a final. A game earns a token per point the user's team scores, times winMult
+// for a win or lossMult for a loss, times the picked challenge's multiplier if it was completed, rounded up. An
+// upgrade level costs levelCost x the level being bought (10, 20, ... 50). Opponents: AI level aiBase + aiPerStrength
+// x the team's strength (0..1), plus aiPerSeason each season (at most aiMax); upgrade levels per player
+// upgradesPerStrength x strength plus upgradesPerSeason each season.
+const CAREER = {
+  teams: 8,
+  playoffTeams: 4,
+  winMult: 1.25,
+  lossMult: 0.75,
+  levelCost: 10,
+  aiBase: 0.25,
+  aiPerStrength: 0.45,
+  aiPerSeason: 0.05,
+  aiMax: 0.95,
+  upgradesPerStrength: 6,
+  upgradesPerSeason: 2,
+  strengthDrift: 0.1, // between seasons each AI team's strength moves up to this much either way
+  // Challenge tiers, easiest first: the token multiplier for completing one.
+  tiers: [
+    { name: 'EASY', mult: 1.1 },
+    { name: 'MEDIUM', mult: 1.25 },
+    { name: 'HARD', mult: 1.5 },
+    { name: 'PRO', mult: 2 },
+  ],
+};
+
 // Fouls: reaching for a steal can be called a foul, more likely the closer the reacher is to the ball handler: no
 // chance from `far` out (the steal reach without upgrades), rising to `maxChance` with bodies touching (`near`, the
 // separation distance). With free throws on (Gamemode tab) the fouled player shoots one from the line; otherwise
@@ -427,6 +455,14 @@ function mix(a, b, t) {
 // The RGB inverse of a #rrggbb color.
 function invertColor(hex) {
   return `#${(0xffffff ^ parseInt(hex.slice(1), 16)).toString(16).padStart(6, '0')}`;
+}
+
+// Two #rrggbb colors too alike to tell two teams apart.
+function colorsClash(a, b) {
+  const na = parseInt(a.slice(1), 16);
+  const nb = parseInt(b.slice(1), 16);
+  const d = (shift) => ((na >> shift) & 255) - ((nb >> shift) & 255);
+  return Math.hypot(d(16), d(8), d(0)) < 90;
 }
 
 function isLightColor(hex) {

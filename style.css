@@ -572,3 +572,61 @@ input[type="color"]::-moz-color-swatch {
   width: calc(var(--px) * 22);
   text-align: center;
 }
+
+/* Career panel: season and tokens, team name, challenges, last game, standings */
+.career-panel {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+}
+
+.career-head {
+  display: flex;
+  justify-content: space-between;
+  color: #ffcd75;
+}
+
+.career-tokens {
+  color: #38b764;
+}
+
+.challenge {
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+}
+
+/* Challenge tiers, easiest to hardest: the tier name in its own color */
+.challenge.tier-0 .mode-name {
+  color: #38b764;
+}
+
+.challenge.tier-1 .mode-name {
+  color: #ffcd75;
+}
+
+.challenge.tier-2 .mode-name {
+  color: #ef7d57;
+}
+
+.challenge.tier-3 .mode-name {
+  color: #e43b44;
+}
+
+.standings {
+  display: grid;
+  grid-template-columns: calc(var(--px) * 14) 1fr calc(var(--px) * 30) calc(var(--px) * 26);
+  gap: var(--px) calc(var(--px) * 3);
+  font-size: 0.75em;
+}
+
+.standings-head {
+  color: #566c86;
+}
+
+.standings-you {
+  color: #ffcd75;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

@@ -99,7 +99,7 @@ function benchOnScreen(item) {
 
 // Depth-sorted drawables, like the hoop layers. `jersey` is the player's jersey color.
 function benchLayers(jersey) {
-  const teamColors = [jersey, invertColor(jersey)];
+  const teamColors = [jersey, awayJersey(jersey)];
   return BENCH_STUFF.filter(benchOnScreen).map((item) => ({
     y: item.y,
     draw(ctx) {

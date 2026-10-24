@@ -124,17 +124,23 @@ const Menu = (() => {
   const POSE_SECONDS = 0.8;
 
   // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), rules, ui, mode(),
-  // setMode(mode) }, where team is the user's team as loadTeam() returns it, rules is DEFAULT_RULES' shape and ui
-  // is { stats }.
+  // setMode(mode), startCareerGame(choice) }, where team is the user's team as loadTeam() returns it, rules is
+  // DEFAULT_RULES' shape and ui is { stats }.
   let game = null;
   let syncUpgradeView = () => {};
   let syncModeView = () => {};
+  let showTab = () => {};
+  let openCareerPanel = () => {};
   let preview = null;
   let look = null;  // player 1's look, which also carries the team kit
   let pick = 0;     // which home player (by role) the Player and Upgrades tabs show
   let open = false;
   let previewTime = 0;
   let lastFrame = 0;
+
+  // In a career game the Upgrades tab shows the career team (names and bought levels); otherwise the free one.
+  const inCareer = () => game.mode() === 'career';
+  const activeTeam = () => (inCareer() ? Career.team() : game.team);
 
   // The look of player `i`: player 1's own, or a teammate's skin, hair and number in the team kit.
   function lookOf(i) {
@@ -245,8 +251,8 @@ const Menu = (() => {
       fctx.fillRect(0, 0, FACE_W, FACE_H);
       p.draw(fctx);
       btn.setAttribute('aria-pressed', String(i === pick));
-      btn.setAttribute('aria-label', `Pick ${game.team[i].name}`);
-      btn.title = game.team[i].name;
+      btn.setAttribute('aria-label', `Pick ${activeTeam()[i].name}`);
+      btn.title = activeTeam()[i].name;
     }
   }
 
@@ -284,15 +290,19 @@ const Menu = (() => {
     };
     for (const t of tabs) t.addEventListener('click', () => show(t));
     show(tabs[0]);
+    showTab = (id) => show(tabs.find((t) => t.dataset.panel === id));
   }
 
   // Upgrades: the picked player (faces at the top, name editable in place) with +/- per stat, shown as pips with
-  // what the current level does.
+  // what the current level does. In a career game it's the career team, whose levels are bought with tokens (and
+  // can't be sold back); otherwise the free testing levels.
   function initUpgradeView() {
     const rows = [...panel.querySelectorAll('.upgrade')];
     const nameInput = document.getElementById('player-name');
     const numberTag = document.getElementById('player-num');
-    const picked = () => game.team[pick];
+    const note = document.getElementById('upgrade-note');
+    const resetButton = document.getElementById('reset-upgrades');
+    const picked = () => activeTeam()[pick];
     const effects = {
       speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
       shooting: (n) => n >= UPGRADES.max
@@ -302,12 +312,22 @@ const Menu = (() => {
       defense: (n) => `+${Math.round(UPGRADES.stealRange * n * 100)}% steal reach, block`,
       dash: (n) => `+${Math.round(UPGRADES.dashDistance * n * 100)}% dash distance`,
     };
+    const saveTeam = () => {
+      if (inCareer()) Career.save();
+      else saveStored(TEAM_STORAGE_KEY, game.team);
+    };
     const changed = () => {
-      saveStored(TEAM_STORAGE_KEY, game.team);
+      saveTeam();
       game.upgradesChanged();
       sync();
     };
     const sync = () => {
+      const career = inCareer();
+      const tokens = Career.get().tokens;
+      note.textContent = career
+        ? `Career: ${tokens} tokens. A level costs ${CAREER.levelCost} x its number; bought levels stay.`
+        : 'Free while testing. Each AI opponent gets as many levels as your player in the same spot, at random.';
+      resetButton.disabled = career;
       if (document.activeElement !== nameInput) nameInput.value = picked().name;
       numberTag.textContent = `#${lookOf(pick).number}`;
       for (const row of rows) {
@@ -319,15 +339,22 @@ const Menu = (() => {
           pip.className = i < n ? 'pip on' : 'pip';
           return pip;
         }));
-        row.querySelector('.upgrade-effect').textContent = n ? effects[key](n) : '';
-        row.querySelector('[data-delta="-1"]').disabled = n <= 0;
-        row.querySelector('[data-delta="1"]').disabled = n >= UPGRADES.max;
+        const price = career && n < UPGRADES.max ? Career.cost(n) : 0;
+        const effect = n ? effects[key](n) : '';
+        row.querySelector('.upgrade-effect').textContent = price ? `${effect}${effect ? ' - ' : ''}next ${price} tokens` : effect;
+        row.querySelector('[data-delta="-1"]').disabled = career || n <= 0;
+        row.querySelector('[data-delta="1"]').disabled = n >= UPGRADES.max || (career && tokens < price);
       }
     };
     for (const row of rows) {
       for (const step of row.querySelectorAll('.step')) {
         step.addEventListener('click', () => {
           const key = row.dataset.upgrade;
+          if (inCareer()) {
+            if (Number(step.dataset.delta) > 0) Career.buy(pick, key);
+            sync();
+            return;
+          }
           const levels = picked().upgrades;
           levels[key] = clamp(levels[key] + Number(step.dataset.delta), 0, UPGRADES.max);
           changed();
@@ -337,7 +364,7 @@ const Menu = (() => {
     nameInput.addEventListener('input', () => {
       nameInput.value = cleanName(nameInput.value);
       picked().name = nameInput.value.trim() || defaultName(pick);
-      saveStored(TEAM_STORAGE_KEY, game.team);
+      saveTeam();
       drawFaces(); // their face's tooltip shows the name
     });
     nameInput.addEventListener('change', sync);
@@ -406,14 +433,28 @@ const Menu = (() => {
       });
     }
     const worldBest = document.getElementById('world-best');
+    const careerPanel = document.getElementById('career-panel');
+    const careerArrow = panel.querySelector('.mode-expand[aria-controls="career-panel"]');
     const sync = () => {
       for (const o of options) o.setAttribute('aria-pressed', String(o.dataset.mode === game.mode()));
       const best = Practice.best();
       worldBest.textContent = best === null ? 'Best: none yet' : `Best: ${Practice.format(best)}`;
+      if (!careerPanel.hidden) renderCareer(careerPanel);
     };
-    // Picking the mode already being played does nothing, except Around the World, which starts over.
+    openCareerPanel = () => {
+      careerPanel.hidden = false;
+      careerArrow.setAttribute('aria-expanded', 'true');
+      sync();
+    };
+    careerArrow.addEventListener('click', sync); // (the shared arrow handler above shows or hides it)
+    // Picking the mode already being played does nothing, except Around the World, which starts over. Career opens
+    // its panel instead: a career game starts from a challenge picked there.
     for (const o of options) {
       o.addEventListener('click', () => {
+        if (o.dataset.mode === 'career') {
+          openCareerPanel();
+          return;
+        }
         if (o.dataset.mode === game.mode() && o.dataset.mode !== 'world') return;
         game.setMode(o.dataset.mode);
         saveMode(o.dataset.mode);
@@ -422,6 +463,112 @@ const Menu = (() => {
     }
     syncModeView = sync; // the best time may have changed since the menu was last open
     sync();
+  }
+
+  // A new element with a class and text (text, never HTML: team names come from the user).
+  function el(tag, className, text = '') {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    e.textContent = text;
+    return e;
+  }
+
+  // Career panel: season and tokens, the team's name, the next game with its three challenges (picking one starts
+  // it) or the season's result, the last game and the standings.
+  let confirmRestart = false;
+  function renderCareer(box) {
+    const c = Career.get();
+    const next = Career.next();
+    const items = [];
+
+    const head = el('div', 'career-head');
+    const week = next ? next.label : 'SEASON OVER';
+    head.append(el('span', '', `Season ${c.season} - ${week}`), el('span', 'career-tokens', `${c.tokens} tokens`));
+    items.push(head);
+
+    const nameRow = el('div', 'row');
+    const nameLabel = el('label', '', 'Team name');
+    const nameInput = el('input', 'name');
+    Object.assign(nameInput, { id: 'career-team-name', maxLength: Career.TEAM_NAME_MAX, spellcheck: false, autocomplete: 'off', value: c.teamName });
+    nameLabel.htmlFor = nameInput.id;
+    nameInput.addEventListener('input', () => Career.setTeamName(nameInput.value));
+    nameInput.addEventListener('change', () => {
+      if (!nameInput.value.trim()) Career.setTeamName('Home');
+      nameInput.value = Career.get().teamName;
+    });
+    nameRow.append(nameLabel, nameInput, el('span', 'upgrade-effect', `Titles: ${c.titles}`));
+    items.push(nameRow);
+
+    if (next) {
+      const opp = Career.teamOf(next.opp);
+      items.push(el('p', 'test-note', `Next: vs ${opp.name} (${Career.record(next.opp)})`));
+      const playing = game.mode() === 'career';
+      items.push(el('p', 'mode-desc', playing
+        ? 'Pick a challenge to tip off (this restarts the game in progress):'
+        : 'Pick a challenge to tip off. Complete it to multiply that game\'s tokens:'));
+      Career.offer(game.rules).forEach((ch, i) => {
+        const tier = CAREER.tiers[ch.tier];
+        const btn = el('button', `mode-option challenge tier-${ch.tier}`);
+        btn.type = 'button';
+        btn.append(el('span', 'mode-name', `${tier.name} x${tier.mult}`), el('span', 'mode-desc', Career.challengeText(ch)));
+        btn.addEventListener('click', () => {
+          game.startCareerGame(i);
+          syncModeView();
+          setOpen(false);
+        });
+        items.push(btn);
+      });
+    } else {
+      const results = {
+        champion: 'Champions!',
+        final: 'Lost in the final',
+        semis: 'Lost in the semifinal',
+        missed: 'Missed the playoffs',
+      };
+      const champ = c.playoff && c.playoff.champion !== null ? Career.teamOf(c.playoff.champion).name : '';
+      items.push(el('p', 'test-note', `Season ${c.season}: ${results[c.result]}${c.result !== 'champion' && champ ? ` (${champ} won it all)` : ''}`));
+      const nextSeason = el('button', 'btn', `Start season ${c.season + 1}`);
+      nextSeason.type = 'button';
+      nextSeason.addEventListener('click', () => {
+        Career.nextSeason();
+        renderCareer(box);
+      });
+      items.push(nextSeason);
+    }
+
+    if (c.last) {
+      const l = c.last;
+      const vs = Career.teamOf(l.opp).abbr;
+      items.push(el('p', 'mode-desc', `Last game: ${l.won ? 'W' : 'L'} ${l.us}-${l.them} vs ${vs}, +${l.tokens} tokens${l.challenge ? ` (challenge ${l.done ? 'done' : 'missed'})` : ''}`));
+    }
+
+    // Standings: best record first; during the playoffs the seeds are marked.
+    const table = el('div', 'standings');
+    for (const text of ['#', 'Team', 'W-L', '+/-']) table.append(el('span', 'standings-head', text));
+    Career.standings().forEach((i, rank) => {
+      const t = c.league[i];
+      const seeded = c.playoff && c.playoff.seeds.includes(i);
+      const cls = i === 0 ? 'standings-you' : '';
+      const diff = t.pf - t.pa;
+      table.append(
+        el('span', cls, `${rank + 1}${seeded ? '*' : ''}`),
+        el('span', cls, Career.teamOf(i).name),
+        el('span', cls, Career.record(i)),
+        el('span', cls, `${diff > 0 ? '+' : ''}${diff}`),
+      );
+    });
+    items.push(table);
+
+    const restart = el('button', 'btn btn-quiet', confirmRestart ? 'Sure? Click again to start over' : 'New career');
+    restart.type = 'button';
+    restart.addEventListener('click', () => {
+      if (confirmRestart) Career.restart();
+      confirmRestart = !confirmRestart;
+      renderCareer(box);
+    });
+    items.push(restart);
+
+    box.replaceChildren(...items);
   }
 
   // Controls: the double-tap dash window and a key button per action. Clicking a button waits for the next key
@@ -641,6 +788,7 @@ const Menu = (() => {
     if (open) {
       lastFrame = 0;
       syncModeView();
+      syncUpgradeView(); // tokens may have come in, or the mode (free or career levels) changed
       requestAnimationFrame(drawPreview);
     } else {
       document.getElementById('game').focus();
@@ -673,8 +821,16 @@ const Menu = (() => {
     requestAnimationFrame(drawPreview);
   }
 
+  // After a career game: the menu opens on the career panel, ready to pick the next game's challenge.
+  function openCareer() {
+    setOpen(true);
+    showTab('mode-view');
+    openCareerPanel();
+  }
+
   return {
     init,
     isOpen: () => open,
+    openCareer,
   };
 })();

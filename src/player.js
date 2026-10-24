@@ -326,13 +326,16 @@ class Player {
     const swing = this.armSwingPhase() * ARM.swing * runK;
     const bend = ARM.bend * runK;
 
-    // Whichever arm is nearer the camera is drawn wider, unshaded and in front of the body.
+    // Whichever arm is nearer the camera is drawn wider, unshaded and in front of the body. Side-on, both arms hang
+    // from the same shoulder, the far one hidden behind the body and near arm until it swings out; in the
+    // three-quarter views the body is turned, so the far shoulder sits at the other edge of the torso.
     const backNear = turn < 0;
     const frontNear = turn >= 0;
     const backW = backNear ? 8 : turn > 0 ? 4 : 6;
     const backSkin = backNear ? c.skin : c.skinDark;
     const backShade = backNear ? c.skinDark : c.skinDarker;
-    let backArm = this.armChain(-11, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
+    const backX = turn === 0 ? 11 : -11;
+    let backArm = this.armChain(backX, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
     const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
     const frontSkin = frontNear ? c.skin : c.skinDark;
     const frontShade = frontNear ? c.skinDark : c.skinDarker;
@@ -347,11 +350,13 @@ class Player {
         ]
       : this.armChain(11, -50 + u, -swing, -swing + bend, frontW, frontNear && turn > 0 ? 1 : 0, frontSkin, frontShade);
 
-    // Jump shot: shooting arm straight up under the ball (with a wrist flick once it's gone), guide arm raised behind.
+    // Jump shot: shooting arm straight up under the ball (with a wrist flick once it's gone), guide arm raised beside
+    // it (side-on, just behind it from the same shoulder).
     if (this.shot) {
+      const guideX = turn === 0 ? 9 : -10;
       backArm = [
-        [-10, -64, 6, 14, c.skinDark],
-        [-10, -56, 6, 2, c.trim],
+        [guideX, -64, 6, 14, c.skinDark],
+        [guideX, -56, 6, 2, c.trim],
       ];
       frontArm = [
         [6, -66, 6, 16, c.skin],

@@ -86,8 +86,8 @@ const SHOT = {
   meterLinger: 0.9,   // seconds the meter stays up after release
   // From behind the half-court line the green is exactly this many frames (1/60 s) of the meter wide, or
   // deepFramesMax with the shooting upgrade maxed out; any mistimed release from there goes in only by luck.
-  deepFrames: 2,
-  deepFramesMax: 5,
+  deepFrames: 1,
+  deepFramesMax: 2,
   deepLuck: 1 / 50,
   // Fadeaway: shooting while holding away from the hoop jumps backwards. Harder to time, harder to contest.
   fadeAway: -0.5,     // counts as "away" when the move direction is within ~60 degrees of straight back (dot product)

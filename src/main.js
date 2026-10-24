@@ -129,7 +129,8 @@ function userControls(frozen) {
 }
 
 // A loose ball behind either backboard can still be grabbed, but if it stays there for RESET.outTime play resets
-// (see resetToCenter). Picking it up or it bouncing back out in front clears the count.
+// (see resetToCenter). Picking it up or it bouncing back out in front clears the count. The reset announces who
+// knocked it out ("OUT ON PLAYER" for the home team, "OUT ON AI" for away) over the ball's new spot.
 function checkBallBehindHoop(dt) {
   const { ball } = state;
   const behind = !ball.held && HOOPS.some((h) => (ball.x - h.boardX) * h.dir < 0);
@@ -140,7 +141,13 @@ function checkBallBehindHoop(dt) {
   state.outFor += dt;
   if (state.outFor >= RESET.outTime) {
     state.outFor = 0;
+    const outOn = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
     resetToCenter();
+    if (state.mode === '3v3' || outOn === 0) {
+      const text = outOn === 0 ? 'OUT ON PLAYER' : 'OUT ON AI';
+      const at = ball.holder || ball;
+      addPopup(state, text, outOn === 0 ? COLORS.bad : COLORS.okay, at.x, at.y, RESET.outTextZ, RESET.outTextTime);
+    }
   }
 }
 

@@ -143,18 +143,18 @@ function drawHangPrompt(ctx, player, time) {
 }
 
 // Floating text anchored to a spot in the world, rising and blinking out.
-function addPopup(game, text, color, x, y, z) {
-  game.popups.push({ text, color, x, y, z, t: 0 });
+function addPopup(game, text, color, x, y, z, life = POPUP_LIFE) {
+  game.popups.push({ text, color, x, y, z, t: 0, life });
 }
 
 function updatePopups(game, dt) {
   for (const p of game.popups) p.t += dt;
-  game.popups = game.popups.filter((p) => p.t < POPUP_LIFE);
+  game.popups = game.popups.filter((p) => p.t < p.life);
 }
 
 function drawPopups(ctx, game) {
   for (const p of game.popups) {
-    if (p.t > POPUP_LIFE * 0.7 && Math.floor(p.t * 12) % 2) continue;
+    if (p.t > p.life - POPUP_LIFE * 0.3 && Math.floor(p.t * 12) % 2) continue;
     const pos = project(p.x, p.y, p.z);
     const rise = Math.round(Math.min(p.t / 0.4, 1) * 16);
     drawText(ctx, p.text, Math.round(pos.x), Math.round(pos.y) - rise, p.color, {

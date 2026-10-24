@@ -139,8 +139,9 @@ const FADE = { out: 0.9, hold: 0.35, in: 0.6 };
 
 // When the ball stays behind a backboard for `outTime` seconds play resets and the camera pans over in `panTime`:
 // in 3v3 the team that didn't touch it last gets it on their own half; in free shot it drops (from dropHeight) at
-// center court with the player on one of `spots` spots around the center circle.
-const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9 };
+// center court with the player on one of `spots` spots around the center circle. The "OUT ON ..." text floats at
+// height outTextZ over the ball's new spot for outTextTime seconds.
+const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9, outTextZ: 36, outTextTime: 2 };
 
 const PICKUP = {
   radius: 12,         // how close (in x and y) the player must be to grab a loose ball

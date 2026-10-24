@@ -128,10 +128,13 @@ function drawShotMeter(ctx, meter, player) {
   ctx.fillRect(x, top, METER_W, METER_H);
   ctx.fillStyle = COLORS.meterFill;
   ctx.fillRect(x, top + METER_H - fillPx, METER_W, fillPx);
-  ctx.fillStyle = COLORS.good;
-  ctx.fillRect(x, top + METER_H - hiPx, METER_W, hiPx - loPx);
-  ctx.fillStyle = mix(COLORS.good, COLORS.line, 0.4);
-  ctx.fillRect(x, top + METER_H - hiPx, 2, hiPx - loPx);
+  // The green band, unless this deep shot hides it.
+  if (!meter.hidden) {
+    ctx.fillStyle = COLORS.good;
+    ctx.fillRect(x, top + METER_H - hiPx, METER_W, hiPx - loPx);
+    ctx.fillStyle = mix(COLORS.good, COLORS.line, 0.4);
+    ctx.fillRect(x, top + METER_H - hiPx, 2, hiPx - loPx);
+  }
   // Release marker: where the fill stopped.
   if (meter.result) {
     ctx.fillStyle = meter.result.color;

@@ -99,6 +99,8 @@ const Shooting = (() => {
       hi: center + green / 2,
       result: null,
       hideIn: 0,
+      // Past 3/4 court the green is sometimes not drawn (it's still there).
+      hidden: deep !== null && deep >= SHOT.hideFrom && Math.random() < SHOT.hideChance,
     };
   }
 
@@ -116,13 +118,10 @@ const Shooting = (() => {
   }
 
   // Release timing decides make or miss; the aim below then sends the ball where physics will play that out.
-  // `deep` (beyond half court, 0 at the half-court line .. 1 from the far baseline, or null): even a green release
-  // only goes in with SHOT.deepMake odds, and outside the green only a SHOT.deepLuck chance.
+  // A green release always goes in. `deep` (beyond half court, 0 at the half-court line .. 1 from the far
+  // baseline, or null): outside the green only a SHOT.deepLuck chance.
   function grade(fill, lo, hi, deep) {
-    if (fill >= lo && fill <= hi) {
-      const make = deep === null || Math.random() < lerp(SHOT.deepMake.half, SHOT.deepMake.full, deep);
-      return { label: 'PERFECT', color: COLORS.good, make };
-    }
+    if (fill >= lo && fill <= hi) return { label: 'PERFECT', color: COLORS.good, make: true };
     deep = deep !== null;
     if (deep && Math.random() < SHOT.deepLuck) return { label: 'LUCKY!', color: COLORS.okay, make: true };
     const early = fill < lo;

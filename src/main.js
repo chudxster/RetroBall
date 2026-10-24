@@ -11,7 +11,7 @@ shadowLayer.width = VIEW_W;
 shadowLayer.height = VIEW_H;
 const shadowCtx = shadowLayer.getContext('2d');
 
-const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0 });
+const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, stl: 0, blk: 0 });
 
 const state = {
   time: 0,

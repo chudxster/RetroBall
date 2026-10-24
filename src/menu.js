@@ -38,11 +38,12 @@ const NAME_MAX = 12;
 const MODE_STORAGE_KEY = 'retroball.mode';
 const MODES = ['3v3', 'free'];
 const RULES_STORAGE_KEY = 'retroball.rules';
-const DEFAULT_RULES = { freeThrows: true };
+const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock };
 const UI_STORAGE_KEY = 'retroball.ui';
 const DEFAULT_UI = { stats: true };
 
-// On/off settings saved as one object: anything saved that isn't a boolean falls back to `defaults`.
+// Settings saved as one object of on/off switches and numbers: anything saved that isn't the same kind as its
+// default (or isn't a finite number) falls back to `defaults`.
 function loadPrefs(key, defaults) {
   let saved = {};
   try {
@@ -51,7 +52,10 @@ function loadPrefs(key, defaults) {
     // Storage blocked or corrupt: use the defaults.
   }
   const prefs = { ...defaults };
-  for (const k of Object.keys(defaults)) if (typeof saved[k] === 'boolean') prefs[k] = saved[k];
+  for (const k of Object.keys(defaults)) {
+    const v = saved[k];
+    if (typeof v === typeof defaults[k] && (typeof v !== 'number' || Number.isFinite(v))) prefs[k] = v;
+  }
   return prefs;
 }
 

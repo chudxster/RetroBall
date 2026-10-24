@@ -90,6 +90,7 @@ const Play = (() => {
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
+      game.stats[p.team].stl++;
     } else {
       p.stunT = DEFENSE.stealStun;
     }
@@ -177,6 +178,7 @@ const Play = (() => {
       game.ball.thrower = shooter;
       game.ball.lastTeam = d.team;
       addPopup(game, 'BLOCKED!', COLORS.bad, d.x, d.y, 60);
+      game.stats[d.team].blk++;
       return true;
     }
     return false;

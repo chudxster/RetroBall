@@ -29,8 +29,8 @@ const TUNING = [
   { path: 'SHOT.fadeDist', label: 'Fadeaway drift', tip: 'How far a fadeaway jumps back', min: 0, max: 80, step: 1 },
   { path: 'SHOT.fadeContest', label: 'Fadeaway cover', tip: 'How much defense still bothers a fadeaway', min: 0, max: 1, step: 0.05 },
   { path: 'SHOT.deepFrames', label: 'Half-court green', tip: 'Frames of green from past half court', min: 1, max: 20, step: 1 },
-  { path: 'SHOT.deepMake.half', label: 'Half-court makes', tip: 'Odds a green half-court shot drops', min: 0, max: 1, step: 0.05 },
-  { path: 'SHOT.deepMake.full', label: 'Full-court makes', tip: 'Odds a green full-court shot drops', min: 0, max: 1, step: 0.05 },
+  { path: 'SHOT.hideChance', label: 'Hidden green', tip: 'Odds the green is invisible past 3/4 court', min: 0, max: 1, step: 0.05 },
+  { path: 'SHOT.deepLuck', label: 'Deep luck', tip: 'Odds a mistimed half-court shot still drops', min: 0, max: 1, step: 0.01 },
   { path: 'SHOT.jumpHeight', label: 'Jump shot height', tip: 'How high a jump shot rises', min: 0, max: 40, step: 1 },
 
   // Dunking

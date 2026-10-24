@@ -85,12 +85,14 @@ const SHOT = {
   flightSpeed: 400,
   meterLinger: 0.9,   // seconds the meter stays up after release
   // From behind the half-court line the green is exactly this many frames (1/60 s) of the meter wide, or
-  // deepFramesMax with the shooting upgrade maxed out. Even a green release only goes in with deepMake odds,
-  // falling from `half` at the half-court line to `full` from the far baseline; any mistimed release goes in only by luck.
+  // deepFramesMax with the shooting upgrade maxed out. A green release always goes in; any mistimed one only by
+  // deepLuck. Past 3/4 court (`deep` hideFrom: 0 = half court .. 1 = far baseline) the green is drawn on only some
+  // shots: hideChance of the time it's still there but invisible, so it has to be timed from memory.
   deepFrames: 1,
   deepFramesMax: 2,
-  deepMake: { half: 0.6, full: 0.2 },
   deepLuck: 1 / 100,
+  hideFrom: 0.5,
+  hideChance: 0.5,
   // Fadeaway: shooting while holding away from the hoop jumps backwards. Harder to time, harder to contest.
   fadeAway: -0.5,     // counts as "away" when the move direction is within ~60 degrees of straight back (dot product)
   fadeDist: 22,       // world units drifted back over the jump
@@ -142,6 +144,12 @@ const FADE = { out: 0.9, hold: 0.35, in: 0.6 };
 // center court with the player on one of `spots` spots around the center circle. The "OUT ON ..." text floats at
 // height outTextZ over the ball's new spot for outTextTime seconds.
 const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9, outTextZ: 36, outTextTime: 2 };
+
+// A 3v3 game: two halves of halfMinutes (the teams switch ends at halftime), then otMinutes overtimes until
+// someone leads at the buzzer. The shot clock gives the team with the ball shotClock seconds to get a shot off
+// (it restarts when the other team gets the ball or a shot hits the rim). The clock stops for dead balls: free
+// throws, resets and the breaks, which last breakTime. The defaults here can be changed in the 3v3 game options.
+const GAME = { halfMinutes: 2.5, otMinutes: 1, shotClock: 14, breakTime: 2.5, shotWarn: 5 };
 
 // Fouls: reaching for a steal can be called a foul, more likely the closer the reacher is to the ball handler: no
 // chance from `far` out (the steal reach without upgrades), rising to `maxChance` with bodies touching (`near`, the
@@ -266,6 +274,7 @@ const AI = {
   helpRange: 110,     // a ball handler this close to the hoop draws a help defender...
   helpDepth: 16,      // ...who stands this far out from the rim, toward the ball
   hangTime: 1.1,      // seconds an AI dunker hangs on the rim on a rim-hang dunk
+  shotClockHurry: 3,  // with this little left on the shot clock, the ball handler shoots whatever happens
 };
 
 // Pseudo-perspective: the far sideline sits higher on screen and is squeezed horizontally.

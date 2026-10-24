@@ -67,7 +67,7 @@ const BALL = {
 
 const SHOT = {
   meterTimeFar: 0.65, // seconds for the meter to fill from quickRange.far out...
-  meterTimeClose: 0.28, // ...down to this from quickRange.near in
+  meterTimeClose: 0.42, // ...down to this from quickRange.near in
   quickRange: { near: 40, far: 140 },
   jumpPerMeter: 1.4,  // jump lasts this many times the meter time
   jumpHeight: 16,

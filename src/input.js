@@ -5,7 +5,7 @@ const Input = (() => {
   const GAME_KEYS = new Set([
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
-    'ShiftLeft', 'ShiftRight', 'Space', 'KeyE', 'KeyQ',
+    'Space', 'KeyE', 'KeyQ',
   ]);
 
   window.addEventListener('keydown', (e) => {
@@ -25,9 +25,6 @@ const Input = (() => {
         x: (any('ArrowRight', 'KeyD') ? 1 : 0) - (any('ArrowLeft', 'KeyA') ? 1 : 0),
         y: (any('ArrowDown', 'KeyS') ? 1 : 0) - (any('ArrowUp', 'KeyW') ? 1 : 0),
       };
-    },
-    sprint() {
-      return any('ShiftLeft', 'ShiftRight');
     },
     shoot() {
       return down.has('Space');

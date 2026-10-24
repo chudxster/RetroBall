@@ -13,7 +13,8 @@ const HEAD_Y = -70;
 const SHOOT_BALL_X = 4;   // ball held overhead while rising for a shot: left edge...
 const SHOOT_BALL_TOP = -80; // ...and top
 const FRONTAL_BALL_X = 8; // ball's left edge in the front/back views, under the dribbling hand
-const VIEW_MIN_SPEED = 0.2; // below this fraction of run speed the player settles back to the side view
+const VIEW_MIN_SPEED = 0.16; // below this fraction of top speed the player settles back to the side view
+const ARM_FULL_SPEED = 110;  // running this fast swings the arms (and bends the elbows) fully
 // Running arms: segment lengths (px) and, at run speed, how far they swing and how much the elbows bend (radians).
 // The forearm never comes up past foreMax (about level).
 const ARM = { upper: 5, fore: 6, swing: 0.6, bend: 0.9, foreMax: 1.5 };
@@ -68,6 +69,7 @@ class Player {
     this.vx = 0;
     this.vy = 0;
     this.speed = 0;
+    this.runT = 0;    // seconds a direction has been held, which picks the speed bracket (see update)
     this.facing = facing;
     this.view = 'side'; // see update(): side, frontQ / backQ (45 degrees), front / back
     this.stride = 0;
@@ -120,7 +122,7 @@ class Player {
     };
   }
 
-  update(dt, move, sprint) {
+  update(dt, move) {
     this.prevX = this.x;
     this.prevY = this.y;
     this.prevZ = this.z;
@@ -138,9 +140,18 @@ class Player {
       iy /= len;
     }
 
+    // How long a direction has been held picks the speed bracket. Turning eats into it; letting go resets it.
+    if (len > 0) {
+      const vlen = Math.hypot(this.vx, this.vy / PLAYER.depthSpeed);
+      const turn = vlen > 1 ? 1 - (ix * this.vx + (iy * this.vy) / PLAYER.depthSpeed) / (vlen * Math.min(len, 1)) : 0;
+      this.runT = Math.max(0, this.runT + dt - turn * PLAYER.turnLoss * dt);
+    } else {
+      this.runT = 0;
+    }
+
     // Steer velocity toward the target at a fixed rate: quick to respond, but with a little weight.
     const boost = 1 + UPGRADES.speed * this.upgrades.speed;
-    const maxSpeed = (sprint ? PLAYER.sprintSpeed : PLAYER.runSpeed) * boost * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
+    const maxSpeed = this.bracketSpeed() * boost * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
     const tx = ix * maxSpeed;
     const ty = iy * maxSpeed * PLAYER.depthSpeed;
     const dx = tx - this.vx;
@@ -178,17 +189,24 @@ class Player {
 
     const speed = Math.hypot(this.vx, this.vy);
     this.stride += speed * dt;
-    this.dribbleT += dt * lerp(2, 3.2, Math.min(speed / PLAYER.sprintSpeed, 1));
+    this.dribbleT += dt * lerp(2, 3.2, Math.min(speed / PLAYER.topSpeed, 1));
     this.speed = speed;
     this.moving = speed > 10;
+  }
+
+  // Top speed for the current speed bracket.
+  bracketSpeed() {
+    let speed = 0;
+    for (const b of PLAYER.speedBrackets) if (this.runT >= b.after) speed = b.speed;
+    return speed;
   }
 
   // Which way the body is turned, from the direction of travel in 8 directions: side-on for left/right,
   // three-quarter views for diagonals (frontQ toward the camera, backQ away), and straight front/back for down/up.
   // Speeds are normalized so a diagonal key press reads as 45 degrees despite the faster depth movement.
   viewForVelocity() {
-    const nx = this.vx / PLAYER.runSpeed;
-    const ny = this.vy / (PLAYER.runSpeed * PLAYER.depthSpeed);
+    const nx = this.vx / PLAYER.topSpeed;
+    const ny = this.vy / (PLAYER.topSpeed * PLAYER.depthSpeed);
     if (Math.hypot(nx, ny) < VIEW_MIN_SPEED) return 'side';
     const angle = (Math.atan2(Math.abs(ny), Math.abs(nx)) * 180) / Math.PI;
     if (angle < 22.5) return 'side';
@@ -365,7 +383,7 @@ class Player {
 
     // Running arms swing from the shoulder like pendulums, in time with the stride, elbows bending more the
     // faster the player goes. The far arm swings with the near leg; a free near arm swings opposite it.
-    const runK = this.moving ? clamp(this.speed / PLAYER.runSpeed, 0, 1.25) : 0;
+    const runK = this.moving ? clamp(this.speed / ARM_FULL_SPEED, 0, 1.25) : 0;
     const swing = this.armSwingPhase() * ARM.swing * runK;
     const bend = ARM.bend * runK;
 
@@ -591,7 +609,7 @@ class Player {
     const dip = this.hasBall ? this.dribblePose().dip : 0;
     const liftL = frame === 0 ? 3 : 0;
     const liftR = frame === 2 ? 3 : 0;
-    const swing = Math.round(this.armSwingPhase() * 3 * clamp(this.speed / PLAYER.runSpeed, 0, 1.25));
+    const swing = Math.round(this.armSwingPhase() * 3 * clamp(this.speed / ARM_FULL_SPEED, 0, 1.25));
 
     const leg = (x, lift) => [
       [x, -22 + u, 6, 10 - u - lift, c.skin],

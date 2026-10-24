@@ -172,7 +172,7 @@ const Shooting = (() => {
     if (p === game.user || p.team === 0) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);
   }
 
-  // Dunk range grows with speed toward the hoop: a standing dunk needs to be under the rim, a full sprint
+  // Dunk range grows with speed toward the hoop: a standing dunk needs to be under the rim, a run at top speed
   // can take off from much farther out. Must be on the court side of the hoop.
   function dunkRange(p, hoop) {
     const dx = hoop.x - p.x;

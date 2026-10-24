@@ -15,8 +15,8 @@ function drawHud(ctx, game) {
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
   const hint = free
-    ? 'WASD MOVE  SHIFT SPRINT  HOLD SPACE SHOOT  E DUNK'
-    : 'WASD MOVE  SHIFT SPRINT  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
+    ? 'WASD MOVE  HOLD SPACE SHOOT  E DUNK'
+    : 'WASD MOVE  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 

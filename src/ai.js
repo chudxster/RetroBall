@@ -1,5 +1,5 @@
 // Computer players. Each tick every AI player fills in a control object, the same shape as the user's:
-// { move, sprint, shoot, dunk, pass, steal, jump, face }. Their memory lives on `p.mind`.
+// { move, shoot, dunk, pass, steal, jump, switch, face }. Their memory lives on `p.mind`.
 //
 // With the ball: drive at the rim when the lane is open, dunk in range, shoot when open (or when held too long),
 // pass out of pressure. Off the ball on offense: spread to spots around the arc, sometimes cutting to the rim.
@@ -18,7 +18,7 @@ const AIBrain = (() => {
   ];
 
   function blank() {
-    return { move: { x: 0, y: 0 }, sprint: false, shoot: false, dunk: false, pass: null, steal: false, jump: false, switch: false, face: 0 };
+    return { move: { x: 0, y: 0 }, shoot: false, dunk: false, pass: null, steal: false, jump: false, switch: false, face: 0 };
   }
 
   function think(dt, game, ctls, frozen) {
@@ -47,8 +47,8 @@ const AIBrain = (() => {
     p.mind.releaseAt = null;
     if (p.jump) return;
     if (ball.holder === p) withBall(dt, game, p, ctl);
-    else if (ball.pass && ball.pass.to === p) moveTo(ctl, p, ball.pass.target, false);
-    else if (!ball.held && !ball.pass && chasing(game, p)) moveTo(ctl, p, landing(ball), true);
+    else if (ball.pass && ball.pass.to === p) moveTo(ctl, p, ball.pass.target);
+    else if (!ball.held && !ball.pass && chasing(game, p)) moveTo(ctl, p, landing(ball));
     else if (game.possession === p.team) offBall(dt, game, p, ctl);
     else defend(dt, game, p, ctl);
   }
@@ -99,7 +99,7 @@ const AIBrain = (() => {
       }
       m.target = driveTarget(game, p, hoop);
     }
-    moveTo(ctl, p, m.target || p, d > 200);
+    moveTo(ctl, p, m.target || p);
   }
 
   // Straight at the rim if nobody is in the way, otherwise a sidestep to find a new angle.
@@ -148,7 +148,7 @@ const AIBrain = (() => {
       m.cutY = hoop.y + rand(-15, 15);
     }
     const target = m.cut ? { x: hoop.x + hoop.dir * 15, y: m.cutY } : spotPos(hoop, SPOTS[m.spot]);
-    moveTo(ctl, p, target, courtDist(p, target) > 80);
+    moveTo(ctl, p, target);
     const look = holder || game.ball;
     if (Math.abs(look.x - p.x) > 2) ctl.face = Math.sign(look.x - p.x);
   }
@@ -209,8 +209,7 @@ const AIBrain = (() => {
       }
     }
 
-    // On the ball, sprint to stay in front of a driver; off it, only to recover from far away.
-    moveTo(ctl, p, target, courtDist(p, target) > (onBall ? 6 : 40));
+    moveTo(ctl, p, target);
     if (Math.abs(man.x - p.x) > 2) ctl.face = Math.sign(man.x - p.x);
 
     if (onBall && !man.shot && p.stealCD <= 0 && courtDist(p, man) < DEFENSE.stealRange + 4 && Math.random() < aiValue(p, AI.stealRate) * dt) {
@@ -271,13 +270,12 @@ const AIBrain = (() => {
 
   // Control input that heads for `t`, easing off on arrival. Depth input is scaled down because the player's
   // depth speed is boosted (see PLAYER.depthSpeed).
-  function moveTo(ctl, p, t, sprint) {
+  function moveTo(ctl, p, t) {
     const dist = Math.hypot(t.x - p.x, t.y - p.y);
     if (dist < 3) return;
     const dir = toward(p, t);
     const k = Math.min(1, dist / 15);
     ctl.move = { x: dir.x * k, y: dir.y * k };
-    ctl.sprint = sprint && AI.sprint;
   }
 
   function toward(p, t) {

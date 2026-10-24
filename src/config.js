@@ -177,7 +177,7 @@ const DEFENSE = {
 // Upgrades for the user's own player, bought in the pause menu (free +/- for now). Effects per level:
 const UPGRADES = {
   max: 5,
-  speed: 0.04,         // +4% run and sprint speed
+  speed: 0.04,         // +4% speed
   threeGreen: 0.15,    // +15% green zone width on three-point shots
   dunkRange: 0.12,     // +12% dunk range
   hangChance: 0.02,    // +2% rim hang odds
@@ -192,7 +192,6 @@ const AI = {
   think: [0.5, 0.2],       // seconds between ball-handler decisions
   reaction: [0.45, 0.12],  // delay before jumping to contest a shot
   shotError: [0.14, 0.035], // spread of the release point around the middle of the green
-  sprint: false,           // AI players never sprint: they move at the user's normal run speed
   stealRate: [0.1, 0.5],   // steal attempts per second when in range of the ball handler
   stealChance: [0.15, 0.35],
   interceptChance: [0.1, 0.35],
@@ -218,9 +217,16 @@ const PROJ = {
   nearScale: 2,
 };
 
+// No sprint button: top speed goes up in brackets the longer a direction is held. Letting go drops back to the first
+// bracket; turning eats into the held time (a full reversal fastest).
 const PLAYER = {
-  runSpeed: 110,
-  sprintSpeed: 165,
+  speedBrackets: [
+    { after: 0, speed: 80 },
+    { after: 0.5, speed: 110 },
+    { after: 1, speed: 140 },
+  ],
+  topSpeed: 140,      // the last bracket's speed (animations scale to it)
+  turnLoss: 1.5,      // seconds of held time lost per second, times how sharp the turn is (0 straight .. 2 reversal)
   depthSpeed: 1.6,    // up/down speed multiplier; the court is foreshortened, so depth moves need a boost to feel right
   accel: 800,
   decel: 1000,

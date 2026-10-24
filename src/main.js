@@ -69,7 +69,7 @@ function update(dt) {
 
   for (const p of state.players) {
     const c = ctls.get(p);
-    p.update(dt, c.move, c.sprint);
+    p.update(dt, c.move);
     if (c.face && !p.airborne() && !p.sitting) p.facing = c.face;
   }
   for (const p of state.players) Shooting.update(dt, state, p, ctls.get(p));
@@ -113,7 +113,6 @@ function userControls(frozen) {
   const holder = state.ball.holder;
   const ctl = AIBrain.blank();
   ctl.move = frozen ? { x: 0, y: 0 } : Input.move();
-  ctl.sprint = !frozen && Input.sprint();
   ctl.shoot = !!keys.shoot;
   if (u.hasBall || u.shot) {
     ctl.dunk = !!keys.action;
@@ -185,7 +184,7 @@ function lineUp() {
     Object.assign(p, {
       x: at.x, y: at.y, prevX: at.x, prevY: at.y, z: 0, prevZ: 0, vx: 0, vy: 0,
       shot: null, jump: null, meter: null, hasBall: false, hangSway: 0, pose: null, sitting: false,
-      stunT: 0, reachT: 0, mind: {},
+      stunT: 0, reachT: 0, runT: 0, mind: {},
     });
     if (Math.abs(at.x - cx) > 1) p.facing = at.x < cx ? 1 : -1;
   }

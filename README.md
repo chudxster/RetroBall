@@ -10,8 +10,7 @@ Two modes, picked in the pause menu: **3v3** (full court, AI teammates and oppon
 
 | Key | With the ball | On defense |
 | --- | --- | --- |
-| WASD / arrows | Move | Move |
-| Shift | Sprint | Sprint |
+| WASD / arrows | Move: keep holding a direction to speed up (faster after 0.5s, fastest after 1s) | Move |
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball |

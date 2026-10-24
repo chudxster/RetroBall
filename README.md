@@ -19,7 +19,9 @@ every AI player gets the same number of levels as you, spread at random (the AI 
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball |
-| Esc / P | Pause menu: Player (customize), Upgrades, Mode, Test (dunk odds, AI level, crowd) | |
+| Esc / P | Pause menu: Player (customize), Upgrades, Mode, Controls (keybinds, dash double-tap timing), Test (dunk odds, AI level, crowd) | |
+
+All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 
 ## Embed on a website
 

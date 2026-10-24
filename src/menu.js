@@ -36,7 +36,7 @@ const OLD_UPGRADE_STORAGE_KEY = 'retroball.upgrades'; // the user's player's lev
 const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
 const NAME_MAX = 12;
 const MODE_STORAGE_KEY = 'retroball.mode';
-const MODES = ['3v3', 'free'];
+const MODES = ['3v3', 'free', 'world'];
 const RULES_STORAGE_KEY = 'retroball.rules';
 const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock };
 const UI_STORAGE_KEY = 'retroball.ui';
@@ -170,6 +170,7 @@ const Menu = (() => {
   // { stats }.
   let game = null;
   let syncUpgradeView = () => {};
+  let syncModeView = () => {};
   let preview = null;
   let look = null;  // player 1's look, which also carries the team kit
   let pick = 0;     // which home player (by role) the Player and Upgrades tabs show
@@ -446,17 +447,22 @@ const Menu = (() => {
         arrow.setAttribute('aria-expanded', String(!settings.hidden));
       });
     }
+    const worldBest = document.getElementById('world-best');
     const sync = () => {
       for (const o of options) o.setAttribute('aria-pressed', String(o.dataset.mode === game.mode()));
+      const best = Practice.best();
+      worldBest.textContent = best === null ? 'Best: none yet' : `Best: ${Practice.format(best)}`;
     };
+    // Picking the mode already being played does nothing, except Around the World, which starts over.
     for (const o of options) {
       o.addEventListener('click', () => {
-        if (o.dataset.mode === game.mode()) return;
+        if (o.dataset.mode === game.mode() && o.dataset.mode !== 'world') return;
         game.setMode(o.dataset.mode);
         saveMode(o.dataset.mode);
         sync();
       });
     }
+    syncModeView = sync; // the best time may have changed since the menu was last open
     sync();
   }
 
@@ -676,6 +682,7 @@ const Menu = (() => {
     button.setAttribute('aria-expanded', String(open));
     if (open) {
       lastFrame = 0;
+      syncModeView();
       requestAnimationFrame(drawPreview);
     } else {
       document.getElementById('game').focus();

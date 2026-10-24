@@ -6,8 +6,10 @@ A Retro Bowl-style 2.5D pixel-art basketball game. Plain HTML5 canvas and JavaSc
 
 Open `index.html` in a browser (double-clicking works), or serve the folder from any static host.
 
-Two modes, picked in the pause menu's Gamemode tab: **3v3 Casual** (full court, AI teammates and opponents, half-court
-defense) and **Free shot** (just you).
+**3v3 Casual** (full court, AI teammates and opponents, half-court defense) is in the pause menu's Gamemode tab. The
+Practice tab has **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across under
+the hoop, two from each elbow, three free throws, five threes around the arc), make each to move on, timed, with your
+best time saved.
 
 A 3v3 game is two 2.5-minute halves (teams switch ends at halftime), with 1-minute overtimes while tied and a
 14-second shot clock; the clock stops for dead balls (free throws, resets, halftime). Half length and the shot clock
@@ -61,6 +63,7 @@ The game scales itself to fit the frame in whole pixels. Players click the frame
 | `src/team.js` | Teams, rosters and team colors, which hoop each team attacks |
 | `src/ai.js` | Computer players: offense, defense, chasing loose balls |
 | `src/clock.js` | 3v3 game clock: halves, overtime, shot clock, final buzzer |
+| `src/practice.js` | Practice drills: Around the World |
 | `src/ref.js` | The referee: wanders the sideline, passes the ball in for free throws |
 | `src/play.js` | Passing, steals, blocks, contests, pickups and possession |
 | `src/shooting.js` | Shot meter, release grading, dunks |

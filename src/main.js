@@ -35,6 +35,7 @@ const state = {
   hitStop: 0, // seconds the action freezes for impact (dunk slams)
   freeThrow: null, // { shooter, pending } from a foul until the shot is away (pending: called, not lined up yet)
   clock: null,     // the 3v3 game and shot clocks (see clock.js)
+  drill: null,     // Around the World progress (see practice.js)
   replayReady: false, // after the final buzzer: the shoot key has been let go, so pressing it starts a new game
 };
 
@@ -45,8 +46,9 @@ function newGame(mode) {
   state.roster = makePlayers(state.look, state.team);
   const star = state.roster[0];
   rollAIUpgrades(state.roster, state.team);
-  state.players = mode === 'free' ? [star] : state.roster;
-  state.ref = mode === 'free' ? null : Ref.make();
+  const solo = mode !== '3v3'; // free shot and the practice drills: just the user's player
+  state.players = solo ? [star] : state.roster;
+  state.ref = solo ? null : Ref.make();
   state.user = star;
   state.score = [0, 0];
   state.stats = [newStats(), newStats()];
@@ -62,6 +64,8 @@ function newGame(mode) {
   state.replayReady = false;
   if (mode === '3v3') Clock.start(state);
   else state.clock = null;
+  state.drill = null;
+  if (mode === 'world') Practice.start(state);
 }
 
 function update(dt) {
@@ -87,6 +91,7 @@ function update(dt) {
   ctls.set(state.user, userControls(frozen));
   AIBrain.think(dt, state, ctls, frozen);
   if (state.freeThrow) freeThrowControls(ctls);
+  if (state.drill) Practice.controls(state, ctls);
 
   for (const p of state.players) {
     const c = ctls.get(p);
@@ -107,8 +112,10 @@ function update(dt) {
   handleBallEvents();
   Play.pickups(state);
   Clock.update(dt, state, frozen);
-  // The out-of-bounds count waits while anyone is dunking (or hanging on the rim).
-  if (!state.fade && !state.players.some((p) => p.shot && p.shot.dunk)) checkBallBehindHoop(dt);
+  Practice.update(dt, state);
+  // The out-of-bounds count waits while anyone is dunking (or hanging on the rim). The drill hands the ball back
+  // itself.
+  if (!state.fade && !state.drill && !state.players.some((p) => p.shot && p.shot.dunk)) checkBallBehindHoop(dt);
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);
@@ -303,6 +310,7 @@ function handleBallEvents() {
   const { ball } = state;
   for (const e of ball.events) {
     if (e.type === 'score') {
+      Practice.scored(state);
       const team = e.team || 0;
       const stats = state.stats[team];
       state.score[team] += e.points;

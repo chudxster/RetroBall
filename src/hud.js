@@ -4,9 +4,10 @@ const METER_W = 8;
 const TEXT_SCALE = 2; // the 3x5 font is drawn with 2px pixels at 640x360
 
 function drawHud(ctx, game) {
-  const free = game.mode === 'free';
+  const free = game.mode !== '3v3';
+  if (game.drill) drawDrill(ctx, game.drill);
   // The stats box in the top left can be turned off in the pause menu's UI tab.
-  if (game.ui.stats) {
+  else if (game.ui.stats) {
     const s = game.stats[0];
     const score = free ? `PTS ${s.pts}` : `HOME ${game.score[0]}  AWAY ${game.score[1]}`;
     const ft = !free && game.rules.freeThrows ? `  FT ${s.ftm}/${s.fta}` : '';
@@ -19,7 +20,9 @@ function drawHud(ctx, game) {
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
   const k = Input.keyLabel;
-  const hint = free
+  const hint = game.drill
+    ? `HOLD ${k('shoot')} TO SHOOT  -  MAKE IT TO MOVE ON`
+    : free
     ? `${Input.moveLabel()} MOVE  2X TAP DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK  ${k('pass')} GET BALL`
     : `${Input.moveLabel()} MOVE  2X TAP DASH  ${k('shoot')} SHOOT/BLOCK  ${k('action')} DUNK/STEAL  ${k('pass')} PASS/SWITCH`;
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
@@ -42,6 +45,21 @@ function drawClock(ctx, game) {
   ctx.fillStyle = COLORS.outline;
   ctx.fillRect(x, 4, wShot, 18);
   drawText(ctx, shot, x + wShot / 2, 8, c.shot <= GAME.shotWarn ? COLORS.bad : COLORS.okay, { align: 'center', scale: TEXT_SCALE });
+}
+
+// Around the World: spot count, time and best time top left; when it's done, the time (and whether it's a record)
+// in a banner with how to go again.
+function drawDrill(ctx, d) {
+  const best = d.best === null ? '--' : Practice.format(d.best);
+  const line = `AROUND THE WORLD  ${Math.min(d.i + 1, Practice.spots)}/${Practice.spots}  ${Practice.format(d.t)}  BEST ${best}`;
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
+  drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });
+  if (!d.done) return;
+  drawBanner(ctx, `DONE ${Practice.format(d.t)}`);
+  const y = VIEW_H / 2 + 34;
+  if (d.record) drawText(ctx, 'NEW RECORD!', VIEW_W / 2, y, COLORS.good, { align: 'center', scale: TEXT_SCALE, shadow: COLORS.outline });
+  drawText(ctx, `PRESS ${Input.keyLabel('shoot')} TO GO AGAIN`, VIEW_W / 2, y + 16, COLORS.okay, { align: 'center', scale: TEXT_SCALE, shadow: COLORS.outline });
 }
 
 // Big centered text on a dark band ("HALFTIME", "OVERTIME").

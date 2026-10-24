@@ -127,9 +127,11 @@ input {
   border-bottom: var(--px) solid #333c57;
 }
 
+/* Smaller than the menu text so all six fit on one row. */
 .tab {
   margin-bottom: calc(var(--px) * -1);
-  padding: calc(var(--px) * 2) calc(var(--px) * 3);
+  padding: calc(var(--px) * 2) calc(var(--px) * 2);
+  font-size: 0.8em;
   background: none;
   border: var(--px) solid transparent;
   color: #94b0c2;

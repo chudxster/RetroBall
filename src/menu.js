@@ -37,6 +37,8 @@ const MODE_STORAGE_KEY = 'retroball.mode';
 const MODES = ['3v3', 'free'];
 const RULES_STORAGE_KEY = 'retroball.rules';
 const DEFAULT_RULES = { freeThrows: true };
+const UI_STORAGE_KEY = 'retroball.ui';
+const DEFAULT_UI = { stats: true };
 
 // On/off settings saved as one object: anything saved that isn't a boolean falls back to `defaults`.
 function loadPrefs(key, defaults) {
@@ -144,8 +146,9 @@ const Menu = (() => {
   ];
   const POSE_SECONDS = 0.8;
 
-  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), rules, mode(),
-  // setMode(mode) }, where team is the user's team as loadTeam() returns it and rules is { freeThrows }.
+  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), rules, ui, mode(),
+  // setMode(mode) }, where team is the user's team as loadTeam() returns it, rules is { freeThrows } and ui is
+  // { stats }.
   let game = null;
   let syncUpgradeView = () => {};
   let preview = null;
@@ -200,6 +203,7 @@ const Menu = (() => {
     initUpgradeView();
     initModeView();
     initControlsView();
+    initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
     initTestView();
 
     button.addEventListener('click', () => setOpen(!open));

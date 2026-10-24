@@ -23,6 +23,7 @@
         <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
         <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Gamemode</button>
         <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
+        <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false">UI</button>
         <button type="button" class="tab" role="tab" data-panel="test-view" aria-selected="false">Test</button>
       </div>
 
@@ -151,6 +152,16 @@
         </div>
         <p class="test-note">Keybinds (click, then press a key)</p>
         <div class="keybinds" id="keybinds"></div>
+      </div>
+
+      <!-- On-screen display toggles. Saved between visits. -->
+      <div class="tab-panel stack-view" id="ui-view" role="tabpanel" hidden>
+        <p class="test-note">On screen</p>
+        <div class="row">
+          <span class="label">Stats</span>
+          <button type="button" class="key-btn" id="show-stats" aria-pressed="false" aria-label="Show stats"></button>
+          <span class="upgrade-effect">Score and shooting, top left</span>
+        </div>
       </div>
 
       <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->

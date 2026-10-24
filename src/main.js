@@ -19,6 +19,7 @@ const state = {
   look: loadLook(),  // the user's custom look; team colors come from it
   team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
   rules: loadPrefs(RULES_STORAGE_KEY, DEFAULT_RULES), // { freeThrows }
+  ui: loadPrefs(UI_STORAGE_KEY, DEFAULT_UI),          // { stats }: what the HUD shows
   roster: [],        // all six players, in either mode
   players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
   user: null,        // the player the user controls
@@ -402,6 +403,7 @@ Menu.init({
   team: state.team,
   upgradesChanged: () => rollAIUpgrades(state.roster, state.team),
   rules: state.rules,
+  ui: state.ui,
   mode: () => state.mode,
   setMode: newGame,
 });

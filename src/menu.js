@@ -29,32 +29,55 @@ function saveLook(look) {
   }
 }
 
-const UPGRADE_STORAGE_KEY = 'retroball.upgrades';
+const TEAM_STORAGE_KEY = 'retroball.team';
+const OLD_UPGRADE_STORAGE_KEY = 'retroball.upgrades'; // the user's player's levels, from before each player had their own
 const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
+const NAME_MAX = 12;
 const MODE_STORAGE_KEY = 'retroball.mode';
 const MODES = ['3v3', 'free'];
 
-// Saved upgrade levels, each a whole number from 0 to UPGRADES.max (anything else counts as 0).
-function loadUpgrades() {
-  let saved = {};
-  try {
-    saved = JSON.parse(localStorage.getItem(UPGRADE_STORAGE_KEY)) || {};
-  } catch (e) {
-    // Storage blocked or corrupt: start from nothing.
-  }
+// Upgrade levels, each a whole number from 0 to UPGRADES.max (anything else counts as 0).
+function cleanLevels(saved) {
   const levels = {};
   for (const key of UPGRADE_KEYS) {
-    const v = saved[key];
+    const v = saved && saved[key];
     levels[key] = Number.isInteger(v) && v >= 0 && v <= UPGRADES.max ? v : 0;
   }
   return levels;
 }
 
-function saveUpgrades(levels) {
+function cleanName(name) {
+  return String(name).replace(/\s+/g, ' ').trimStart().slice(0, NAME_MAX);
+}
+
+function defaultName(i) {
+  return `Player ${i + 1}`;
+}
+
+// The user's team: a name and upgrade levels for each home player (by role). Levels saved before players had
+// their own carry over to player 1.
+function loadTeam() {
+  let saved = null;
+  let old = null;
   try {
-    localStorage.setItem(UPGRADE_STORAGE_KEY, JSON.stringify(levels));
+    saved = JSON.parse(localStorage.getItem(TEAM_STORAGE_KEY));
+    old = JSON.parse(localStorage.getItem(OLD_UPGRADE_STORAGE_KEY));
   } catch (e) {
-    // Not fatal; the levels just won't persist.
+    // Storage blocked or corrupt: start from nothing.
+  }
+  if (!Array.isArray(saved)) saved = [{ upgrades: old }];
+  return ROSTER[0].map((_, i) => {
+    const s = saved[i] || {};
+    const name = typeof s.name === 'string' ? cleanName(s.name).trim() : '';
+    return { name: name || defaultName(i), upgrades: cleanLevels(s.upgrades) };
+  });
+}
+
+function saveTeam(team) {
+  try {
+    localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(team));
+  } catch (e) {
+    // Not fatal; names and levels just won't persist.
   }
 }
 
@@ -98,8 +121,10 @@ const Menu = (() => {
   ];
   const POSE_SECONDS = 0.8;
 
-  // What the menu edits, supplied by main.js: { look, setLook(look), upgrades, upgradesChanged(), mode(), setMode(mode) }.
+  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), mode(), setMode(mode) },
+  // where team is the user's team as loadTeam() returns it.
   let game = null;
+  let syncUpgradeView = () => {};
   let preview = null;
   let look = null;
   let open = false;
@@ -185,9 +210,14 @@ const Menu = (() => {
     show(tabs[0]);
   }
 
-  // Upgrades: +/- per stat, shown as pips with what the current level does.
+  // Upgrades: pick one of the user's team (< >, name editable in place), then +/- per stat for that player, shown
+  // as pips with what the current level does.
   function initUpgradeView() {
     const rows = [...panel.querySelectorAll('.upgrade')];
+    const nameInput = document.getElementById('player-name');
+    const numberTag = document.getElementById('player-num');
+    let pick = 0;
+    const picked = () => game.team[pick];
     const effects = {
       speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
       shooting: (n) => n >= UPGRADES.max
@@ -198,14 +228,16 @@ const Menu = (() => {
       dash: (n) => `+${Math.round(UPGRADES.dashDistance * n * 100)}% dash distance`,
     };
     const changed = () => {
-      saveUpgrades(game.upgrades);
+      saveTeam(game.team);
       game.upgradesChanged();
       sync();
     };
     const sync = () => {
+      if (document.activeElement !== nameInput) nameInput.value = picked().name;
+      numberTag.textContent = `#${pick === 0 ? look.number : ROSTER[0][pick].number}`;
       for (const row of rows) {
         const key = row.dataset.upgrade;
-        const n = game.upgrades[key];
+        const n = picked().upgrades[key];
         const pips = row.querySelector('.pips');
         pips.replaceChildren(...Array.from({ length: UPGRADES.max }, (_, i) => {
           const pip = document.createElement('span');
@@ -221,13 +253,30 @@ const Menu = (() => {
       for (const step of row.querySelectorAll('.step')) {
         step.addEventListener('click', () => {
           const key = row.dataset.upgrade;
-          game.upgrades[key] = clamp(game.upgrades[key] + Number(step.dataset.delta), 0, UPGRADES.max);
+          const levels = picked().upgrades;
+          levels[key] = clamp(levels[key] + Number(step.dataset.delta), 0, UPGRADES.max);
           changed();
         });
       }
     }
+    for (const step of panel.querySelectorAll('.step[data-pick]')) {
+      step.addEventListener('click', () => {
+        const n = game.team.length;
+        pick = (pick + Number(step.dataset.pick) + n) % n;
+        nameInput.blur();
+        sync();
+      });
+    }
+    nameInput.addEventListener('input', () => {
+      nameInput.value = cleanName(nameInput.value);
+      picked().name = nameInput.value.trim() || defaultName(pick);
+      saveTeam(game.team);
+    });
+    nameInput.addEventListener('change', sync);
+    syncUpgradeView = sync; // player 1's number follows the look
+    // Reset clears the picked player's levels; their name stays.
     document.getElementById('reset-upgrades').addEventListener('click', () => {
-      for (const key of UPGRADE_KEYS) game.upgrades[key] = 0;
+      for (const key of UPGRADE_KEYS) picked().upgrades[key] = 0;
       changed();
     });
     sync();
@@ -380,6 +429,7 @@ const Menu = (() => {
     preview.setLook(look);
     saveLook(look);
     syncControls();
+    syncUpgradeView();
   }
 
   function syncControls() {

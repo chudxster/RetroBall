@@ -175,6 +175,26 @@ input {
   color: #94b0c2;
 }
 
+/* Upgrades: which player's levels are shown, with their name editable in place */
+.player-pick {
+  margin-bottom: calc(var(--px) * 2);
+}
+
+.name {
+  box-sizing: border-box;
+  width: calc(var(--px) * 80);
+  height: calc(var(--px) * 10);
+  padding: 0 calc(var(--px) * 2);
+  background: #262b44;
+  border: var(--px) solid #94b0c2;
+}
+
+.player-num {
+  min-width: calc(var(--px) * 16);
+  color: #94b0c2;
+  text-align: center;
+}
+
 /* Keybinds: two columns of action + key button */
 .keybinds {
   display: grid;

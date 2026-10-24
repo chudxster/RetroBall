@@ -76,9 +76,15 @@
         </div>
       </div>
 
-      <!-- Upgrades for the user's own player. Free to set for now; saved between visits. -->
+      <!-- Upgrades and names for each player on the user's team. Free to set for now; saved between visits. -->
       <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
-        <p class="test-note">Free while testing. In 3v3 each AI player gets as many levels, at random.</p>
+        <p class="test-note">Free while testing. Each AI opponent gets as many levels as your player in the same spot, at random.</p>
+        <div class="row player-pick">
+          <button type="button" class="step" data-pick="-1" aria-label="Previous player">&lt;</button>
+          <input id="player-name" class="name" maxlength="12" spellcheck="false" autocomplete="off" aria-label="Player name">
+          <span class="player-num" id="player-num"></span>
+          <button type="button" class="step" data-pick="1" aria-label="Next player">&gt;</button>
+        </div>
         <div class="row upgrade" data-upgrade="speed">
           <span class="label">Speed</span>
           <button type="button" class="step" data-delta="-1" aria-label="Lower speed">-</button>

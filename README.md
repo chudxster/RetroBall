@@ -9,8 +9,9 @@ Open `index.html` in a browser (double-clicking works), or serve the folder from
 Two modes, picked in the pause menu: **3v3 Casual** (full court, AI teammates and opponents, half-court defense) and
 **Free shot** (just you).
 
-Upgrades (pause menu, free while testing) apply to your own player: speed, shooting, dunking, defense and dash. In 3v3
-every AI player gets the same number of levels as you, spread at random (the AI doesn't dash).
+Upgrades (pause menu, free while testing): each of the three players on your team has their own levels for speed,
+shooting, dunking, defense and dash, and their own name. In 3v3 each AI opponent gets as many levels as your player in
+the same spot, spread at random (the AI doesn't dash).
 
 | Key | With the ball | On defense |
 | --- | --- | --- |
@@ -48,5 +49,5 @@ The game scales itself to fit the frame in whole pixels. Players click the frame
 | `src/hoop.js` | Hoops, net, rim bend, shadows |
 | `src/court.js` | Arena, crowd and court drawing |
 | `src/camera.js` | Projection, zoom, tilt, panning |
-| `src/menu.js` | Pause menu tabs: customization, upgrades, game mode, test sliders |
+| `src/menu.js` | Pause menu tabs: customization, per-player upgrades and names, game mode, controls, test sliders |
 | `src/hud.js` | Score, meter, pop-up text |

@@ -59,10 +59,17 @@ function randomUpgrades(total) {
   return levels;
 }
 
-// Every computer player gets as many upgrade levels as the user has bought, at random.
-function rollAIUpgrades(players, mine) {
-  const total = Object.values(mine).reduce((a, b) => a + b, 0);
-  for (const p of players) if (p.upgrades !== mine) p.upgrades = randomUpgrades(total);
+// The user's team plays with the levels set for each of them; every opponent gets as many levels as the home
+// player in the same spot, at random.
+function rollAIUpgrades(players, team) {
+  for (const p of players) {
+    if (p.team === 0) {
+      p.upgrades = team[p.role].upgrades;
+      continue;
+    }
+    const total = Object.values(team[p.role].upgrades).reduce((a, b) => a + b, 0);
+    p.upgrades = randomUpgrades(total);
+  }
 }
 
 // Re-dress everyone after the user changes their look (team colors follow the user's kit).

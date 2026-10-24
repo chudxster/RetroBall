@@ -17,7 +17,7 @@ const state = {
   time: 0,
   mode: loadMode(),  // '3v3' or 'free' (free shot: just the user, no AI)
   look: loadLook(),  // the user's custom look; team colors come from it
-  upgrades: loadUpgrades(),
+  team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
   roster: [],        // all six players, in either mode
   players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
   user: null,        // the player the user controls
@@ -37,8 +37,7 @@ function newGame(mode) {
   state.mode = mode;
   state.roster = makePlayers(state.look);
   const star = state.roster[0];
-  star.upgrades = state.upgrades;
-  rollAIUpgrades(state.roster, state.upgrades);
+  rollAIUpgrades(state.roster, state.team);
   state.players = mode === 'free' ? [star] : state.roster;
   state.user = star;
   state.score = [0, 0];
@@ -347,8 +346,8 @@ Menu.init({
     state.look = look;
     setTeamLooks(state.roster, look);
   },
-  upgrades: state.upgrades,
-  upgradesChanged: () => rollAIUpgrades(state.roster, state.upgrades),
+  team: state.team,
+  upgradesChanged: () => rollAIUpgrades(state.roster, state.team),
   mode: () => state.mode,
   setMode: newGame,
 });

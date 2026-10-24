@@ -4,7 +4,8 @@ const Shooting = (() => {
   let wasHeld = false;
   let wasDunkHeld = false;
 
-  function update(dt, game, held, dunkHeld) {
+  // `move` is the movement input, used to spot a fadeaway when the shot starts.
+  function update(dt, game, held, dunkHeld, move) {
     const p = game.player;
     const pressed = held && !wasHeld;
     const dunkPressed = dunkHeld && !wasDunkHeld;
@@ -15,13 +16,21 @@ const Shooting = (() => {
       // Knocked down by a shattered rim: nothing to do until the reset.
     } else if (!p.shot) {
       if (dunkPressed && p.hasBall) tryDunk(game);
-      else if (pressed && p.hasBall) start(game);
+      else if (pressed && p.hasBall) start(game, move);
     } else if (p.shot.dunk) {
       updateDunk(dt, game, dunkPressed);
     } else {
       const shot = p.shot;
       shot.t += dt;
-      p.z = SHOT.jumpHeight * Math.sin(Math.PI * Math.min(shot.t / shot.jumpTime, 1));
+      const k = Math.min(shot.t / shot.jumpTime, 1);
+      p.z = SHOT.jumpHeight * Math.sin(Math.PI * k);
+      if (shot.fade) {
+        // Drift back fast off the floor, slowing toward the landing.
+        const back = SHOT.fadeDist * Math.sin((k * Math.PI) / 2);
+        const m = PLAYER.boundsMargin;
+        p.x = clamp(shot.fade.x + shot.fade.dx * back, -m, COURT.length + m);
+        p.y = clamp(shot.fade.y + shot.fade.dy * back, -m, COURT.width + m);
+      }
       if (!shot.released) {
         shot.fill = Math.min(shot.t / shot.meterTime, 1);
         game.meter.fill = shot.fill;
@@ -40,11 +49,12 @@ const Shooting = (() => {
     }
   }
 
-  function start(game) {
+  function start(game, move) {
     const p = game.player;
     const hoop = nearestHoop(p.x);
     const dist = Math.hypot(hoop.x - p.x, hoop.y - p.y);
     if (Math.abs(hoop.x - p.x) > 1) p.facing = Math.sign(hoop.x - p.x);
+    const fade = fadeDirection(p, hoop, dist, move);
 
     // Closer shots are quicker: the meter (and the jump with it) speeds up near the rim.
     const t = clamp((dist - SHOT.quickRange.near) / (SHOT.quickRange.far - SHOT.quickRange.near), 0, 1);
@@ -53,10 +63,26 @@ const Shooting = (() => {
     // The green zone shrinks the farther out the shot is, and is much wider right at the rim.
     const { near, far } = SHOT.closeRangeGreen;
     const closeness = 1 - clamp((dist - near) / (far - near), 0, 1);
-    const green = clamp(SHOT.greenMax - dist * SHOT.greenShrink, SHOT.greenMin, SHOT.greenMax) + SHOT.greenCloseBonus * closeness;
+    const baseGreen = clamp(SHOT.greenMax - dist * SHOT.greenShrink, SHOT.greenMin, SHOT.greenMax) + SHOT.greenCloseBonus * closeness;
+    const green = fade ? baseGreen * SHOT.fadeGreen : baseGreen;
     // Keep a wide green fully on the meter (with a sliver of "late" above it).
     const center = Math.min(SHOT.greenCenter, 0.97 - green / 2);
-    p.shot = { t: 0, fill: 0, released: false, hoop, meterTime, jumpTime: meterTime * SHOT.jumpPerMeter };
+    p.shot = {
+      t: 0,
+      fill: 0,
+      released: false,
+      hoop,
+      meterTime,
+      jumpTime: meterTime * SHOT.jumpPerMeter,
+      fade,
+      // Multiplier on how much a defender's contest affects the shot (defenders will read this).
+      contest: fade ? SHOT.fadeContest : 1,
+    };
+    if (fade) {
+      // The fade replaces any running momentum.
+      p.vx = 0;
+      p.vy = 0;
+    }
     game.meter = {
       fill: 0,
       lo: center - green / 2,
@@ -64,6 +90,19 @@ const Shooting = (() => {
       result: null,
       hideIn: 0,
     };
+  }
+
+  // Holding away from the hoop (within ~60 degrees of straight back) makes it a fadeaway: returns the takeoff spot and
+  // the unit direction to drift in (the way the stick points), or null for a normal jump shot.
+  function fadeDirection(p, hoop, dist, move) {
+    // Same depth boost as running, so the drift goes the way the player would have moved.
+    const mx = move.x;
+    const my = move.y * PLAYER.depthSpeed;
+    const len = Math.hypot(mx, my);
+    if (len < 0.5 || dist < 0.01) return null;
+    const dot = (mx * (hoop.x - p.x) + my * (hoop.y - p.y)) / (len * dist);
+    if (dot > SHOT.fadeAway) return null;
+    return { x: p.x, y: p.y, dx: mx / len, dy: my / len };
   }
 
   // Release timing decides make or miss; the aim below then sends the ball where physics will play that out.

@@ -35,8 +35,9 @@ function update(dt) {
 
   // Hold still while the camera pans back to center or the screen fades for a reset.
   const frozen = camera.pan || state.fade;
-  p.update(dt, frozen ? { x: 0, y: 0 } : Input.move(), Input.sprint());
-  Shooting.update(dt, state, !frozen && Input.shoot(), !frozen && Input.dunk());
+  const move = frozen ? { x: 0, y: 0 } : Input.move();
+  p.update(dt, move, Input.sprint());
+  Shooting.update(dt, state, !frozen && Input.shoot(), !frozen && Input.dunk(), move);
   ball.update(dt);
   handleBallEvents();
   tryPickup();

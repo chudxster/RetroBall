@@ -216,7 +216,7 @@ class Player {
   shootingBallPosition() {
     const s = scaleAtY(this.y) / spriteScale(this.y); // sprite pixels per world unit at this depth
     return {
-      x: this.x + (this.facing * (SHOOT_BALL_X + BALL_SIZE / 2)) / s,
+      x: this.x + (this.facing * (SHOOT_BALL_X - this.leanBack() + BALL_SIZE / 2)) / s,
       y: this.y,
       z: this.z + -(SHOOT_BALL_TOP + BALL_SIZE) / s,
     };
@@ -250,7 +250,22 @@ class Player {
   // Sprite as a list of [dx, dy, w, h, color] rects, relative to the feet, drawn facing right. Later rects cover earlier ones.
   bodyParts() {
     if (this.pose === 'sit') return this.sittingParts();
-    return this.isFrontal() ? this.frontalParts() : this.profileParts();
+    const parts = this.isFrontal() ? this.frontalParts() : this.profileParts();
+    return this.leanBack() ? this.leanParts(parts) : parts;
+  }
+
+  // Fadeaway lean in px (backwards, away from the facing direction): the head and raised arms go furthest.
+  leanBack() {
+    return this.shot && this.shot.fade ? SHOT.fadeLean : 0;
+  }
+
+  // Shift everything above the waist back, more at the shoulders and above, so the body tilts away from the hoop.
+  leanParts(parts) {
+    const lean = this.leanBack();
+    return parts.map(([x, y, ...rest]) => {
+      const dx = y < -52 ? lean : y < -34 ? lean - 1 : 0;
+      return [x - dx, y, ...rest];
+    });
   }
 
   // The head, hair and face for any view. `hairView` picks the hair variant; `face` rects (relative to the
@@ -634,7 +649,7 @@ class Player {
   }
 
   ballParts() {
-    if (this.shot) return ballSprite(SHOOT_BALL_X, SHOOT_BALL_TOP, 0);
+    if (this.shot) return ballSprite(SHOOT_BALL_X - this.leanBack(), SHOOT_BALL_TOP, 0);
     return ballSprite(this.dribbleBallX(), this.dribblePose().ballTop, (this.dribbleT % 1) * (BALL_SIZE - 2));
   }
 }

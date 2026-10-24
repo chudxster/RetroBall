@@ -10,7 +10,7 @@ Open `index.html` in a browser (double-clicking works), or serve the folder from
 | --- | --- |
 | WASD / arrows | Move |
 | Shift | Sprint |
-| Hold Space | Jump shot: release in the green zone on the meter |
+| Hold Space | Jump shot: release in the green zone on the meter. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) |
 | F | Dunk (range grows with your speed toward the rim) |
 | Esc / P | Pause menu: customize your player, plus a test panel for dunk odds |
 

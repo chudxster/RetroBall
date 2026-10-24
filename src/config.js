@@ -84,6 +84,12 @@ const SHOT = {
   baseTime: 0.5,      // ball flight time = baseTime + distance / flightSpeed
   flightSpeed: 400,
   meterLinger: 0.9,   // seconds the meter stays up after release
+  // Fadeaway: shooting while holding away from the hoop jumps backwards. Harder to time, harder to contest.
+  fadeAway: -0.5,     // counts as "away" when the move direction is within ~60 degrees of straight back (dot product)
+  fadeDist: 22,       // world units drifted back over the jump
+  fadeGreen: 0.6,     // green zone width multiplier
+  fadeContest: 0.5,   // how much a defender's contest counts against a fadeaway (for when defenders arrive)
+  fadeLean: 3,        // px the upper body leans back
 };
 
 // Dunk key: works from baseRange standing still, plus rangePerSpeed per unit/s of speed toward the hoop.

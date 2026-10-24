@@ -108,6 +108,8 @@ class Ball {
     if (this.z < 0) {
       this.z = 0;
       if (this.vz < 0) {
+        const fall = -this.vz;
+        if (fall > SOUND.bounceMin) Sfx.play('dribble', { x: this.x, vol: fall / SOUND.bounceFull });
         if (this.shot && !this.touched) this.events.push({ type: 'airball', x: this.x, y: this.y });
         this.shot = null;
         this.pass = null; // a pass that hits the floor is just a loose ball
@@ -157,6 +159,7 @@ class Ball {
     this.z = HOOP.rimZ + nz * R - R;
     const vn = this.vx * nx + this.vy * ny + this.vz * nz;
     if (vn < 0) {
+      Sfx.play('rim', { x: this.x, vol: -vn / SOUND.hitFull });
       const k = (1 + BALL.rimBounce) * vn;
       this.vx -= k * nx;
       this.vy -= k * ny;
@@ -173,6 +176,7 @@ class Ball {
     const inFront = (this.x - hoop.boardX) * hoop.dir; // distance from the board's face toward the court
     if (inFront < R && inFront > -R && this.vx * hoop.dir < 0) {
       this.x = hoop.boardX + hoop.dir * R;
+      Sfx.play('board', { x: this.x, vol: Math.abs(this.vx) / SOUND.hitFull });
       this.vx = -this.vx * BALL.boardBounce;
       this.touched = true;
     }

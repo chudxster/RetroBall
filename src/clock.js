@@ -97,6 +97,7 @@ const Clock = (() => {
   // Out of time to shoot: the other team gets the ball, checked up from their own half.
   function violation(game) {
     const offense = game.clock.shotTeam;
+    Sfx.play('whistle');
     restartPlay(1 - offense);
     const h = game.ball.holder;
     addPopup(game, 'SHOT CLOCK', COLORS.bad, h.x, h.y, RESET.outTextZ, RESET.outTextTime);
@@ -104,6 +105,7 @@ const Clock = (() => {
 
   function endPeriod(game) {
     const c = game.clock;
+    Sfx.play('buzzer');
     c.t = 0;
     c.buzzer = false;
     game.freeThrow = null;

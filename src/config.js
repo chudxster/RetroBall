@@ -187,6 +187,14 @@ const DUO = {
   markers: ['#ffcd75', '#41a6f6'], // player 1's and player 2's arrow and text colors
 };
 
+// Sound (sfx.js): a sound at panRange world units from the camera's center plays fully to that side (panMax: 1 =
+// only that speaker); the demo behind the main menu plays at demoVolume. Ball bounces louder than bounceFull
+// (falling speed) play at full volume; quieter ones under bounceMin aren't heard. Rim and board hits scale the same
+// way with hitFull. A dribble plays at `dribble`.
+const SOUND = {
+  panRange: 260, panMax: 0.7, demoVolume: 0.35, dribble: 0.45, bounceMin: 25, bounceFull: 220, hitFull: 200,
+};
+
 // Main menu (title.js): behind it the AI plays itself in a demo game of demoHalfMinutes halves, starting a new one
 // demoRestart seconds after the final buzzer, with the court dimmed by `dim`.
 const TITLE = { demoHalfMinutes: 1, demoRestart: 4, dim: 0.55 };

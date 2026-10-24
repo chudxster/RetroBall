@@ -89,8 +89,8 @@ function el(tag, className, text = '') {
   return e;
 }
 
-// An ON/OFF button for `prefs[key]`, saved under `storageKey` whenever it flips.
-function initToggle(button, prefs, key, storageKey) {
+// An ON/OFF button for `prefs[key]`, saved under `storageKey` whenever it flips (then `changed` runs).
+function initToggle(button, prefs, key, storageKey, changed = () => {}) {
   const sync = () => {
     button.textContent = prefs[key] ? 'ON' : 'OFF';
     button.setAttribute('aria-pressed', String(prefs[key]));
@@ -98,6 +98,7 @@ function initToggle(button, prefs, key, storageKey) {
   button.addEventListener('click', () => {
     prefs[key] = !prefs[key];
     saveStored(storageKey, prefs);
+    changed();
     sync();
   });
   sync();
@@ -232,6 +233,7 @@ const Menu = (() => {
     initUpgradeView();
     initControlsView();
     initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
+    initSoundView();
     initTuningView();
     initTestView();
     initFoot();
@@ -637,6 +639,24 @@ const Menu = (() => {
     preview.draw(pctx);
 
     requestAnimationFrame(drawPreview);
+  }
+
+  // Sound (UI tab): on/off and the volume (Sfx saves them and applies them right away).
+  function initSoundView() {
+    initToggle(document.getElementById('sound-on'), Sfx.prefs, 'on', SOUND_STORAGE_KEY, Sfx.save);
+    const slider = document.getElementById('sound-volume');
+    const value = document.getElementById('sound-volume-value');
+    const sync = () => {
+      slider.value = Math.round(Sfx.prefs.volume * 100);
+      value.textContent = `${slider.value}%`;
+    };
+    slider.addEventListener('input', () => {
+      Sfx.prefs.volume = Number(slider.value) / 100;
+      Sfx.save();
+      sync();
+    });
+    slider.addEventListener('change', () => Sfx.play('swish')); // a sample at the new volume
+    sync();
   }
 
   // Footer: in a game, Main menu (in a career game that isn't over, after an "are you sure": it won't count) and

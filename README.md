@@ -47,6 +47,12 @@ Reaching for a steal can be called a foul, more likely the closer you are to the
 seconds. With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of
 the scorer's table, following the play.
 
+**Sound**: every sound is made by the game itself with Web Audio (no sound files, nothing to license): dribbles
+and bounces, rim clanks, backboard thuds, swishes, passes, dashes, steals, blocks, dunks, a shattering rim, the ref's
+whistle, the period horn, airballs, the crowd's roar and menu clicks, panned toward where they happen. The demo
+behind the main menu plays quieter. Sound on/off and volume are in the pause menu's UI tab. Browsers only allow
+sound after a click or key press, so it starts with the first one.
+
 The home crowd mostly sits on its hands, but jumps up for big plays: steals, blocks, baskets, threes and dunks, a
 rim-hanging or rim-shattering dunk loudest of all (the other team's plays get half the cheer). After a basket some
 fans may wave signs with the scorer's number.
@@ -96,6 +102,7 @@ give it keyboard focus.
 | `src/clock.js` | 3v3 game clock: halves, overtime, shot clock, final buzzer |
 | `src/practice.js` | Practice drills: Around the World |
 | `src/title.js` | The main menu and its screens: career (challenges, upgrades, standings), quick game, 2 Player, practice |
+| `src/sfx.js` | Sound effects, generated with Web Audio (no files) |
 | `src/career.js` | Career mode: league, schedule, standings, playoffs, challenges, tokens and bought upgrades |
 | `src/duo.js` | 2 Player mode: formats, the split-screen upgrade draft, run it back |
 | `src/ref.js` | The referee: wanders the sideline, passes the ball in for free throws |

@@ -26,6 +26,7 @@ const Play = (() => {
       ty = to.y + to.vy * time * PASS.lead;
     }
     ball.launch(sx, sy, PASS.fromZ, { x: tx, y: ty, z: PASS.toZ }, time, null);
+    Sfx.play('pass', { x: sx });
     ball.thrower = from;
     ball.lastTeam = from.team;
     ball.pass = { to, team: from.team, target: { x: tx, y: ty }, rolls: new Map() };
@@ -90,6 +91,7 @@ const Play = (() => {
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
+      Sfx.play('steal', { x: p.x });
       game.stats[p.team].stl++;
       cheerCrowd(CROWD.hype.steal, p);
     } else {
@@ -109,6 +111,7 @@ const Play = (() => {
   function foul(game, p, h) {
     p.stunT = FOUL.stun;
     addPopup(game, 'FOUL!', COLORS.bad, p.x, p.y, 56);
+    Sfx.play('whistle', { x: p.x });
     if (!game.rules.freeThrows) return;
     game.freeThrow = { shooter: h, pending: true, waitT: FOUL.callTime };
     const { ball } = game;
@@ -189,6 +192,7 @@ const Play = (() => {
       game.ball.thrower = shooter;
       game.ball.lastTeam = d.team;
       addPopup(game, 'BLOCKED!', COLORS.bad, d.x, d.y, 60);
+      Sfx.play('block', { x: d.x });
       game.stats[d.team].blk++;
       cheerCrowd(CROWD.hype.block, d);
       return true;
@@ -222,6 +226,7 @@ const Play = (() => {
     if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
     startJump(d);
     addPopup(game, 'STUFFED!', COLORS.bad, d.x, d.y, 60);
+    Sfx.play('block', { x: d.x });
     cheerCrowd(CROWD.hype.stuff, d);
     return true;
   }
@@ -313,7 +318,10 @@ const Play = (() => {
     if (!best) return;
     const picked = ball.pass && best.team !== ball.pass.team;
     give(game, best);
-    if (picked) addPopup(game, 'PICKED OFF!', COLORS.okay, best.x, best.y, 56);
+    if (picked) {
+      addPopup(game, 'PICKED OFF!', COLORS.okay, best.x, best.y, 56);
+      Sfx.play('steal', { x: best.x });
+    }
   }
 
   // Players closer than DEFENSE.separation push each other apart (anyone mid-shot or dunk holds their ground).

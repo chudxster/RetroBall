@@ -102,7 +102,10 @@ const Title = (() => {
         best = b;
       }
     }
-    if (best) best.focus();
+    if (best) {
+      best.focus();
+      Sfx.play('tick');
+    }
   }
 
   function show(next = 'home', { focus = true } = {}) {

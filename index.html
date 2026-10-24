@@ -186,13 +186,23 @@
         <div class="keybinds keybinds-duo" id="keybinds-duo"></div>
       </div>
 
-      <!-- On-screen display toggles. Saved between visits. -->
+      <!-- On-screen display and sound. Saved between visits. -->
       <div class="tab-panel stack-view" id="ui-view" role="tabpanel" hidden>
         <p class="test-note">On screen</p>
         <div class="row">
           <span class="label">Stats</span>
           <button type="button" class="key-btn" id="show-stats" aria-pressed="false" aria-label="Show stats"></button>
           <span class="upgrade-effect">Score and shooting, top left</span>
+        </div>
+        <p class="test-note">Sound</p>
+        <div class="row">
+          <span class="label">Sound</span>
+          <button type="button" class="key-btn" id="sound-on" aria-pressed="false" aria-label="Sound"></button>
+        </div>
+        <div class="row">
+          <label for="sound-volume">Volume</label>
+          <input type="range" id="sound-volume" min="0" max="100" step="5">
+          <span class="value pct" id="sound-volume-value"></span>
         </div>
       </div>
 
@@ -336,6 +346,7 @@
   <script src="src/practice.js"></script>
   <script src="src/tuning.js"></script>
   <script src="src/menu.js"></script>
+  <script src="src/sfx.js"></script>
   <script src="src/career.js"></script>
   <script src="src/duo.js"></script>
   <script src="src/title.js"></script>

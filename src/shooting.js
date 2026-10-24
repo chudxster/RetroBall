@@ -187,6 +187,7 @@ const Shooting = (() => {
     };
 
     ball.launch(from.x, from.y, from.z, target, SHOT.baseTime + dist / SHOT.flightSpeed, { hoop, points, dist, team: p.team, ft });
+    Sfx.play('shot', { x: from.x });
     ball.thrower = p;
     ball.lastTeam = p.team;
     // The release grade shows for the home team, and for a 2 Player opponent's own shots.
@@ -359,6 +360,7 @@ const Shooting = (() => {
     p.hasBall = false;
     game.stats[p.team].fga++;
     hoop.bendV += DUNK.slamKick;
+    Sfx.play('dunk', { x: hoop.x });
     game.hitStop = DUNK.hitStop;
   }
 
@@ -369,6 +371,7 @@ const Shooting = (() => {
     spawnRimDebris(game, hoop);
     camera.shake = DUNK.shatterShake;
     addPopup(game, 'RIM SHATTERED!', COLORS.bad, hoop.x, hoop.y, HOOP.rimZ + 30);
+    Sfx.play('shatter', { x: hoop.x });
   }
 
   return { update, dunkRange };

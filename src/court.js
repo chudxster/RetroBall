@@ -18,6 +18,7 @@ function cheerCrowd(level, player, { sign = false, rare = false } = {}) {
   if (player && player.team !== 0) level *= CROWD.awayHype;
   if (level < crowdLevel()) return;
   crowdHype.peak = level;
+  Sfx.play('crowd', { vol: level });
   crowdHype.time = crowdHype.t = CROWD.hypeTime * (rare ? 2 : 1);
   crowdHype.sign = player && (rare || (sign && Math.random() < CROWD.signChance))
     ? { number: player.look.number, color: player.look.jersey } : null;

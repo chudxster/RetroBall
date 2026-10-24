@@ -206,7 +206,10 @@ class Player {
 
     const speed = Math.hypot(this.vx, this.vy);
     this.stride += speed * dt;
+    const beat = Math.floor(this.dribbleT);
     this.dribbleT += dt * lerp(2, 3.2, Math.min(speed / PLAYER.topSpeed, 1));
+    // The ball hits the floor once per dribble.
+    if (this.hasBall && !this.shot && Math.floor(this.dribbleT) !== beat) Sfx.play('dribble', { x: this.x, vol: SOUND.dribble });
     this.speed = speed;
     this.moving = speed > 10;
   }
@@ -220,6 +223,7 @@ class Player {
     this.dashSpeed = DASH.speed * (1 + UPGRADES.dashDistance * this.upgrades.dash);
     this.dashDir = { x: dir.x / len, y: dir.y / len };
     this.dashCD = DASH.cooldown;
+    Sfx.play('dash', { x: this.x });
   }
 
   // Top speed for the current speed bracket.

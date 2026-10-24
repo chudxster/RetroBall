@@ -58,6 +58,7 @@ function newGame(mode, runBack = false) {
   endsSwapped = false;
   const duo = mode === 'duo';
   Input.setTwoPlayer(duo);
+  Sfx.setQuiet(mode === 'demo' ? SOUND.demoVolume : 1);
   // A career game: the opponent's kit (unless it's too close to the home jersey), AI level and upgrades, and the
   // career team's own levels.
   const career = mode === 'career' ? Career.setup() : null;
@@ -384,6 +385,7 @@ function handleBallEvents() {
       const cheer = e.dunk ? (e.rare ? hype.rareDunk : hype.dunk) : e.ft ? hype.freeThrow : e.points === 3 ? hype.three : hype.score;
       cheerCrowd(cheer, e.shooter, { sign: !e.ft, rare: e.rare });
       addPopup(state, `+${e.points}`, team === 0 ? COLORS.okay : COLORS.hint, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
+      if (!e.dunk) Sfx.play(e.swish ? 'swish' : 'net', { x: e.hoop.x });
       if (e.dunk) {
         addPopup(state, 'DUNK!', COLORS.bad, e.hoop.x, e.hoop.y, HOOP.rimZ + 26);
         camera.shake = DUNK.shake;
@@ -397,6 +399,7 @@ function handleBallEvents() {
       }
     } else if (e.type === 'airball') {
       addPopup(state, 'AIRBALL', COLORS.bad, e.x, e.y, 20);
+      Sfx.play('airball', { x: e.x });
     }
   }
   ball.events.length = 0;

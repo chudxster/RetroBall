@@ -14,6 +14,8 @@ const SHOOT_BALL_X = 4;   // ball held overhead while rising for a shot: left ed
 const SHOOT_BALL_TOP = -80; // ...and top
 const FRONTAL_BALL_X = 8; // ball's left edge in the front/back views, under the dribbling hand
 const VIEW_MIN_SPEED = 0.2; // below this fraction of run speed the player settles back to the side view
+// Shorts over legs stuck straight out (falling from a shattered rim, or sitting): [thigh cover], [hem across the legs].
+const LEGS_OUT_SHORTS = [[[10, -30, 4, 11]], [[14, -28, 2, 9]]];
 
 // Hair as [hx, hy, w, h] rects relative to the head's top-left: side view (facing right), from the front and
 // from behind, plus a few lighter strands for shine.
@@ -367,11 +369,11 @@ class Player {
     // Kicked-out legs from a rim-shattering slam: angled halfway, or straight out at hip height, soles forward.
     const kicked = (dy, skin) => this.pose === 'legsUp'
       ? [
-          [2, -24 + dy, 18, 6, skin],
-          [20, -24 + dy, 4, 6, COLORS.sock],
-          [21, -24 + dy, 1, 6, c.jersey],
-          [24, -26 + dy, 6, 9, c.shoe],
-          [30, -26 + dy, 2, 9, c.sole],
+          [2, -24 + dy, 22, 6, skin],
+          [24, -24 + dy, 4, 6, COLORS.sock],
+          [25, -24 + dy, 1, 6, c.jersey],
+          [28, -26 + dy, 6, 9, c.shoe],
+          [34, -26 + dy, 2, 9, c.sole],
         ]
       : [
           [0, -22 + dy, 6, 5, skin],
@@ -392,12 +394,17 @@ class Player {
       // Far arm goes behind the body. The back arm swings opposite the legs.
       ...(backNear ? frontArm : backArm),
 
-      // Shorts: darker back, waistband, side stripe and hem.
-      [-10, -32 + u, 20, 12, c.shorts],
-      [-10, -32 + u, 4, 12, c.shortsDark],
-      [-10, -32 + u, 20, 2, c.shortsDark],
-      [3, -30 + u, 1, 8, c.shortsTrim],
-      [-10, -22 + u, 20, 2, c.shortsTrim],
+      // Shorts: darker back, waistband, side stripe and hem. With the legs kicked out they curve forward over the
+      // thighs instead (see kickedShorts).
+      ...(legsKicked
+        ? this.kickedShorts()
+        : [
+            [-10, -32 + u, 20, 12, c.shorts],
+            [-10, -32 + u, 4, 12, c.shortsDark],
+            [-10, -32 + u, 20, 2, c.shortsDark],
+            [3, -30 + u, 1, 8, c.shortsTrim],
+            [-10, -22 + u, 20, 2, c.shortsTrim],
+          ]),
 
       // Jersey: darker back, lit front edge, V-neck collar, hem and number.
       [-10, -52 + u, 20, 20, c.jersey],
@@ -420,17 +427,40 @@ class Player {
     ];
   }
 
+  // Shorts that follow kicked-out legs: a rounded seat at the back, and the front wrapping down and forward over
+  // the thighs, ending in a hem across the legs. `dy` lowers the whole thing (the sitting pose).
+  curvedShorts(top, thighs, hem, dy = 0) {
+    const c = this.colors;
+    const at = ([x, y, w, h], color) => [x, y + dy, w, h, color];
+    return [
+      at([-10, top, 20, 10], c.shorts),
+      at([-8, top + 10, 18, 2], c.shorts),
+      ...thighs.map((r) => at(r, c.shorts)),
+      at([-10, top, 4, 10], c.shortsDark),
+      at([-10, top, 20, 2], c.shortsDark),
+      at([3, top + 2, 1, 8], c.shortsTrim),
+      ...hem.map((r) => at(r, c.shortsTrim)),
+    ];
+  }
+
+  kickedShorts() {
+    // Legs straight out at hip height: the shorts reach forward along the thighs.
+    if (this.pose === 'legsUp') return this.curvedShorts(-32, ...LEGS_OUT_SHORTS);
+    // Legs angled down and forward: the shorts follow them partway down.
+    return this.curvedShorts(-32, [[4, -24, 8, 6], [8, -20, 5, 3]], [[10, -18, 4, 2], [12, -20, 2, 2]]);
+  }
+
   // Knocked onto the floor by a shattered rim: sitting with legs out in front (toes up), one arm propped
   // behind and the other resting on a knee. The upper body is the standing one lowered by `d`.
   sittingParts() {
     const c = this.colors;
     const d = 18;
     const leg = (x, dy, skin) => [
-      [x, -8 + dy, 18, 6, skin],
-      [x + 18, -8 + dy, 4, 6, COLORS.sock],
-      [x + 19, -8 + dy, 1, 6, c.jersey],
-      [x + 22, -12 + dy, 6, 10, c.shoe],
-      [x + 28, -12 + dy, 2, 10, c.sole],
+      [x, -8 + dy, 22, 6, skin],
+      [x + 22, -8 + dy, 4, 6, COLORS.sock],
+      [x + 23, -8 + dy, 1, 6, c.jersey],
+      [x + 26, -12 + dy, 6, 10, c.shoe],
+      [x + 32, -12 + dy, 2, 10, c.sole],
     ];
     const face = [
       [5, 7, 2, 3, c.skinDark],
@@ -448,11 +478,8 @@ class Player {
       ...leg(0, -2, c.skinDark),
       ...leg(2, 0, c.skin),
 
-      // Shorts on the floor, with a darker back, waistband and side stripe.
-      [-10, -14, 20, 12, c.shorts],
-      [-10, -14, 4, 12, c.shortsDark],
-      [-10, -14, 20, 2, c.shortsDark],
-      [3, -12, 1, 8, c.shortsTrim],
+      // Shorts on the floor, curving forward over the thighs (the legsUp shape, lowered onto the floor).
+      ...this.curvedShorts(-32, ...LEGS_OUT_SHORTS, d),
 
       // Jersey and head, lowered.
       [-10, -52 + d, 20, 20, c.jersey],

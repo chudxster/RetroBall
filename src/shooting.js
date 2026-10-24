@@ -66,9 +66,12 @@ const Shooting = (() => {
     let green = clamp(SHOT.greenMax - dist * SHOT.greenShrink, SHOT.greenMin, SHOT.greenMax) + SHOT.greenCloseBonus * closeness;
     if (fade) green *= SHOT.fadeGreen;
     if (isThreePoint(p.x, p.y, hoop)) green *= 1 + UPGRADES.threeGreen * p.upgrades.shooting;
-    // Beyond half court: a fixed sliver of the meter, a few frames wide.
-    const deep = (p.x - COURT.length / 2) * hoop.dir > 0;
-    if (deep) green = (p.upgrades.shooting >= UPGRADES.max ? SHOT.deepFramesMax : SHOT.deepFrames) / (meterTime * 60);
+    // Beyond half court: a fixed sliver of the meter, a frame or two wide. `deep` measures how far back (0 at the
+    // half-court line, 1 at the far baseline).
+    const halfLine = COURT.length / 2 - COURT.hoopX;
+    const fromHoop = Math.abs(p.x - hoop.x);
+    const deep = fromHoop > halfLine ? clamp((fromHoop - halfLine) / (COURT.length - COURT.hoopX - halfLine), 0, 1) : null;
+    if (deep !== null) green = (p.upgrades.shooting >= UPGRADES.max ? SHOT.deepFramesMax : SHOT.deepFrames) / (meterTime * 60);
     // Keep a wide green fully on the meter (with a sliver of "late" above it).
     const center = Math.min(SHOT.greenCenter, 0.97 - green / 2);
     p.shot = {
@@ -113,9 +116,14 @@ const Shooting = (() => {
   }
 
   // Release timing decides make or miss; the aim below then sends the ball where physics will play that out.
-  // `deep` (beyond half court): outside the green, only a SHOT.deepLuck chance of it going in anyway.
+  // `deep` (beyond half court, 0 at the half-court line .. 1 from the far baseline, or null): even a green release
+  // only goes in with SHOT.deepMake odds, and outside the green only a SHOT.deepLuck chance.
   function grade(fill, lo, hi, deep) {
-    if (fill >= lo && fill <= hi) return { label: 'PERFECT', color: COLORS.good, make: true };
+    if (fill >= lo && fill <= hi) {
+      const make = deep === null || Math.random() < lerp(SHOT.deepMake.half, SHOT.deepMake.full, deep);
+      return { label: 'PERFECT', color: COLORS.good, make };
+    }
+    deep = deep !== null;
     if (deep && Math.random() < SHOT.deepLuck) return { label: 'LUCKY!', color: COLORS.okay, make: true };
     const early = fill < lo;
     const off = early ? lo - fill : fill - hi;
@@ -129,9 +137,12 @@ const Shooting = (() => {
 
   // Where the ball should come down, relative to the rim center: `long` along the shot line (+ = past center), `side` across it.
   // Offsets come from simulating thousands of shots: landing 0-2.5 long always drops, 5-7.5 short/long always rims out.
-  function aim(result, dist) {
+  function aim(result, dist, deep) {
     if (result.make) return { long: rand(0, 2.5), side: rand(-0.5, 0.5) };
     if (result.airball) return { long: -rand(14, 22), side: rand(-2, 2) };
+    // Heaves come down so steeply that a near miss can still rattle in, and long ones bank in off the board: miss
+    // them clearly short of the rim.
+    if (deep !== null) return { long: -rand(9, 12), side: rand(-2, 2) };
     const long = result.early ? -rand(5, 7) : rand(5.5, 7.5);
     // Up close the ball drops so steeply that front/back rim misses still fall in, so miss off the side instead.
     const side = dist < SHOT.closeRange ? (Math.random() < 0.5 ? -1 : 1) * rand(7, 9) : rand(-1.5, 1.5);
@@ -166,7 +177,7 @@ const Shooting = (() => {
     const dist = Math.hypot(dx, dy);
     const ux = dist > 0.01 ? dx / dist : -hoop.dir;
     const uy = dist > 0.01 ? dy / dist : 0;
-    const { long, side } = aim(result, dist);
+    const { long, side } = aim(result, dist, shot.deep);
     const target = {
       x: hoop.x + ux * long - uy * side,
       y: hoop.y + uy * long + ux * side,

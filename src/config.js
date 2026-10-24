@@ -85,10 +85,12 @@ const SHOT = {
   flightSpeed: 400,
   meterLinger: 0.9,   // seconds the meter stays up after release
   // From behind the half-court line the green is exactly this many frames (1/60 s) of the meter wide, or
-  // deepFramesMax with the shooting upgrade maxed out; any mistimed release from there goes in only by luck.
+  // deepFramesMax with the shooting upgrade maxed out. Even a green release only goes in with deepMake odds,
+  // falling from `half` at the half-court line to `full` from the far baseline; any mistimed release goes in only by luck.
   deepFrames: 1,
   deepFramesMax: 2,
-  deepLuck: 1 / 50,
+  deepMake: { half: 0.6, full: 0.2 },
+  deepLuck: 1 / 100,
   // Fadeaway: shooting while holding away from the hoop jumps backwards. Harder to time, harder to contest.
   fadeAway: -0.5,     // counts as "away" when the move direction is within ~60 degrees of straight back (dot product)
   fadeDist: 22,       // world units drifted back over the jump

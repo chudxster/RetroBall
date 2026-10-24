@@ -45,6 +45,7 @@ function update(dt) {
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);
+  updateScoreboard(dt, state.stats.pts, 0);
 
   // While the ball is loose, frame both the player and the ball. Zoom out the farther the player is from a hoop.
   const hoop = nearestHoop(p.x);
@@ -83,6 +84,7 @@ function updateFade(dt) {
   f.t += dt;
   if (before < FADE.out && f.t >= FADE.out) {
     restoreHoops();
+    scatterBenchClutter();
     state.debris = [];
     state.popups = [];
     resetToCenter(true);
@@ -162,12 +164,13 @@ function render(alpha) {
   shadowCtx.clearRect(0, 0, VIEW_W, VIEW_H);
   for (const h of HOOPS) drawHoopShadow(shadowCtx, h);
   drawBenchShadows(shadowCtx);
+  drawTableShadow(shadowCtx);
   for (const m of movers) m.drawShadow(shadowCtx);
   ctx.globalAlpha = SHADOW.alpha;
   ctx.drawImage(shadowLayer, 0, 0);
   ctx.globalAlpha = 1;
 
-  const layers = [...benchLayers(player.look.jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
+  const layers = [...benchLayers(player.look.jersey), tableLayer(player.look.jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
   if (state.meter) drawShotMeter(ctx, state.meter, player);

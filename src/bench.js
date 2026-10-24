@@ -1,41 +1,46 @@
 // Team benches along the far sideline: a row of chairs per team, with towels and water bottles left lying around.
-// Placement is pseudo-random from hash2, so the mess is the same every frame. Colors are picked when drawing:
-// the home bench (team 0) wears the player's jersey color, the away bench its inverse.
+// The chairs are fixed; the clutter is scattered fresh by scatterBenchClutter (on load and during fade-to-black
+// resets, so nothing visibly jumps).
+// Colors are picked when drawing: the home bench (team 0) wears the player's jersey color, the away bench its inverse.
 const BENCH = {
   y: -9,          // depth of the chair row, on the floor between the court and the crowd
   spacing: 15,    // world units between chairs
   chairs: 6,
-  teams: [{ from: 125 }, { from: 270 }],
+  teams: [{ from: 110 }, { from: 285 }], // leaves room for the scorer's table at center court
+  spread: 8,      // clutter lands up to this far (world units) in front of or behind the chair row
 };
 const BOTTLE_COLORS = ['#38b764', '#ffcd75', '#41a6f6', '#ef7d57'];
 
-const BENCH_STUFF = (() => {
+const BENCH_CHAIRS = BENCH.teams.flatMap((bench, team) =>
+  Array.from({ length: BENCH.chairs }, (_, i) => ({ kind: 'chair', x: bench.from + i * BENCH.spacing, y: BENCH.y, team, towel: false, flip: 1 })));
+
+let BENCH_STUFF = [];
+
+// Semi-random mess around each chair: maybe a towel over the back, maybe one on the floor somewhere nearby
+// (in front, underneath or behind), and up to three bottles anywhere around it, some knocked over.
+function scatterBenchClutter() {
+  const r = Math.random;
+  const near = (x) => x + (r() - 0.5) * BENCH.spacing * 1.4;
+  const depth = () => BENCH.y + (r() * 2 - 1) * BENCH.spread;
   const items = [];
-  let k = 0;
-  BENCH.teams.forEach((bench, team) => {
-    for (let i = 0; i < BENCH.chairs; i++, k++) {
-      const x = bench.from + i * BENCH.spacing;
-      const flip = hash2(k, 5) < 0.5 ? -1 : 1;
-      items.push({ kind: 'chair', x, y: BENCH.y, team, towel: hash2(k, 1) < 0.4, flip });
-      // A towel tossed on the floor nearby...
-      if (hash2(k, 2) < 0.45) {
-        items.push({ kind: 'towel', x: x + (hash2(k, 3) - 0.5) * 14, y: BENCH.y + 2 + hash2(k, 4) * 5, team, flip });
-      }
-      // ...and a couple of water bottles, some knocked over.
-      const bottles = Math.floor(hash2(k, 6) * 3);
-      for (let b = 0; b < bottles; b++) {
-        items.push({
-          kind: hash2(k, 11 + b) < 0.3 ? 'tipped' : 'bottle',
-          x: x + (hash2(k, 7 + b) - 0.5) * 16,
-          y: BENCH.y + 1 + hash2(k, 9 + b) * 6,
-          color: BOTTLE_COLORS[Math.floor(hash2(k, 13 + b) * BOTTLE_COLORS.length)],
-          flip: hash2(k, 15 + b) < 0.5 ? -1 : 1,
-        });
-      }
+  for (const chair of BENCH_CHAIRS) {
+    chair.flip = r() < 0.5 ? -1 : 1;
+    chair.towel = r() < 0.35;
+    if (r() < 0.5) items.push({ kind: 'towel', x: near(chair.x), y: depth(), team: chair.team, flip: r() < 0.5 ? -1 : 1 });
+    const bottles = Math.floor(r() * 4);
+    for (let b = 0; b < bottles; b++) {
+      items.push({
+        kind: r() < 0.3 ? 'tipped' : 'bottle',
+        x: near(chair.x),
+        y: depth(),
+        color: BOTTLE_COLORS[Math.floor(r() * BOTTLE_COLORS.length)],
+        flip: r() < 0.5 ? -1 : 1,
+      });
     }
-  });
-  return items;
-})();
+  }
+  BENCH_STUFF = [...BENCH_CHAIRS, ...items];
+}
+scatterBenchClutter();
 
 // Sprites as [dx, dy, w, h, color] rects relative to the item's spot on the floor (see drawRects).
 // `teamColors[item.team]` colors chairs and towel stripes; bottles carry their own color.

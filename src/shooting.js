@@ -66,6 +66,9 @@ const Shooting = (() => {
     let green = clamp(SHOT.greenMax - dist * SHOT.greenShrink, SHOT.greenMin, SHOT.greenMax) + SHOT.greenCloseBonus * closeness;
     if (fade) green *= SHOT.fadeGreen;
     if (isThreePoint(p.x, p.y, hoop)) green *= 1 + UPGRADES.threeGreen * p.upgrades.shooting;
+    // Beyond half court: a fixed sliver of the meter, a few frames wide.
+    const deep = (p.x - COURT.length / 2) * hoop.dir > 0;
+    if (deep) green = (p.upgrades.shooting >= UPGRADES.max ? SHOT.deepFramesMax : SHOT.deepFrames) / (meterTime * 60);
     // Keep a wide green fully on the meter (with a sliver of "late" above it).
     const center = Math.min(SHOT.greenCenter, 0.97 - green / 2);
     p.shot = {
@@ -76,6 +79,7 @@ const Shooting = (() => {
       meterTime,
       jumpTime: meterTime * SHOT.jumpPerMeter,
       fade,
+      deep,
       baseGreen: green,
       center,
       // How much defenders' contests count (a fadeaway is harder to bother).
@@ -109,13 +113,14 @@ const Shooting = (() => {
   }
 
   // Release timing decides make or miss; the aim below then sends the ball where physics will play that out.
-  function grade(fill, lo, hi) {
+  // `deep` (beyond half court): only the green itself goes in.
+  function grade(fill, lo, hi, deep) {
     if (fill >= lo && fill <= hi) return { label: 'PERFECT', color: COLORS.good, make: true };
     const early = fill < lo;
     const off = early ? lo - fill : fill - hi;
     if (off <= SHOT.goodMargin) {
       const label = early ? 'SLIGHTLY EARLY' : 'SLIGHTLY LATE';
-      return { label, color: COLORS.okay, make: Math.random() < SHOT.slightMakeChance, early };
+      return { label, color: COLORS.okay, make: !deep && Math.random() < SHOT.slightMakeChance, early };
     }
     if (early && fill < SHOT.airballFill) return { label: 'WAY EARLY', color: COLORS.bad, make: false, early, airball: true };
     return { label: early ? 'EARLY' : 'LATE', color: COLORS.bad, make: false, early };
@@ -151,7 +156,7 @@ const Shooting = (() => {
       return;
     }
 
-    const result = grade(shot.fill, meter.lo, meter.hi);
+    const result = grade(shot.fill, meter.lo, meter.hi, shot.deep);
     meter.result = result;
 
     // Aim along the line from the ball to the hoop, offset long/short and sideways by the result.

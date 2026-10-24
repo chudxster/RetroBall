@@ -189,7 +189,9 @@ const Menu = (() => {
     const rows = [...panel.querySelectorAll('.upgrade')];
     const effects = {
       speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
-      shooting: (n) => `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
+      shooting: (n) => n >= UPGRADES.max
+        ? `+${Math.round(UPGRADES.threeGreen * n * 100)}% 3s, ${SHOT.deepFramesMax}f half court`
+        : `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
       dunking: (n) => `+${Math.round(UPGRADES.dunkRange * n * 100)}% range, rim odds up`,
     };
     const sync = () => {

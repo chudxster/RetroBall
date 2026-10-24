@@ -25,6 +25,67 @@ function drawHud(ctx, game) {
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
+// Game clock (period and time left) and shot clock, top right beside the pause button (3v3). The game clock turns
+// yellow in the last 10 seconds, the shot clock red in its last GAME.shotWarn.
+function drawClock(ctx, game) {
+  const c = game.clock;
+  const main = `${Clock.periodLabel(c.period)} ${Clock.format(c.t)}`;
+  const shot = game.rules.shotClock ? String(Math.max(0, Math.ceil(c.shot))) : '';
+  const wMain = textWidth(main, TEXT_SCALE) + 12;
+  const wShot = shot ? textWidth('00', TEXT_SCALE) + 12 : 0;
+  let x = VIEW_W - 34 - wMain - (shot ? wShot + 4 : 0);
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(x, 4, wMain, 18);
+  drawText(ctx, main, x + 6, 8, c.t < 10 ? COLORS.okay : COLORS.line, { scale: TEXT_SCALE });
+  if (!shot) return;
+  x += wMain + 4;
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(x, 4, wShot, 18);
+  drawText(ctx, shot, x + wShot / 2, 8, c.shot <= GAME.shotWarn ? COLORS.bad : COLORS.okay, { align: 'center', scale: TEXT_SCALE });
+}
+
+// Big centered text on a dark band ("HALFTIME", "OVERTIME").
+function drawBanner(ctx, text) {
+  const y = VIEW_H / 2 - 24;
+  ctx.fillStyle = 'rgba(26, 28, 44, 0.8)';
+  ctx.fillRect(0, y, VIEW_W, 48);
+  drawText(ctx, text, VIEW_W / 2, y + 14, COLORS.okay, { align: 'center', scale: TEXT_SCALE * 2, shadow: COLORS.outline });
+}
+
+// After the final buzzer: the result, the final score and both teams' stat lines, then how to play again.
+function drawGameOver(ctx, game) {
+  const [home, away] = game.score;
+  const won = home > away;
+  const ot = game.clock.period > 2 ? ` / ${Clock.periodLabel(game.clock.period)}` : '';
+  ctx.fillStyle = 'rgba(26, 28, 44, 0.85)';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const mid = VIEW_W / 2;
+  drawText(ctx, won ? 'YOU WIN!' : 'YOU LOSE', mid, 40, won ? COLORS.good : COLORS.bad, { align: 'center', scale: TEXT_SCALE * 3, shadow: COLORS.outline });
+  drawText(ctx, `FINAL${ot}`, mid, 82, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  drawText(ctx, `HOME ${home} - ${away} AWAY`, mid, 100, COLORS.line, { align: 'center', scale: TEXT_SCALE * 2 });
+
+  // Stat table: label, home, away.
+  const rows = [
+    ['FG', (s) => `${s.fgm}/${s.fga}`],
+    ['3PT', (s) => `${s.tpm}/${s.tpa}`],
+    ['FT', (s) => `${s.ftm}/${s.fta}`],
+    ['STL', (s) => String(s.stl)],
+    ['BLK', (s) => String(s.blk)],
+  ];
+  const top = 136;
+  drawText(ctx, 'HOME', mid - 10, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  drawText(ctx, 'AWAY', mid + 90, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  rows.forEach(([label, value], i) => {
+    const y = top + 20 + i * 18;
+    drawText(ctx, label, mid - 110, y, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+    drawText(ctx, value(game.stats[0]), mid - 10, y, COLORS.line, { align: 'center', scale: TEXT_SCALE });
+    drawText(ctx, value(game.stats[1]), mid + 90, y, COLORS.line, { align: 'center', scale: TEXT_SCALE });
+  });
+  if (game.clock.overT > 1 && Math.floor(game.time * 2) % 2 === 0) {
+    drawText(ctx, `PRESS ${Input.keyLabel('shoot')} TO PLAY AGAIN`, mid, VIEW_H - 46, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
+  }
+}
+
 // Speed lines trailing a dashing player: horizontal streaks behind a sideways dash, vertical ones above or below
 // an up/down dash.
 function drawDashLines(ctx, p) {

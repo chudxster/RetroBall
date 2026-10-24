@@ -9,6 +9,11 @@ Open `index.html` in a browser (double-clicking works), or serve the folder from
 Two modes, picked in the pause menu's Gamemode tab: **3v3 Casual** (full court, AI teammates and opponents, half-court
 defense) and **Free shot** (just you).
 
+A 3v3 game is two 2.5-minute halves (teams switch ends at halftime), with 1-minute overtimes while tied and a
+14-second shot clock; the clock stops for dead balls (free throws, resets, halftime). Half length and the shot clock
+are in the 3v3 game options (the arrow beside 3v3 Casual), along with Restart game. At the final buzzer you get the
+result and both teams' stats; press shoot to play again.
+
 Reaching for a steal can be called a foul, more likely the closer you are to the ball handler. With **free throws** on
 (Gamemode tab: the arrow beside 3v3 Casual opens its game options) the fouled player shoots one from the line for a point: the ref hands them the ball after two seconds.
 With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of the
@@ -55,6 +60,7 @@ The game scales itself to fit the frame in whole pixels. Players click the frame
 | `src/player.js` | Player movement and the pixel-art sprite |
 | `src/team.js` | Teams, rosters and team colors, which hoop each team attacks |
 | `src/ai.js` | Computer players: offense, defense, chasing loose balls |
+| `src/clock.js` | 3v3 game clock: halves, overtime, shot clock, final buzzer |
 | `src/ref.js` | The referee: wanders the sideline, passes the ball in for free throws |
 | `src/play.js` | Passing, steals, blocks, contests, pickups and possession |
 | `src/shooting.js` | Shot meter, release grading, dunks |

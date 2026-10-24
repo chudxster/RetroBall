@@ -34,11 +34,14 @@ const state = {
   fade: null, // { t } while fading to black and back for a reset
   hitStop: 0, // seconds the action freezes for impact (dunk slams)
   freeThrow: null, // { shooter, pending } from a foul until the shot is away (pending: called, not lined up yet)
+  clock: null,     // the 3v3 game and shot clocks (see clock.js)
+  replayReady: false, // after the final buzzer: the shoot key has been let go, so pressing it starts a new game
 };
 
 // A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball.
 function newGame(mode) {
   state.mode = mode;
+  endsSwapped = false;
   state.roster = makePlayers(state.look, state.team);
   const star = state.roster[0];
   rollAIUpgrades(state.roster, state.team);
@@ -56,6 +59,9 @@ function newGame(mode) {
   lineUp();
   Play.give(state, star);
   camera.snap(star.x);
+  state.replayReady = false;
+  if (mode === '3v3') Clock.start(state);
+  else state.clock = null;
 }
 
 function update(dt) {
@@ -67,8 +73,16 @@ function update(dt) {
   const { ball } = state;
   updateFade(dt);
 
-  // Hold still while the camera pans back to center or the screen fades for a reset.
-  const frozen = !!(camera.pan || state.fade);
+  // Hold still while the camera pans back to center, the screen fades for a reset, or between periods.
+  const frozen = !!(camera.pan || state.fade) || Clock.stopped(state);
+  // After the final buzzer, a fresh press of the shoot key starts a new game.
+  if (state.clock && state.clock.over && state.clock.overT > 1) {
+    if (!Input.shoot()) state.replayReady = true;
+    else if (state.replayReady) {
+      newGame(state.mode);
+      return;
+    }
+  }
   const ctls = new Map();
   ctls.set(state.user, userControls(frozen));
   AIBrain.think(dt, state, ctls, frozen);
@@ -92,6 +106,7 @@ function update(dt) {
   ball.update(dt);
   handleBallEvents();
   Play.pickups(state);
+  Clock.update(dt, state, frozen);
   // The out-of-bounds count waits while anyone is dunking (or hanging on the rim).
   if (!state.fade && !state.players.some((p) => p.shot && p.shot.dunk)) checkBallBehindHoop(dt);
   updateHoops(dt);
@@ -225,21 +240,30 @@ function resetToCenter(instant = false) {
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
   const lastTeam = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
+  if (state.mode === '3v3') {
+    restartPlay(1 - lastTeam, instant);
+    return;
+  }
+  state.freeThrow = null;
+  lineUp();
+  state.user = state.players[0];
+  ball.respawn(cx, cy, RESET.dropHeight);
+  if (instant) camera.snap(cx);
+  else camera.panTo(cx, RESET.panTime);
+}
+
+// 3v3: everyone back on their own halves and `team`'s first player with the ball (a fresh shot clock), the camera
+// gliding over (or jumping there when the screen is black).
+function restartPlay(team, instant = false) {
   state.freeThrow = null;
   if (state.ref) state.ref.hasBall = false;
   lineUp();
   state.user = state.players[0];
-  let focusX = cx;
-  if (state.mode === '3v3') {
-    const team = 1 - lastTeam;
-    const p = state.players.find((q) => q.team === team && q.role === 0);
-    Play.give(state, p);
-    focusX = p.x;
-  } else {
-    ball.respawn(cx, cy, RESET.dropHeight);
-  }
-  if (instant) camera.snap(focusX);
-  else camera.panTo(focusX, RESET.panTime);
+  const p = state.players.find((q) => q.team === team && q.role === 0);
+  Play.give(state, p);
+  Clock.resetShot(state, team);
+  if (instant) camera.snap(p.x);
+  else camera.panTo(p.x, RESET.panTime);
 }
 
 // A foul with free throws on: everyone lines up at the end the shooter attacks, the fouled player just behind the
@@ -349,6 +373,11 @@ function render(alpha) {
   }
   drawPopups(ctx, state);
   drawHud(ctx, state);
+  if (state.clock) {
+    drawClock(ctx, state);
+    if (state.clock.banner) drawBanner(ctx, state.clock.banner);
+    if (state.clock.over) drawGameOver(ctx, state);
+  }
   if (state.fade) {
     ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha()})`;
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);

@@ -15,8 +15,11 @@ const ROSTER = [
   ],
 ];
 
+// Which end each team attacks: home starts on the right hoop; after halftime the teams switch (see Clock).
+let endsSwapped = false;
+
 function attackHoop(team) {
-  return team === 0 ? HOOPS[1] : HOOPS[0];
+  return (team === 0) !== endsSwapped ? HOOPS[1] : HOOPS[0];
 }
 
 // The hoop a shot or dunk goes at: in free shot mode, whichever is nearer.
@@ -83,7 +86,7 @@ function setTeamLooks(players, look, home) {
 
 // Lined up for a jump ball: each team on its own half (the half it defends), the first player by the circle.
 function formationSpot(team, role) {
-  const side = team === 0 ? -1 : 1;
+  const side = attackHoop(team).dir; // the half away from the hoop they attack
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
   const spots = [[COURT.circleR + 4, 0], [80, -70], [80, 70]];

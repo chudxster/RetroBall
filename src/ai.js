@@ -96,7 +96,8 @@ const AIBrain = (() => {
         ctl.dunk = true;
         return;
       }
-      const forced = m.holdT > AI.maxHold;
+      const c = game.clock;
+      const forced = m.holdT > AI.maxHold || (!!c && game.rules.shotClock && c.shot < AI.shotClockHurry);
       const layup = d < 45 && gap > 10 && m.holdT > 0.3;
       const open = d < AI.shootRange && gap > AI.openGap && m.holdT > AI.minHold;
       const want = isThreePoint(p.x, p.y, hoop) ? 0.7 : 0.4;

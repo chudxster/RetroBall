@@ -408,10 +408,36 @@ const Menu = (() => {
     sync();
   }
 
+  // A number box for `prefs[key]`, kept within the box's min/max and step and saved under `storageKey`.
+  function initNumber(input, prefs, key, storageKey) {
+    const sync = () => {
+      input.value = String(prefs[key]);
+    };
+    input.addEventListener('change', () => {
+      const step = Number(input.step) || 1;
+      const v = Number(input.value);
+      if (Number.isFinite(v)) {
+        prefs[key] = clamp(Math.round(v / step) * step, Number(input.min), Number(input.max));
+        savePrefs(storageKey, prefs);
+      }
+      sync();
+    });
+    sync();
+  }
+
   // Gamemode: picking a different mode starts a new game in it. Rule toggles below apply right away.
   function initModeView() {
     const options = [...panel.querySelectorAll('.mode-option')];
     initToggle(document.getElementById('free-throws'), game.rules, 'freeThrows', RULES_STORAGE_KEY);
+    initToggle(document.getElementById('shot-clock'), game.rules, 'shotClock', RULES_STORAGE_KEY);
+    initNumber(document.getElementById('half-minutes'), game.rules, 'halfMinutes', RULES_STORAGE_KEY);
+    initNumber(document.getElementById('shot-seconds'), game.rules, 'shotSeconds', RULES_STORAGE_KEY);
+    document.getElementById('restart-game').addEventListener('click', () => {
+      game.setMode('3v3');
+      saveMode('3v3');
+      sync();
+      setOpen(false);
+    });
     // The arrow beside a mode opens its game options underneath.
     for (const arrow of panel.querySelectorAll('.mode-expand')) {
       const settings = document.getElementById(arrow.getAttribute('aria-controls'));

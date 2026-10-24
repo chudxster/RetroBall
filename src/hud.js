@@ -43,6 +43,13 @@ function drawShotMeter(ctx, meter, player) {
   }
 }
 
+// Blinking reminder above a player hanging on the rim.
+function drawHangPrompt(ctx, player, time) {
+  if (Math.floor(time * 3) % 2) return;
+  const y = player.by - Math.round(96 * player.scale);
+  drawText(ctx, 'F TO LET GO', player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
+}
+
 // Floating text anchored to a spot in the world, rising and blinking out.
 function addPopup(game, text, color, x, y, z) {
   game.popups.push({ text, color, x, y, z, t: 0 });

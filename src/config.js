@@ -105,8 +105,7 @@ const DUNK = {
   hitStop: 0.07,      // the whole game freezes this long on impact
   shake: 0.35,        // seconds of camera shake
   bend: 2,            // px the rim bends under a normal dunk
-  hangChance: 0.05,   // odds of a long hang that bends the rim further
-  longHang: 1.0,
+  hangChance: 0.05,   // odds of a rim hang: bends the rim further, held until the dunk key is pressed again
   hangBend: 6,
   swayPx: 5,          // hanging, the player (and rim) swing like a pendulum: px of swing...
   swayPeriod: 0.7,    // ...seconds per swing...

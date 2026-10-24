@@ -40,7 +40,8 @@ function update(dt) {
   ball.update(dt);
   handleBallEvents();
   tryPickup();
-  if (!state.fade) checkBallBehindHoop(dt);
+  // The out-of-bounds count waits while the player is mid-shot or hanging on the rim.
+  if (!state.fade && !p.shot) checkBallBehindHoop(dt);
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);
@@ -106,6 +107,7 @@ function resetToCenter(instant = false) {
   const x = cx + Math.cos(a) * COURT.circleR;
   const y = cy + Math.sin(a) * COURT.circleR;
   Object.assign(p, { x, y, prevX: x, prevY: y, z: 0, prevZ: 0, vx: 0, vy: 0, shot: null, hasBall: false, hangSway: 0 });
+  for (const h of HOOPS) h.hanging = false;
   if (Math.abs(x - cx) > 1) p.facing = x < cx ? 1 : -1;
   ball.respawn(cx, cy, RESET.dropHeight);
   state.meter = null;
@@ -168,6 +170,9 @@ function render(alpha) {
   for (const l of layers) l.draw(ctx);
 
   if (state.meter) drawShotMeter(ctx, state.meter, player);
+  if (player.shot && player.shot.dunk && player.shot.hang === Infinity && player.shot.released) {
+    drawHangPrompt(ctx, player, state.time);
+  }
   drawPopups(ctx, state);
   drawHud(ctx, state);
   if (state.fade) {

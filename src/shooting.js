@@ -15,7 +15,7 @@ const Shooting = (() => {
       if (dunkPressed && p.hasBall) tryDunk(game);
       else if (pressed && p.hasBall) start(game);
     } else if (p.shot.dunk) {
-      updateDunk(dt, game);
+      updateDunk(dt, game, dunkPressed);
     } else {
       const shot = p.shot;
       shot.t += dt;
@@ -165,7 +165,8 @@ const Shooting = (() => {
       dunk: true,
       t: 0,
       rise: DUNK.rise + dist * DUNK.risePerUnit,
-      hang: { normal: DUNK.hang, hang: DUNK.longHang, shatter: DUNK.shatterHang }[outcome],
+      // A rim hang lasts until the dunk key is pressed again (see updateDunk).
+      hang: { normal: DUNK.hang, hang: Infinity, shatter: DUNK.shatterHang }[outcome],
       bend: { normal: DUNK.bend, hang: DUNK.hangBend, shatter: DUNK.shatterBend }[outcome],
       outcome,
       rimZ: HOOP.rimZ + 1 - reach,
@@ -180,7 +181,7 @@ const Shooting = (() => {
     game.meter = null;
   }
 
-  function updateDunk(dt, game) {
+  function updateDunk(dt, game, letGo) {
     const p = game.player;
     const shot = p.shot;
     const hoop = shot.hoop;
@@ -227,6 +228,8 @@ const Shooting = (() => {
       p.hangSway = hoop.sway;
       p.x = shot.to.x + hoop.sway / s;
       p.z = shot.rimZ - (hoop.bend + hoopFlex(hoop).drop) / s;
+      // Holding on: pressing the dunk key again lets go, starting the drop next tick.
+      if (shot.hang === Infinity && letGo) shot.hang = ht;
     } else {
       if (!shot.falling) {
         shot.falling = true;

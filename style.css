@@ -208,8 +208,15 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .presets {
-  padding-left: calc(var(--px) * 59);
   gap: calc(var(--px) * 2);
+}
+
+/* Sits in the label column, smaller and dimmer than a real label: the swatches are suggestions, not the only options. */
+.row .preset-label {
+  margin-right: var(--px);
+  font-size: 0.7em;
+  color: #566c86;
+  text-align: right;
 }
 
 .btn {

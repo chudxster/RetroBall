@@ -69,7 +69,7 @@ const Menu = (() => {
       swatch.className = 'swatch';
       swatch.style.background = skin;
       swatch.dataset.skin = skin;
-      swatch.setAttribute('aria-label', `Skin tone ${skin}`);
+      swatch.setAttribute('aria-label', `Recommended skin tone ${skin}`);
       swatch.addEventListener('click', () => applyLook({ ...look, skin }));
       presetRow.appendChild(swatch);
     }
@@ -184,7 +184,7 @@ const Menu = (() => {
     }
     if (document.activeElement !== numberInput) numberInput.value = look.number;
     hairStyleName.textContent = look.hairStyle;
-    for (const swatch of presetRow.children) {
+    for (const swatch of presetRow.querySelectorAll('.swatch')) {
       swatch.setAttribute('aria-pressed', String(swatch.dataset.skin === look.skin));
     }
   }

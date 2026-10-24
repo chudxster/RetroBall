@@ -30,7 +30,7 @@ function saveLook(look) {
 }
 
 const UPGRADE_STORAGE_KEY = 'retroball.upgrades';
-const UPGRADE_KEYS = ['speed', 'shooting', 'dunking'];
+const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense'];
 const MODE_STORAGE_KEY = 'retroball.mode';
 const MODES = ['3v3', 'free'];
 
@@ -98,7 +98,7 @@ const Menu = (() => {
   ];
   const POSE_SECONDS = 0.8;
 
-  // What the menu edits, supplied by main.js: { look, setLook(look), upgrades, mode(), setMode(mode) }.
+  // What the menu edits, supplied by main.js: { look, setLook(look), upgrades, upgradesChanged(), mode(), setMode(mode) }.
   let game = null;
   let preview = null;
   let look = null;
@@ -193,6 +193,12 @@ const Menu = (() => {
         ? `+${Math.round(UPGRADES.threeGreen * n * 100)}% 3s, ${SHOT.deepFramesMax}f half court`
         : `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
       dunking: (n) => `+${Math.round(UPGRADES.dunkRange * n * 100)}% range, rim odds up`,
+      defense: (n) => `+${Math.round(UPGRADES.stealRange * n * 100)}% steal reach, block`,
+    };
+    const changed = () => {
+      saveUpgrades(game.upgrades);
+      game.upgradesChanged();
+      sync();
     };
     const sync = () => {
       for (const row of rows) {
@@ -214,15 +220,13 @@ const Menu = (() => {
         step.addEventListener('click', () => {
           const key = row.dataset.upgrade;
           game.upgrades[key] = clamp(game.upgrades[key] + Number(step.dataset.delta), 0, UPGRADES.max);
-          saveUpgrades(game.upgrades);
-          sync();
+          changed();
         });
       }
     }
     document.getElementById('reset-upgrades').addEventListener('click', () => {
       for (const key of UPGRADE_KEYS) game.upgrades[key] = 0;
-      saveUpgrades(game.upgrades);
-      sync();
+      changed();
     });
     sync();
   }

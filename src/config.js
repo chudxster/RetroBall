@@ -144,6 +144,14 @@ const PICKUP = {
   delay: 0.5,         // after a shot or pass, the thrower can't grab the ball for this long
 };
 
+// Dash: double-tap left or right for a short sideways burst, then wait out the cooldown.
+const DASH = {
+  speed: 250,         // world units per second during the burst...
+  time: 0.16,         // ...for this long
+  cooldown: 3,
+  doubleTap: 0.125,   // the second tap must come within this many seconds of the first
+};
+
 // Passing (Q with the ball): a fast, flat throw led toward where the receiver is heading.
 const PASS = {
   speed: 380,         // world units per second
@@ -190,6 +198,9 @@ const UPGRADES = {
   dunkRange: 0.12,     // +12% dunk range
   hangChance: 0.02,    // +2% rim hang odds
   shatterChance: 0.004, // +0.4% rim shatter odds
+  stealRange: 0.1,     // defense: +10% steal reach (+50% at max)...
+  blockRange: 0.1,     // ...+10% block reach...
+  blockChance: 0.06,   // ...and +6% odds on blocks and dunk stuffs
 };
 
 // Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set in the Test panel.

@@ -1,8 +1,9 @@
 // Everything between players: passing, steals, contest jumps and blocks, who picks up a loose ball (and so who has
 // possession), and keeping players from standing inside each other.
 const Play = (() => {
-  // Carry out the non-shooting buttons for one player this tick: pass, steal, jump.
+  // Carry out the non-shooting buttons for one player this tick: dash, pass, steal, jump.
   function act(game, p, ctl) {
+    if (ctl.dash) p.dash(ctl.dash);
     if (ctl.pass && p.hasBall && !p.shot) pass(game, p, ctl.pass);
     if (ctl.steal) trySteal(game, p);
     if (ctl.jump) startJump(p);
@@ -24,6 +25,7 @@ const Play = (() => {
     }
     ball.launch(sx, sy, PASS.fromZ, { x: tx, y: ty, z: PASS.toZ }, time, null);
     ball.thrower = from;
+    ball.lastTeam = from.team;
     ball.pass = { to, team: from.team, target: { x: tx, y: ty }, rolls: new Map() };
     from.hasBall = false;
     if (Math.abs(tx - from.x) > 1) from.facing = Math.sign(tx - from.x);
@@ -64,7 +66,7 @@ const Play = (() => {
     if (!h || h.team === p.team || h.shot) return;
     if (Math.abs(h.x - p.x) > 1) p.facing = Math.sign(h.x - p.x);
     const ballX = h.x + h.facing * 8;
-    const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= DEFENSE.stealRange;
+    const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p);
     const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
     const chance = p === game.user ? lerp(...DEFENSE.userStealChance, AI.level) : aiValue(p, AI.stealChance);
     if (inRange && !backcourt && Math.random() < chance) {
@@ -73,6 +75,15 @@ const Play = (() => {
     } else {
       p.stunT = DEFENSE.stealStun;
     }
+  }
+
+  // How far a player can reach for a steal, and how well they block, with their defense upgrade.
+  function stealReach(p) {
+    return DEFENSE.stealRange * (1 + UPGRADES.stealRange * p.upgrades.defense);
+  }
+
+  function blockBonus(p) {
+    return UPGRADES.blockChance * p.upgrades.defense;
   }
 
   // Knock the ball out of `h`'s hands onto the floor, roughly toward `by`, and stun `h`.
@@ -93,6 +104,7 @@ const Play = (() => {
     h.vy = 0;
     ball.launch(fromX, h.y, 12, { x: fromX + dx, y: clamp(h.y + dy, 0, COURT.width), z: 0 }, 0.4, null);
     ball.thrower = h;
+    ball.lastTeam = by.team;
     ball.noPickup = DEFENSE.stolenStun;
   }
 
@@ -119,8 +131,10 @@ const Play = (() => {
   // At the release: an opponent up in the air right on the shooter may swat it away.
   function tryBlock(game, shooter, from) {
     for (const d of opponents(game, shooter)) {
-      if (!d.jump || d.z < DEFENSE.blockMinZ || courtDist(d, shooter) > DEFENSE.blockRange) continue;
-      const chance = (d === game.user ? DEFENSE.userBlockChance : aiValue(d, AI.blockChance)) * shooter.shot.contest;
+      const range = DEFENSE.blockRange * (1 + UPGRADES.blockRange * d.upgrades.defense);
+      if (!d.jump || d.z < DEFENSE.blockMinZ || courtDist(d, shooter) > range) continue;
+      const base = d === game.user ? DEFENSE.userBlockChance : aiValue(d, AI.blockChance);
+      const chance = (base + blockBonus(d)) * shooter.shot.contest;
       if (Math.random() >= chance) continue;
       // Knocked back the way the shooter came from, landing loose.
       const hoop = shooter.shot.hoop;
@@ -128,6 +142,7 @@ const Play = (() => {
       const to = { x: from.x + away * rand(30, 60), y: from.y + rand(-30, 30), z: 0 };
       game.ball.launch(from.x, from.y, from.z, to, 0.6, null);
       game.ball.thrower = shooter;
+      game.ball.lastTeam = d.team;
       addPopup(game, 'BLOCKED!', COLORS.bad, d.x, d.y, 60);
       return true;
     }
@@ -143,7 +158,7 @@ const Play = (() => {
   // A dunk attempt into a guarded rim may get stuffed: the dunker goes up, the ball comes back out loose.
   function tryStuff(game, p, hoop) {
     for (const d of rimGuards(game, p, hoop)) {
-      const chance = d === game.user ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5;
+      const chance = (d === game.user ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5) + blockBonus(d);
       if (Math.random() >= chance) continue;
       p.hasBall = false;
       p.jump = { t: 0 };
@@ -154,6 +169,7 @@ const Play = (() => {
       const to = { x: p.x + hoop.dir * rand(20, 45), y: p.y + rand(-25, 25), z: 0 };
       game.ball.launch(p.x, p.y, 40, to, 0.55, null);
       game.ball.thrower = p;
+      game.ball.lastTeam = d.team;
       if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
       startJump(d);
       addPopup(game, 'STUFFED!', COLORS.bad, d.x, d.y, 60);
@@ -182,6 +198,7 @@ const Play = (() => {
     ball.shot = null;
     ball.pass = null;
     ball.reserved = null;
+    ball.lastTeam = p.team;
     p.hasBall = true;
     p.mind.holdT = 0;
     game.possession = p.team;
@@ -276,5 +293,5 @@ const Play = (() => {
     }
   }
 
-  return { act, pass, passTarget, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, retreatBoost, give, nearestTo, switchPlayer, pickups, separate };
+  return { act, pass, passTarget, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, nearestTo, switchPlayer, pickups, separate };
 })();

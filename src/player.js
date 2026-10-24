@@ -81,13 +81,16 @@ class Player {
     this.sitting = false; // knocked onto the floor; can't move until the reset
     this.team = 0;    // 0 = home (the user's team), 1 = away
     this.role = 0;    // 0..2 within the team; defenders guard the opponent with the same role
-    this.upgrades = { speed: 0, shooting: 0, dunking: 0 }; // levels; only the user's own player buys any
+    this.upgrades = { speed: 0, shooting: 0, dunking: 0, defense: 0 }; // levels: the user's buys, the AI's random
     this.meter = null; // this player's shot meter while shooting (and briefly after)
     this.jump = null;  // { t } while jumping to contest or block
     this.reachT = 0;   // seconds left of a steal reach (arm out)
     this.stunT = 0;    // seconds left slowed after a missed reach or losing the ball
     this.dazedT = 0;   // seconds left of stars circling the head after having the ball stolen
     this.stealCD = 0;
+    this.dashT = 0;   // seconds left of a dash burst...
+    this.dashDir = 0; // ...in this x direction
+    this.dashCD = 0;
     this.prevShoot = false; // last tick's shoot / dunk buttons, so Shooting can spot presses
     this.prevDunk = false;
     this.mind = {};    // the AI's working memory (see ai.js)
@@ -132,6 +135,8 @@ class Player {
     this.stunT = Math.max(0, this.stunT - dt);
     this.dazedT = Math.max(0, this.dazedT - dt);
     this.stealCD = Math.max(0, this.stealCD - dt);
+    this.dashT = Math.max(0, this.dashT - dt);
+    this.dashCD = Math.max(0, this.dashCD - dt);
 
     // No steering in the air during a jump shot or a contest jump, or while sitting on the floor.
     const stuck = this.shot || this.jump || this.sitting;
@@ -170,6 +175,12 @@ class Player {
       this.vy += (dy / dist) * step;
     }
 
+    // Dashing overrides the sideways speed with a burst, then normal steering takes it back down.
+    if (this.dashT > 0 && !stuck) {
+      this.vx = this.dashDir * DASH.speed;
+      this.facing = this.dashDir;
+    }
+
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
@@ -196,6 +207,14 @@ class Player {
     this.dribbleT += dt * lerp(2, 3.2, Math.min(speed / PLAYER.topSpeed, 1));
     this.speed = speed;
     this.moving = speed > 10;
+  }
+
+  // Start a dash burst in x direction `dir`, if it's off cooldown and the player is free to move.
+  dash(dir) {
+    if (!dir || this.dashCD > 0 || this.airborne() || this.sitting) return;
+    this.dashT = DASH.time;
+    this.dashDir = dir;
+    this.dashCD = DASH.cooldown;
   }
 
   // Top speed for the current speed bracket.

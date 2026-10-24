@@ -77,7 +77,7 @@
 
       <!-- Upgrades for the user's own player. Free to set for now; saved between visits. -->
       <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
-        <p class="test-note">Upgrades for your player (free while testing)</p>
+        <p class="test-note">Upgrades for your player (free while testing). In 3v3 every AI player gets the same number of levels, at random.</p>
         <div class="row upgrade" data-upgrade="speed">
           <span class="label">Speed</span>
           <button type="button" class="step" data-delta="-1" aria-label="Lower speed">-</button>
@@ -99,13 +99,20 @@
           <button type="button" class="step" data-delta="1" aria-label="Raise dunking">+</button>
           <span class="upgrade-effect"></span>
         </div>
+        <div class="row upgrade" data-upgrade="defense">
+          <span class="label">Defense</span>
+          <button type="button" class="step" data-delta="-1" aria-label="Lower defense">-</button>
+          <span class="pips" aria-hidden="true"></span>
+          <button type="button" class="step" data-delta="1" aria-label="Raise defense">+</button>
+          <span class="upgrade-effect"></span>
+        </div>
       </div>
 
       <!-- Game mode. Switching starts a new game. -->
       <div class="tab-panel stack-view" id="mode-view" role="tabpanel" hidden>
         <p class="test-note">Game mode (switching starts a new game)</p>
         <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
-          <span class="mode-name">3v3</span>
+          <span class="mode-name">3v3 Casual</span>
           <span class="mode-desc">Full court with AI teammates and opponents</span>
         </button>
         <button type="button" class="mode-option" data-mode="free" aria-pressed="false">

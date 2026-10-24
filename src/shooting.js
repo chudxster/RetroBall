@@ -175,6 +175,7 @@ const Shooting = (() => {
 
     ball.launch(from.x, from.y, from.z, target, SHOT.baseTime + dist / SHOT.flightSpeed, { hoop, points, dist, team: p.team });
     ball.thrower = p;
+    ball.lastTeam = p.team;
     if (p === game.user || p.team === 0) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);
   }
 
@@ -337,6 +338,7 @@ const Shooting = (() => {
     shot.released = true;
     game.ball.slam(hoop.x, hoop.y, p.shootingBallPosition().z, DUNK.slamSpeed, { hoop, points: 2, dist: 0, dunk: true, team: p.team });
     game.ball.thrower = p;
+    game.ball.lastTeam = p.team;
     p.hasBall = false;
     game.stats[p.team].fga++;
     hoop.bendV += DUNK.slamKick;

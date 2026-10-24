@@ -20,6 +20,7 @@ class Ball {
     this.thrower = null; // who last shot or passed it: they can't grab it back for noPickup seconds
     this.noPickup = 0;
     this.reserved = null; // after a basket, only this team may pick the ball up (to bring it back in)
+    this.lastTeam = null; // team that last touched it (held, shot, passed, blocked, poked): the other team gets it if it goes out
     this.events = [];    // 'score' / 'airball' for the game to react to
   }
 
@@ -54,6 +55,7 @@ class Ball {
     this.noPickup = 0;
     this.thrower = null;
     this.reserved = null;
+    this.lastTeam = null;
   }
 
   update(dt) {

@@ -47,6 +47,23 @@ function makePlayers(look) {
   return players;
 }
 
+// `total` upgrade levels spread at random over the stats (none past UPGRADES.max).
+function randomUpgrades(total) {
+  const levels = { speed: 0, shooting: 0, dunking: 0, defense: 0 };
+  const keys = Object.keys(levels);
+  for (let n = Math.min(total, keys.length * UPGRADES.max); n > 0; n--) {
+    const open = keys.filter((k) => levels[k] < UPGRADES.max);
+    levels[open[Math.floor(Math.random() * open.length)]]++;
+  }
+  return levels;
+}
+
+// Every computer player gets as many upgrade levels as the user has bought, at random.
+function rollAIUpgrades(players, mine) {
+  const total = Object.values(mine).reduce((a, b) => a + b, 0);
+  for (const p of players) if (p.upgrades !== mine) p.upgrades = randomUpgrades(total);
+}
+
 // Re-dress everyone after the user changes their look (team colors follow the user's kit).
 function setTeamLooks(players, look) {
   for (const p of players) p.setLook(playerLook(look, p.team, p.role));

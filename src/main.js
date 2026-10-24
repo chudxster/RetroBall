@@ -38,6 +38,7 @@ function newGame(mode) {
   state.roster = makePlayers(state.look);
   const star = state.roster[0];
   star.upgrades = state.upgrades;
+  rollAIUpgrades(state.roster, state.upgrades);
   state.players = mode === 'free' ? [star] : state.roster;
   state.user = star;
   state.score = [0, 0];
@@ -113,6 +114,7 @@ function userControls(frozen) {
   const holder = state.ball.holder;
   const ctl = AIBrain.blank();
   ctl.move = frozen ? { x: 0, y: 0 } : Input.move();
+  ctl.dash = frozen ? 0 : Input.takeDash();
   ctl.shoot = !!keys.shoot;
   if (u.hasBall || u.shot) {
     ctl.dunk = !!keys.action;
@@ -125,8 +127,8 @@ function userControls(frozen) {
   return ctl;
 }
 
-// A loose ball behind either backboard can still be grabbed, but if it stays there for RESET.outTime it comes
-// back at center court. Picking it up or it bouncing back out in front clears the count.
+// A loose ball behind either backboard can still be grabbed, but if it stays there for RESET.outTime play resets
+// (see resetToCenter). Picking it up or it bouncing back out in front clears the count.
 function checkBallBehindHoop(dt) {
   const { ball } = state;
   const behind = !ball.held && HOOPS.some((h) => (ball.x - h.boardX) * h.dir < 0);
@@ -184,24 +186,34 @@ function lineUp() {
     Object.assign(p, {
       x: at.x, y: at.y, prevX: at.x, prevY: at.y, z: 0, prevZ: 0, vx: 0, vy: 0,
       shot: null, jump: null, meter: null, hasBall: false, hangSway: 0, pose: null, sitting: false,
-      stunT: 0, dazedT: 0, reachT: 0, runT: 0, mind: {},
+      stunT: 0, dazedT: 0, reachT: 0, runT: 0, dashT: 0, dashCD: 0, mind: {},
     });
     if (Math.abs(at.x - cx) > 1) p.facing = at.x < cx ? 1 : -1;
   }
   for (const h of HOOPS) h.hanging = false;
 }
 
-// A fresh ball dropped at center court for a jump ball, everyone lined up, and the camera gliding over to them
-// (or jumping straight there when the screen is black).
+// Everyone lined up again and the camera gliding over (or jumping straight there when the screen is black).
+// In 3v3 the team that didn't touch the ball last gets it, starting on their own half; in free shot a fresh ball
+// drops at center court.
 function resetToCenter(instant = false) {
   const { ball } = state;
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
+  const lastTeam = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
   lineUp();
   state.user = state.players[0];
-  ball.respawn(cx, cy, RESET.dropHeight);
-  if (instant) camera.snap(cx);
-  else camera.panTo(cx, RESET.panTime);
+  let focusX = cx;
+  if (state.mode === '3v3') {
+    const team = 1 - lastTeam;
+    const p = state.players.find((q) => q.team === team && q.role === 0);
+    Play.give(state, p);
+    focusX = p.x;
+  } else {
+    ball.respawn(cx, cy, RESET.dropHeight);
+  }
+  if (instant) camera.snap(focusX);
+  else camera.panTo(focusX, RESET.panTime);
 }
 
 function handleBallEvents() {
@@ -259,7 +271,11 @@ function render(alpha) {
   const layers = [...benchLayers(jersey), tableLayer(jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
-  for (const p of state.players) if (p.dazedT > 0) drawDazed(ctx, p, state.time);
+  for (const p of state.players) {
+    if (p.dashT > 0) drawDashLines(ctx, p);
+    if (p.dazedT > 0) drawDazed(ctx, p, state.time);
+  }
+  drawDashCooldown(ctx, user);
   if (state.players.length > 1) drawUserMarker(ctx, user);
   if (user.meter) drawShotMeter(ctx, user.meter, user);
   if (user.shot && user.shot.dunk && user.shot.hang === Infinity && user.shot.released) {
@@ -319,6 +335,7 @@ Menu.init({
     setTeamLooks(state.roster, look);
   },
   upgrades: state.upgrades,
+  upgradesChanged: () => rollAIUpgrades(state.roster, state.upgrades),
   mode: () => state.mode,
   setMode: newGame,
 });

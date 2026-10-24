@@ -15,9 +15,35 @@ function drawHud(ctx, game) {
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
   const hint = free
-    ? 'WASD MOVE  HOLD SPACE SHOOT  E DUNK'
-    : 'WASD MOVE  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
+    ? 'WASD MOVE  AA/DD DASH  HOLD SPACE SHOOT  E DUNK'
+    : 'WASD MOVE  AA/DD DASH  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+}
+
+// Speed lines trailing a dashing player.
+function drawDashLines(ctx, p) {
+  const k = p.scale;
+  const back = -p.dashDir;
+  ctx.fillStyle = COLORS.line;
+  for (const [dy, len] of [[-58, 10], [-44, 16], [-30, 12], [-16, 8]]) {
+    const x0 = p.sx + back * Math.round(14 * k);
+    const w = Math.round(len * k);
+    ctx.fillRect(back > 0 ? x0 : x0 - w, p.by + Math.round(dy * k), w, 1);
+  }
+}
+
+// Dash cooldown under the user's player: a small bar that fills back up, gone once the dash is ready.
+function drawDashCooldown(ctx, p) {
+  if (p.dashCD <= 0) return;
+  const w = 20;
+  const x = p.sx - w / 2;
+  const y = p.sy + 4;
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(x - 1, y - 1, w + 2, 4);
+  ctx.fillStyle = COLORS.meterBg;
+  ctx.fillRect(x, y, w, 2);
+  ctx.fillStyle = COLORS.hint;
+  ctx.fillRect(x, y, Math.round(w * (1 - p.dashCD / DASH.cooldown)), 2);
 }
 
 // Three little stars circling over the head of a player who just had the ball stolen.

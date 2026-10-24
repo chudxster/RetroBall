@@ -1,16 +1,82 @@
+// Keyboard input with rebindable keys (Controls tab). Arrow keys always move too, so a bad rebind can't lock the
+// player out; Esc always pauses (see menu.js).
 const Input = (() => {
+  const STORAGE_KEY = 'retroball.controls';
+  const DEFAULT_BINDS = {
+    up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD',
+    shoot: 'Space', action: 'KeyE', pass: 'KeyQ', dash: 'ShiftLeft', pause: 'KeyP',
+  };
+  const ARROWS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+
   const down = new Set();
+  let binds = { ...DEFAULT_BINDS };
+  // Seconds allowed between the two taps of a double-tap dash.
+  const settings = { doubleTap: DASH.doubleTap };
 
-  // Keys the game owns; we stop the browser (or a parent page around an iframe) from scrolling on them.
-  const GAME_KEYS = new Set([
-    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-    'KeyW', 'KeyA', 'KeyS', 'KeyD',
-    'Space', 'KeyE', 'KeyQ', 'ShiftLeft', 'ShiftRight',
-  ]);
+  // Left and right Shift/Ctrl/Alt/Meta count as the same key.
+  const family = (code) => code.replace(/^(Shift|Control|Alt|Meta)(Left|Right)$/, '$1');
+  const isBound = (name, code) => family(binds[name]) === family(code) || ARROWS[name] === code;
+  const held = (name) => [...down].some((code) => isBound(name, code));
 
-  // Shift queues a dash the way the player is moving; double-tapping left or right queues one that way.
+  function load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+      for (const name of Object.keys(DEFAULT_BINDS)) {
+        if (typeof saved.binds?.[name] === 'string' && saved.binds[name]) binds[name] = saved.binds[name];
+      }
+      if (Number.isFinite(saved.doubleTap)) settings.doubleTap = clamp(saved.doubleTap, 0.05, 0.4);
+    } catch (e) {
+      // Storage blocked or corrupt: keep the defaults.
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ binds, doubleTap: settings.doubleTap }));
+    } catch (e) {
+      // Not fatal; the controls just won't persist.
+    }
+  }
+
+  // Bind `code` to `name`; whatever action had that key takes this action's old key instead (a swap).
+  function setBind(name, code) {
+    const other = Object.keys(binds).find((n) => n !== name && family(binds[n]) === family(code));
+    if (other) binds[other] = binds[name];
+    binds[name] = code;
+    save();
+  }
+
+  function reset() {
+    binds = { ...DEFAULT_BINDS };
+    settings.doubleTap = DASH.doubleTap;
+    save();
+  }
+
+  // A short name for a key code, for the menu and the on-screen hints.
+  function label(code) {
+    const named = {
+      Space: 'SPACE', Enter: 'ENTER', Tab: 'TAB', Backspace: 'BKSP', CapsLock: 'CAPS', Escape: 'ESC',
+      ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT',
+      Shift: 'SHIFT', Control: 'CTRL', Alt: 'ALT', Meta: 'META',
+      Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", Minus: '-', Equal: '=',
+      BracketLeft: '[', BracketRight: ']', Backslash: '\\', Backquote: '`',
+    };
+    const c = family(code);
+    if (named[c]) return named[c];
+    if (/^Key[A-Z]$/.test(c)) return c.slice(3);
+    if (/^Digit\d$/.test(c)) return c.slice(5);
+    if (/^Numpad/.test(c)) return `NUM${c.slice(6).toUpperCase()}`;
+    return c.toUpperCase();
+  }
+
+  // The move keys as one word when they're single letters (e.g. "WASD"), else listed.
+  function moveLabel() {
+    const keys = ['up', 'left', 'down', 'right'].map((n) => label(binds[n]));
+    return keys.every((k) => k.length === 1) ? keys.join('') : keys.join('/');
+  }
+
+  // Double-tapping left or right queues a dash that way; the dash key queues one the way the player is moving.
   // Either is picked up by takeDash.
-  const TAP_DIRS = { KeyA: -1, ArrowLeft: -1, KeyD: 1, ArrowRight: 1 };
   let lastTap = { dir: 0, t: -Infinity };
   let dash = { dir: 0, t: -Infinity };
   const now = () => performance.now() / 1000;
@@ -18,16 +84,19 @@ const Input = (() => {
   window.addEventListener('keydown', (e) => {
     // Typing in the pause menu shouldn't move the player or be blocked.
     if (e.target instanceof Element && e.target.closest('#menu')) return;
-    if (GAME_KEYS.has(e.code)) e.preventDefault();
-    if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) dash = { dir: 'held', t: now() };
-    const dir = TAP_DIRS[e.code];
-    if (dir && !e.repeat) {
-      const t = now();
-      if (lastTap.dir === dir && t - lastTap.t < DASH.doubleTap) {
-        dash = { dir, t };
-        lastTap = { dir: 0, t: -Infinity };
-      } else {
-        lastTap = { dir, t };
+    const ours = Object.keys(binds).some((n) => isBound(n, e.code));
+    if (ours) e.preventDefault();
+    if (!e.repeat) {
+      if (isBound('dash', e.code)) dash = { dir: 'held', t: now() };
+      const dir = isBound('left', e.code) ? -1 : isBound('right', e.code) ? 1 : 0;
+      if (dir) {
+        const t = now();
+        if (lastTap.dir === dir && t - lastTap.t < settings.doubleTap) {
+          dash = { dir, t };
+          lastTap = { dir: 0, t: -Infinity };
+        } else {
+          lastTap = { dir, t };
+        }
       }
     }
     down.add(e.code);
@@ -35,27 +104,31 @@ const Input = (() => {
   window.addEventListener('keyup', (e) => down.delete(e.code));
   window.addEventListener('blur', () => down.clear());
 
-  const any = (...codes) => codes.some((c) => down.has(c));
+  load();
 
   return {
+    binds: () => binds,
+    settings,
+    defaults: DEFAULT_BINDS,
+    isBound,
+    setBind,
+    reset,
+    save,
+    label,
+    keyLabel: (name) => label(binds[name]),
+    moveLabel,
     move() {
       return {
-        x: (any('ArrowRight', 'KeyD') ? 1 : 0) - (any('ArrowLeft', 'KeyA') ? 1 : 0),
-        y: (any('ArrowDown', 'KeyS') ? 1 : 0) - (any('ArrowUp', 'KeyW') ? 1 : 0),
+        x: (held('right') ? 1 : 0) - (held('left') ? 1 : 0),
+        y: (held('down') ? 1 : 0) - (held('up') ? 1 : 0),
       };
     },
-    shoot() {
-      return down.has('Space');
-    },
-    // E: dunk with the ball (and let go of the rim), steal on defense.
-    action() {
-      return down.has('KeyE');
-    },
-    // Q: pass with the ball, switch player on defense.
-    pass() {
-      return down.has('KeyQ');
-    },
-    // A just-requested dash, once: 'held' (Shift: go the way the player is moving), -1 / 1 (double tap left /
+    shoot: () => held('shoot'),
+    // Dunk with the ball (and let go of the rim), steal on defense.
+    action: () => held('action'),
+    // Pass with the ball, switch player on defense.
+    pass: () => held('pass'),
+    // A just-requested dash, once: 'held' (dash key: go the way the player is moving), -1 / 1 (double tap left /
     // right), or 0 for none. Stale ones (e.g. pressed while paused) are dropped.
     takeDash() {
       const d = now() - dash.t < 0.2 ? dash.dir : 0;

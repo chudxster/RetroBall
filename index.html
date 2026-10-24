@@ -22,6 +22,7 @@
         <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true">Player</button>
         <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
         <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Mode</button>
+        <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
         <button type="button" class="tab" role="tab" data-panel="test-view" aria-selected="false">Test</button>
       </div>
 
@@ -128,6 +129,18 @@
         </button>
       </div>
 
+      <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->
+      <div class="tab-panel stack-view" id="controls-view" role="tabpanel" hidden>
+        <p class="test-note">Dash</p>
+        <div class="row">
+          <label for="double-tap">Double tap</label>
+          <input type="range" id="double-tap" min="50" max="400" step="5">
+          <span class="value pct" id="double-tap-value"></span>
+        </div>
+        <p class="test-note">Keybinds (click, then press a key)</p>
+        <div class="keybinds" id="keybinds"></div>
+      </div>
+
       <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
       <div class="tab-panel stack-view" id="test-view" role="tabpanel" hidden>
         <p class="test-note">Dunk odds</p>
@@ -165,6 +178,7 @@
           <button type="button" class="btn btn-quiet" id="reset-look" data-for="player-view">Reset look</button>
           <button type="button" class="btn btn-quiet" id="reset-upgrades" data-for="upgrade-view" hidden>Reset</button>
           <button type="button" class="btn btn-quiet" id="reset-odds" data-for="test-view" hidden>Defaults</button>
+          <button type="button" class="btn btn-quiet" id="reset-controls" data-for="controls-view" hidden>Defaults</button>
         </span>
         <button type="button" class="btn" id="resume">Resume</button>
       </div>

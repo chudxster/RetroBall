@@ -151,6 +151,7 @@ const Menu = (() => {
     initTabs();
     initUpgradeView();
     initModeView();
+    initControlsView();
     initTestView();
 
     button.addEventListener('click', () => setOpen(!open));
@@ -159,7 +160,7 @@ const Menu = (() => {
     document.getElementById('game').addEventListener('pointerdown', () => setOpen(false));
     window.addEventListener('keydown', (e) => {
       const typing = e.target instanceof HTMLInputElement;
-      if (e.code === 'Escape' || (e.code === 'KeyP' && !typing)) {
+      if (e.code === 'Escape' || (Input.isBound('pause', e.code) && !typing)) {
         e.preventDefault();
         setOpen(!open);
       }
@@ -246,6 +247,80 @@ const Menu = (() => {
         sync();
       });
     }
+    sync();
+  }
+
+  // Controls: the double-tap dash window and a key button per action. Clicking a button waits for the next key
+  // (Esc cancels); a key already used elsewhere swaps over. Saved by Input.
+  const KEYBIND_NAMES = {
+    up: 'Up', down: 'Down', left: 'Left', right: 'Right', dash: 'Dash',
+    shoot: 'Shoot/block', action: 'Dunk/steal', pass: 'Pass/switch', pause: 'Pause',
+  };
+
+  function initControlsView() {
+    const slider = document.getElementById('double-tap');
+    const value = document.getElementById('double-tap-value');
+    const list = document.getElementById('keybinds');
+    const buttons = {};
+    let listening = null;
+    let swallowUp = null;
+
+    const sync = () => {
+      slider.value = Math.round(Input.settings.doubleTap * 1000);
+      value.textContent = `${slider.value}ms`;
+      for (const [name, btn] of Object.entries(buttons)) {
+        btn.textContent = listening === name ? '...' : Input.keyLabel(name);
+        btn.setAttribute('aria-pressed', String(listening === name));
+      }
+    };
+
+    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
+      const row = document.createElement('div');
+      row.className = 'keybind';
+      const label = document.createElement('span');
+      label.className = 'keybind-label';
+      label.textContent = text;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'key-btn';
+      btn.setAttribute('aria-label', `Key for ${text}`);
+      btn.addEventListener('click', () => {
+        listening = listening === name ? null : name;
+        sync();
+      });
+      row.append(label, btn);
+      list.append(row);
+      buttons[name] = btn;
+    }
+
+    // While waiting for a key, grab it before the game or the pause shortcut sees it (and swallow its key-up so
+    // Space doesn't also click the focused button).
+    window.addEventListener('keydown', (e) => {
+      if (!listening) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.code !== 'Escape') Input.setBind(listening, e.code);
+      swallowUp = e.code;
+      listening = null;
+      sync();
+    }, true);
+    window.addEventListener('keyup', (e) => {
+      if (e.code !== swallowUp) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      swallowUp = null;
+    }, true);
+
+    slider.addEventListener('input', () => {
+      Input.settings.doubleTap = Number(slider.value) / 1000;
+      Input.save();
+      sync();
+    });
+    document.getElementById('reset-controls').addEventListener('click', () => {
+      Input.reset();
+      listening = null;
+      sync();
+    });
     sync();
   }
 

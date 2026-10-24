@@ -14,9 +14,10 @@ function drawHud(ctx, game) {
 
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
+  const k = Input.keyLabel;
   const hint = free
-    ? 'WASD MOVE  SHIFT DASH  HOLD SPACE SHOOT  E DUNK'
-    : 'WASD MOVE  SHIFT DASH  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
+    ? `${Input.moveLabel()} MOVE  ${k('dash')} DASH  HOLD ${k('shoot')} SHOOT  ${k('action')} DUNK`
+    : `${Input.moveLabel()} MOVE  ${k('dash')} DASH  ${k('shoot')} SHOOT/BLOCK  ${k('action')} DUNK/STEAL  ${k('pass')} PASS/SWITCH`;
   drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
@@ -111,7 +112,7 @@ function drawShotMeter(ctx, meter, player) {
 function drawHangPrompt(ctx, player, time) {
   if (Math.floor(time * 3) % 2) return;
   const y = player.by - Math.round(96 * player.scale);
-  drawText(ctx, 'E TO LET GO', player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
+  drawText(ctx, `${Input.keyLabel('action')} TO LET GO`, player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
 }
 
 // Floating text anchored to a spot in the world, rising and blinking out.

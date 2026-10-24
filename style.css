@@ -175,6 +175,43 @@ input {
   color: #94b0c2;
 }
 
+/* Keybinds: two columns of action + key button */
+.keybinds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--px) * 2) calc(var(--px) * 6);
+}
+
+.keybind {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--px) * 3);
+}
+
+.keybind-label {
+  font-size: 0.75em;
+  color: #94b0c2;
+}
+
+.key-btn {
+  min-width: calc(var(--px) * 36);
+  height: calc(var(--px) * 11);
+  padding: 0 calc(var(--px) * 2);
+  background: #262b44;
+  border: var(--px) solid #94b0c2;
+  cursor: pointer;
+}
+
+.key-btn:hover {
+  border-color: #f4f4f4;
+}
+
+.key-btn[aria-pressed="true"] {
+  border-color: #ffcd75;
+  color: #ffcd75;
+}
+
 /* Game mode choices */
 .mode-option {
   display: flex;

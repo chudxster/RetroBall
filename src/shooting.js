@@ -11,7 +11,9 @@ const Shooting = (() => {
     wasHeld = held;
     wasDunkHeld = dunkHeld;
 
-    if (!p.shot) {
+    if (p.sitting) {
+      // Knocked down by a shattered rim: nothing to do until the reset.
+    } else if (!p.shot) {
       if (dunkPressed && p.hasBall) tryDunk(game);
       else if (pressed && p.hasBall) start(game);
     } else if (p.shot.dunk) {
@@ -188,12 +190,15 @@ const Shooting = (() => {
     shot.t += dt;
     const t = shot.t;
     const { height } = DUNK;
+    const shatter = shot.outcome === 'shatter';
+    const fallTime = shatter ? DUNK.shatterFall : DUNK.fall;
     // Phase boundaries: float up, hold at the top, slam down, hang on the rim, drop.
     const apexAt = shot.rise;
     const slamAt = apexAt + DUNK.apexHold;
     const hangAt = slamAt + DUNK.slamTime;
     const fallAt = hangAt + shot.hang;
-    const endAt = fallAt + DUNK.fall;
+    const endAt = fallAt + fallTime;
+    p.pose = null;
 
     // Glide up to the hover point short of the rim, easing in and out. After the slam the player stays at the rim.
     const k = Math.min(t / shot.rise, 1);
@@ -230,6 +235,8 @@ const Shooting = (() => {
       p.z = shot.rimZ - (hoop.bend + hoopFlex(hoop).drop) / s;
       // Holding on: pressing the dunk key again lets go, starting the drop next tick.
       if (shot.hang === Infinity && letGo) shot.hang = ht;
+      // A rim-shattering slam kicks the legs up: halfway, then straight out.
+      if (shatter) p.pose = ht < DUNK.legKick ? 'legsDiag' : 'legsUp';
     } else {
       if (!shot.falling) {
         shot.falling = true;
@@ -237,16 +244,29 @@ const Shooting = (() => {
         shot.fallX = shot.to.x + p.hangSway / scaleAtY(hoop.y);
         p.hangSway = 0;
         hoop.hanging = false;
-        if (shot.outcome === 'shatter') shatterRim(game, hoop);
+        if (shatter) shatterRim(game, hoop);
       }
-      p.x = shot.fallX;
-      p.z = shot.fallFrom * Math.cos((Math.min((t - fallAt) / DUNK.fall, 1) * Math.PI) / 2);
+      const f = Math.min((t - fallAt) / fallTime, 1);
+      if (shatter) {
+        // Dropping with the rim, legs still out, drifting back to land sitting down.
+        p.pose = 'legsUp';
+        p.x = shot.fallX - p.facing * DUNK.shatterDrift * f;
+        p.z = shot.fallFrom * (1 - f * f);
+      } else {
+        p.x = shot.fallX;
+        p.z = shot.fallFrom * Math.cos((f * Math.PI) / 2);
+      }
     }
 
     if (t >= endAt) {
       p.z = 0;
       p.shot = null;
-      if (shot.outcome === 'shatter') fadeToReset();
+      if (shatter) {
+        p.pose = 'sit';
+        p.sitting = true;
+        camera.shake = DUNK.sitShake;
+        fadeToReset();
+      }
     }
   }
 

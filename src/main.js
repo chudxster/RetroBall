@@ -106,7 +106,7 @@ function resetToCenter(instant = false) {
   const a = (Math.floor(Math.random() * RESET.spots) * 2 * Math.PI) / RESET.spots;
   const x = cx + Math.cos(a) * COURT.circleR;
   const y = cy + Math.sin(a) * COURT.circleR;
-  Object.assign(p, { x, y, prevX: x, prevY: y, z: 0, prevZ: 0, vx: 0, vy: 0, shot: null, hasBall: false, hangSway: 0 });
+  Object.assign(p, { x, y, prevX: x, prevY: y, z: 0, prevZ: 0, vx: 0, vy: 0, shot: null, hasBall: false, hangSway: 0, pose: null, sitting: false });
   for (const h of HOOPS) h.hanging = false;
   if (Math.abs(x - cx) > 1) p.facing = x < cx ? 1 : -1;
   ball.respawn(cx, cy, RESET.dropHeight);
@@ -139,7 +139,7 @@ function handleBallEvents() {
 // Run over a loose ball (low enough to reach) to grab it.
 function tryPickup() {
   const { player: p, ball } = state;
-  if (ball.held || p.shot || ball.noPickup > 0 || ball.z > PICKUP.reach) return;
+  if (ball.held || p.shot || p.sitting || ball.noPickup > 0 || ball.z > PICKUP.reach) return;
   if (Math.abs(ball.x - p.x) > PICKUP.radius || Math.abs(ball.y - p.y) > PICKUP.radius) return;
   ball.held = true;
   ball.shot = null;

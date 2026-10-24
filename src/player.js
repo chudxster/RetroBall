@@ -69,6 +69,8 @@ class Player {
     this.hasBall = true;
     this.shot = null; // set by Shooting while the player is in a jump shot
     this.hangSway = 0; // px of pendulum swing while hanging on the rim (the legs swing further)
+    this.pose = null;  // special poses from a shattered-rim dunk: 'legsDiag' / 'legsUp' (legs kicked out), 'sit'
+    this.sitting = false; // knocked onto the floor; can't move until the reset
     this.sx = 0;      // screen position of the feet on the floor...
     this.sy = 0;
     this.by = 0;      // ...and of the feet including jump height
@@ -105,9 +107,10 @@ class Player {
     this.prevY = this.y;
     this.prevZ = this.z;
 
-    // No steering in the air during a jump shot.
-    let ix = this.shot ? 0 : move.x;
-    let iy = this.shot ? 0 : move.y;
+    // No steering in the air during a jump shot, or while sitting on the floor.
+    const stuck = this.shot || this.sitting;
+    let ix = stuck ? 0 : move.x;
+    let iy = stuck ? 0 : move.y;
     const len = Math.hypot(ix, iy);
     if (len > 1) {
       ix /= len;
@@ -142,7 +145,7 @@ class Player {
     this.y = cy;
 
     if (ix !== 0) this.facing = Math.sign(ix);
-    this.view = this.shot ? 'side' : this.viewForVelocity();
+    this.view = stuck ? 'side' : this.viewForVelocity();
 
     const speed = Math.hypot(this.vx, this.vy);
     this.stride += speed * dt;
@@ -239,6 +242,7 @@ class Player {
 
   // Sprite as a list of [dx, dy, w, h, color] rects, relative to the feet, drawn facing right. Later rects cover earlier ones.
   bodyParts() {
+    if (this.pose === 'sit') return this.sittingParts();
     return this.isFrontal() ? this.frontalParts() : this.profileParts();
   }
 
@@ -360,10 +364,30 @@ class Player {
     }[this.view];
     const numberLeft = { side: -6, frontQ: -4, backQ: -8 }[this.view];
 
+    // Kicked-out legs from a rim-shattering slam: angled halfway, or straight out at hip height, soles forward.
+    const kicked = (dy, skin) => this.pose === 'legsUp'
+      ? [
+          [2, -24 + dy, 18, 6, skin],
+          [20, -24 + dy, 4, 6, COLORS.sock],
+          [21, -24 + dy, 1, 6, c.jersey],
+          [24, -26 + dy, 6, 9, c.shoe],
+          [30, -26 + dy, 2, 9, c.sole],
+        ]
+      : [
+          [0, -22 + dy, 6, 5, skin],
+          [4, -18 + dy, 6, 5, skin],
+          [8, -14 + dy, 6, 4, skin],
+          [11, -11 + dy, 6, 3, COLORS.sock],
+          [13, -9 + dy, 8, 6, c.shoe],
+          [13, -3 + dy, 8, 2, c.sole],
+        ];
+    const legsKicked = this.pose === 'legsUp' || this.pose === 'legsDiag';
+
     return [
       // Back leg is shaded darker.
-      ...leg(-8 + back, c.skinDark, c.skinDarker),
-      ...leg(2 + front, c.skin, c.skinDark),
+      ...(legsKicked
+        ? [...kicked(-3, c.skinDark), ...kicked(0, c.skin)]
+        : [...leg(-8 + back, c.skinDark, c.skinDarker), ...leg(2 + front, c.skin, c.skinDark)]),
 
       // Far arm goes behind the body. The back arm swings opposite the legs.
       ...(backNear ? frontArm : backArm),
@@ -393,6 +417,62 @@ class Player {
       // Armhole straps on both sides of the jersey go last so the arms never cover them.
       [8, -52 + u, 2, 6, c.trim],
       [-10, -52 + u, 2, 6, c.trim],
+    ];
+  }
+
+  // Knocked onto the floor by a shattered rim: sitting with legs out in front (toes up), one arm propped
+  // behind and the other resting on a knee. The upper body is the standing one lowered by `d`.
+  sittingParts() {
+    const c = this.colors;
+    const d = 18;
+    const leg = (x, dy, skin) => [
+      [x, -8 + dy, 18, 6, skin],
+      [x + 18, -8 + dy, 4, 6, COLORS.sock],
+      [x + 19, -8 + dy, 1, 6, c.jersey],
+      [x + 22, -12 + dy, 6, 10, c.shoe],
+      [x + 28, -12 + dy, 2, 10, c.sole],
+    ];
+    const face = [
+      [5, 7, 2, 3, c.skinDark],
+      ...this.eye(11, 6, 2),
+      [16, 8, 1, 2, c.skin],
+    ];
+    return [
+      // Back arm, propped on the floor behind.
+      [-14, -32, 6, 8, c.skinDark],
+      [-17, -25, 6, 8, c.skinDark],
+      [-20, -18, 6, 10, c.skinDark],
+      [-20, -14, 6, 2, c.trim],
+      [-22, -8, 8, 4, c.skinDark],
+
+      ...leg(0, -2, c.skinDark),
+      ...leg(2, 0, c.skin),
+
+      // Shorts on the floor, with a darker back, waistband and side stripe.
+      [-10, -14, 20, 12, c.shorts],
+      [-10, -14, 4, 12, c.shortsDark],
+      [-10, -14, 20, 2, c.shortsDark],
+      [3, -12, 1, 8, c.shortsTrim],
+
+      // Jersey and head, lowered.
+      [-10, -52 + d, 20, 20, c.jersey],
+      [-10, -52 + d, 4, 20, c.jerseyDark],
+      [5, -48 + d, 2, 14, c.jerseyLight],
+      [-10, -34 + d, 20, 1, c.jerseyDark],
+      [-4, -52 + d, 8, 2, c.trim],
+      [-2, -52 + d, 4, 1, c.skinDark],
+      [-1, -50 + d, 2, 1, c.trim],
+      ...this.numberParts(-6, -47 + d, c.trim),
+      ...this.headParts(d, 'side', face),
+
+      // Front arm resting forward on the knee.
+      [8, -32, 6, 8, c.skin],
+      [12, -26, 6, 12, c.skin],
+      [12, -20, 6, 2, c.trim],
+      [14, -14, 6, 4, c.skin],
+
+      [8, -52 + d, 2, 6, c.trim],
+      [-10, -52 + d, 2, 6, c.trim],
     ];
   }
 

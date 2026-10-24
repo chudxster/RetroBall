@@ -114,6 +114,10 @@ const DUNK = {
   shatterHang: 0.45,
   shatterBend: 8,
   shatterShake: 0.6,
+  legKick: 0.08,      // on a shatter slam the legs swing up: halfway for this long, then straight out
+  shatterFall: 0.45,  // seconds falling with the broken rim (vs. `fall` normally)...
+  shatterDrift: 6,    // ...drifting back this far, to land sitting down
+  sitShake: 0.15,
 };
 
 // Fade to black and back: out, hold on black (the reset happens here), then in.

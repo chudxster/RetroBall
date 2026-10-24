@@ -8,6 +8,30 @@ const PLANK_SEAM_GAP = 60; // world units between plank ends along a row
 // so raising the density only adds people (and lowering it only removes them) without reshuffling the rest.
 const CROWD_SEED = Math.floor(Math.random() * 1e6);
 
+// The crowd's reaction to the last big play: `peak` share of fans on their feet for `t` more seconds, maybe
+// waving signs with the scorer's number.
+const crowdHype = { peak: 0, t: 0, time: 1, sign: null };
+
+// A play worth cheering: `level` is the share of fans who jump up (less for the other team). A louder play takes
+// over from a quieter one still going; a quieter one is drowned out.
+function cheerCrowd(level, player, { sign = false, rare = false } = {}) {
+  if (player && player.team !== 0) level *= CROWD.awayHype;
+  if (level < crowdLevel()) return;
+  crowdHype.peak = level;
+  crowdHype.time = crowdHype.t = CROWD.hypeTime * (rare ? 2 : 1);
+  crowdHype.sign = player && (rare || (sign && Math.random() < CROWD.signChance))
+    ? { number: player.look.number, color: player.look.jersey } : null;
+}
+
+function updateCrowd(dt) {
+  crowdHype.t = Math.max(0, crowdHype.t - dt);
+}
+
+// Share of fans on their feet right now: all of the peak, then fading over the last 40% of the cheer.
+function crowdLevel() {
+  return crowdHype.peak * clamp(crowdHype.t / (crowdHype.time * 0.4), 0, 1);
+}
+
 function drawArena(ctx, time) {
   ctx.fillStyle = COLORS.wall;
   ctx.fillRect(0, 0, VIEW_W, CROWD_TOP);
@@ -31,9 +55,10 @@ function drawArena(ctx, time) {
   ctx.beginPath();
   ctx.rect(0, CROWD_TOP, VIEW_W, floorTop - CROWD_TOP);
   ctx.clip();
-  for (let row = 0, top = floorTop - CROWD_ROW_H; top + CROWD_ROW_H > CROWD_TOP; row++, top -= CROWD_ROW_H) {
-    drawCrowdRow(ctx, row, top, time);
-  }
+  // Back rows first, so fans jumping up (and their signs) stay in front of the row behind them.
+  let rows = 0;
+  while (floorTop - (rows + 1) * CROWD_ROW_H + CROWD_ROW_H > CROWD_TOP) rows++;
+  for (let row = rows - 1; row >= 0; row--) drawCrowdRow(ctx, row, floorTop - (row + 1) * CROWD_ROW_H, time);
   ctx.restore();
 }
 
@@ -49,12 +74,20 @@ function drawCrowdRow(ctx, row, top, time) {
   const first = Math.floor((offset - VIEW_W / 2) / SEAT_SPACING) - 1;
   const last = Math.ceil((offset + VIEW_W / 2) / SEAT_SPACING) + 1;
 
+  const level = crowdLevel();
+  const { sign } = crowdHype;
   for (let k = first; k <= last; k++) {
-    if (hash2(k + CROWD_SEED, row + 1013) >= CROWD.density) continue; // empty seat
-    const h = hash2(k + CROWD_SEED, row);
+    const seat = k + CROWD_SEED;
+    if (hash2(seat, row + 1013) >= CROWD.density) continue; // empty seat
+    const h = hash2(seat, row);
     const sx = Math.round(VIEW_W / 2 + k * SEAT_SPACING - offset);
-    const cheering = Math.sin(time * 6 + h * 50) > 0.97;
-    const y = top + (cheering ? -2 : 0);
+    // Each fan has a fixed eagerness: the most eager get up for small plays, everyone for a big one.
+    const hyped = hash2(seat, row + 2027) < level;
+    const holdsSign = hyped && sign && hash2(seat, row + 3041) < CROWD.signShare;
+    const cheering = hyped || Math.sin(time * 6 + h * 50) > CROWD.idleCheer;
+    // On their feet: bouncing up and down (sign holders bob less, waving the sign side to side).
+    const hop = holdsSign ? 1 : 3;
+    const y = top - (hyped ? Math.round(Math.abs(Math.sin(time * 8 + h * 40)) * hop) + 1 : cheering ? 2 : 0);
     const skin = SKINS[Math.floor(h * 31) % SKINS.length];
     const shirt = CROWD_SHIRTS[Math.floor(h * 97) % CROWD_SHIRTS.length];
 
@@ -65,13 +98,33 @@ function drawCrowdRow(ctx, row, top, time) {
     ctx.fillStyle = skin;
     ctx.fillRect(sx + 1, y + 1, 5, 5);
     ctx.fillRect(sx + 3, y + 6, 1, 1);
-    if (cheering) {
+    if (holdsSign) {
+      ctx.fillRect(sx, y - 1, 1, 8);
+      ctx.fillRect(sx + 6, y - 1, 1, 8);
+    } else if (cheering) {
       ctx.fillRect(sx - 1, y, 1, 7);
       ctx.fillRect(sx + 7, y, 1, 7);
     }
     ctx.fillStyle = CROWD_HAIR[Math.floor(h * 53) % CROWD_HAIR.length];
     ctx.fillRect(sx + 1, y + 1, 5, 2);
+    if (holdsSign) drawCrowdSign(ctx, sign, sx + 3, y - 2, Math.round(Math.sin(time * 5 + h * 30) * 1.5), h);
   }
+}
+
+// A sign held overhead (bottom edge at `bottom`, centered on `cx`) with the scorer's number: half the fans paint
+// it in the team color, the rest write the number in team color on white.
+function drawCrowdSign(ctx, sign, cx, bottom, sway, h) {
+  const w = textWidth(sign.number) + 4;
+  const left = Math.round(cx - w / 2) + sway;
+  const top = bottom - 8;
+  const teamBoard = h < 0.5;
+  const board = teamBoard ? sign.color : '#f4f4f4';
+  const ink = teamBoard || isLightColor(sign.color) ? (isLightColor(board) ? '#1a1c2c' : '#f4f4f4') : sign.color;
+  ctx.fillStyle = shade(board, 0.7);
+  ctx.fillRect(left - 1, top - 1, w + 2, 10);
+  ctx.fillStyle = board;
+  ctx.fillRect(left, top, w, 8);
+  drawText(ctx, sign.number, left + 2, top + 2, ink);
 }
 
 // The floor is filled one screen row at a time, so the perspective squeeze comes for free.

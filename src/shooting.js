@@ -349,7 +349,7 @@ const Shooting = (() => {
   function slam(game, p, shot) {
     const hoop = shot.hoop;
     shot.released = true;
-    game.ball.slam(hoop.x, hoop.y, p.shootingBallPosition().z, DUNK.slamSpeed, { hoop, points: 2, dist: 0, dunk: true, team: p.team });
+    game.ball.slam(hoop.x, hoop.y, p.shootingBallPosition().z, DUNK.slamSpeed, { hoop, points: 2, dist: 0, dunk: true, team: p.team, rare: shot.outcome !== 'normal' });
     game.ball.thrower = p;
     game.ball.lastTeam = p.team;
     // While someone hangs on the rim (or tears it down) the ball stays dead.

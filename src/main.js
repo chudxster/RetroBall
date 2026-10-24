@@ -57,6 +57,7 @@ function newGame(mode) {
   state.fade = null;
   state.outFor = 0;
   state.freeThrow = null;
+  crowdHype.t = 0;
   restoreHoops();
   lineUp();
   Play.give(state, star);
@@ -119,6 +120,7 @@ function update(dt) {
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);
+  updateCrowd(dt);
   updateScoreboard(dt, state.score[0], state.score[1]);
 
   // Follow the ball (leading a dribbler). In free shot, frame both the player and a loose ball.
@@ -318,6 +320,9 @@ function handleBallEvents() {
       if (e.ft) stats.ftm++;
       else stats.fgm++;
       if (e.points === 3) stats.tpm++;
+      const { hype } = CROWD;
+      const cheer = e.dunk ? (e.rare ? hype.rareDunk : hype.dunk) : e.ft ? hype.freeThrow : e.points === 3 ? hype.three : hype.score;
+      cheerCrowd(cheer, e.shooter, { sign: !e.ft, rare: e.rare });
       addPopup(state, `+${e.points}`, team === 0 ? COLORS.okay : COLORS.hint, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
       if (e.dunk) {
         addPopup(state, 'DUNK!', COLORS.bad, e.hoop.x, e.hoop.y, HOOP.rimZ + 26);

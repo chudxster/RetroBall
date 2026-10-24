@@ -378,6 +378,13 @@ const SKINS = ['#f2c9a0', '#d9a066', '#a86b47', '#7a4a32', '#5a3524', '#3e2419']
 
 const CROWD = {
   density: 0.92, // share of seats filled (0..1); which seats are taken is random each load
+  idleCheer: 0.995, // between plays a fan pops up now and then: closer to 1 = rarer (sine threshold)
+  // Share of fans who jump up for each play (the home crowd); a rim-hanging or rim-shattering dunk is the loudest.
+  hype: { steal: 0.35, block: 0.35, stuff: 0.5, freeThrow: 0.2, score: 0.45, three: 0.6, dunk: 0.75, rareDunk: 1 },
+  awayHype: 0.5,  // the other team's plays get this much of the cheer
+  hypeTime: 2.5,  // seconds a cheer lasts (fans sit back down over the last 40%); rare dunks last twice as long
+  signChance: 0.5, // chance a basket brings out signs with the scorer's number (always for rare dunks)
+  signShare: 0.15, // share of cheering fans holding up a sign
 };
 const CROWD_SHIRTS =['#b13e53', '#3b5dc9', '#f4f4f4', '#ffcd75', '#38b764', '#41a6f6', '#ef7d57', '#5d275d'];
 const CROWD_HAIR = ['#1a1c2c', '#1a1c2c', '#5d275d', '#7a4a32', '#ffcd75', '#94b0c2'];

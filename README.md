@@ -21,6 +21,10 @@ Reaching for a steal can be called a foul, more likely the closer you are to the
 With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of the
 scorer's table, following the play.
 
+The home crowd mostly sits on its hands, but jumps up for big plays: steals, blocks, baskets, threes and dunks, a
+rim-hanging or rim-shattering dunk loudest of all (the other team's plays get half the cheer). After a basket some
+fans may wave signs with the scorer's number.
+
 Click a face (Player and Upgrades tabs) to pick which of your three players to customize: each has their own skin,
 hair and number (Randomize rolls a new one), while the jersey, shorts and shoe colors are the whole team's.
 

@@ -91,6 +91,7 @@ const Play = (() => {
       poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
       game.stats[p.team].stl++;
+      cheerCrowd(CROWD.hype.steal, p);
     } else {
       p.stunT = DEFENSE.stealStun;
     }
@@ -179,6 +180,7 @@ const Play = (() => {
       game.ball.lastTeam = d.team;
       addPopup(game, 'BLOCKED!', COLORS.bad, d.x, d.y, 60);
       game.stats[d.team].blk++;
+      cheerCrowd(CROWD.hype.block, d);
       return true;
     }
     return false;
@@ -208,6 +210,7 @@ const Play = (() => {
       if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
       startJump(d);
       addPopup(game, 'STUFFED!', COLORS.bad, d.x, d.y, 60);
+      cheerCrowd(CROWD.hype.stuff, d);
       return true;
     }
     return false;

@@ -192,6 +192,8 @@ const FOUL = {
   ftBack: 3,                 // the shooter stands this far behind the free-throw line
   aiShootDelay: [0.6, 1.2],  // seconds an AI shooter waits at the line
   textTime: 2,               // how long "FREE THROW" stays up
+  callTime: 2,               // after the whistle the ball drops loose and everyone stands still this long
+  dropTime: 0.3,             // seconds the ball takes to fall from the handler's hands to the floor
 };
 
 // The referee (3v3 only): walks the strip between the scorer's table and the far sideline (at depth `y`), following

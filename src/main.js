@@ -35,7 +35,7 @@ const state = {
   debris: [],
   fade: null, // { t } while fading to black and back for a reset
   hitStop: 0, // seconds the action freezes for impact (dunk slams)
-  freeThrow: null, // { shooter, pending } from a foul until the shot is away (pending: called, not lined up yet)
+  freeThrow: null, // { shooter, pending, waitT } from a foul until the shot is away (pending: whistled, waiting)
   clock: null,     // the 3v3 game and shot clocks (see clock.js)
   drill: null,     // Around the World progress (see practice.js)
   replayReady: false, // after the final buzzer: the shoot key has been let go, so pressing it starts a new game
@@ -92,8 +92,10 @@ function update(dt) {
   const { ball } = state;
   updateFade(dt);
 
-  // Hold still while the camera pans back to center, the screen fades for a reset, or between periods.
-  const frozen = !!(camera.pan || state.fade) || Clock.stopped(state);
+  // Hold still while the camera pans back to center, the screen fades for a reset, between periods, or after a
+  // foul's whistle until the free throw is set up.
+  const whistle = !!(state.freeThrow && state.freeThrow.pending);
+  const frozen = !!(camera.pan || state.fade) || Clock.stopped(state) || whistle;
   // After the final buzzer, a fresh press of the shoot key starts a new game (in career, opens the career menu to
   // pick the next one).
   if (state.clock && state.clock.over && state.clock.overT > 1) {
@@ -122,7 +124,12 @@ function update(dt) {
   const ft = state.freeThrow;
   if (ft && !ft.pending && ft.shooter.shot && ft.shooter.shot.released) state.freeThrow = null;
   for (const p of state.players) Play.act(state, p, ctls.get(p));
-  if (state.freeThrow && state.freeThrow.pending) startFreeThrow(state.freeThrow.shooter);
+  // After the whistle and the pause, line up for the free throw.
+  const called = state.freeThrow;
+  if (called && called.pending) {
+    called.waitT -= dt;
+    if (called.waitT <= 0) startFreeThrow(called.shooter);
+  }
   if (ctls.get(state.user).switch) Play.switchPlayer(state);
   Play.separate(state);
 
@@ -135,7 +142,7 @@ function update(dt) {
   Practice.update(dt, state);
   // The out-of-bounds count waits while anyone is dunking (or hanging on the rim). The drill hands the ball back
   // itself.
-  if (!state.fade && !state.drill && !state.players.some((p) => p.shot && p.shot.dunk)) checkBallBehindHoop(dt);
+  if (!state.fade && !state.drill && !whistle && !state.players.some((p) => p.shot && p.shot.dunk)) checkBallBehindHoop(dt);
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);

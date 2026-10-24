@@ -3,7 +3,7 @@
 const Play = (() => {
   // Carry out the non-shooting buttons for one player this tick: dash, pass, steal, jump.
   function act(game, p, ctl) {
-    // A foul was just called this tick: nothing else happens until everyone is lined up for the free throw.
+    // A foul was whistled: nothing else happens until everyone is lined up for the free throw.
     if (game.freeThrow && game.freeThrow.pending) return;
     if (ctl.dash) p.dash(ctl.dash);
     if (ctl.pass && p.hasBall && !p.shot) pass(game, p, ctl.pass);
@@ -103,12 +103,22 @@ const Play = (() => {
     return FOUL.maxChance * k;
   }
 
-  // The handler keeps the ball; with free throws on, they go to the line (set up by main.js after this tick's
-  // actions, see startFreeThrow).
+  // The handler keeps the ball. With free throws on, the whistle stops play instead: the ball drops out of their
+  // hands (dead: nobody can pick it up), everyone holds still for FOUL.callTime, then they go to the line (main.js
+  // counts down `waitT` and calls startFreeThrow).
   function foul(game, p, h) {
     p.stunT = FOUL.stun;
     addPopup(game, 'FOUL!', COLORS.bad, p.x, p.y, 56);
-    if (game.rules.freeThrows) game.freeThrow = { shooter: h, pending: true };
+    if (!game.rules.freeThrows) return;
+    game.freeThrow = { shooter: h, pending: true, waitT: FOUL.callTime };
+    const { ball } = game;
+    const fromX = h.x + h.facing * 8;
+    h.hasBall = false;
+    ball.launch(fromX, h.y, 16, { x: fromX + h.facing * 4, y: h.y, z: 0 }, FOUL.dropTime, null);
+    ball.thrower = h;
+    ball.lastTeam = h.team;
+    ball.lockT = FOUL.callTime + 1; // dead until the free-throw line-up takes it
+    for (const q of game.players) Object.assign(q, { vx: 0, vy: 0, dashT: 0 });
   }
 
   // How far a player can reach for a steal, and how well they block, with their defense upgrade.

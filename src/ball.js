@@ -13,15 +13,21 @@ class Ball {
     this.vy = 0;
     this.vz = 0;
     this.spin = 0;
-    this.shot = null;    // { hoop, points } while a shot is live
+    this.holder = null;  // the player holding it, while held
+    this.shot = null;    // { hoop, points, team } while a shot is live
+    this.pass = null;    // { to, team, target, rolls } while a pass is in the air
     this.touched = false; // hit rim or board since the shot was released
+    this.thrower = null; // who last shot or passed it: they can't grab it back for noPickup seconds
     this.noPickup = 0;
+    this.reserved = null; // after a basket, only this team may pick the ball up (to bring it back in)
     this.events = [];    // 'score' / 'airball' for the game to react to
   }
 
   // Throw from (x, y, z) so the ball's bottom reaches `to` after `time` seconds.
   launch(x, y, z, to, time, shot) {
     this.held = false;
+    this.holder = null;
+    this.pass = null;
     this.x = this.prevX = x;
     this.y = this.prevY = y;
     this.z = this.prevZ = z;
@@ -46,6 +52,8 @@ class Ball {
     this.vy = 0;
     this.vz = 0;
     this.noPickup = 0;
+    this.thrower = null;
+    this.reserved = null;
   }
 
   update(dt) {
@@ -81,7 +89,7 @@ class Ball {
       const hoop = this.shot.hoop;
       if (Math.hypot(this.x - hoop.x, this.y - hoop.y) < HOOP.rimR) {
         const dunk = !!this.shot.dunk;
-        this.events.push({ type: 'score', hoop, points: this.shot.points, swish: !this.touched, dunk });
+        this.events.push({ type: 'score', hoop, team: this.shot.team, points: this.shot.points, swish: !this.touched, dunk });
         hoop.netT = HOOP.swishTime;
         hoop.netSwing = dunk ? HOOP.maxSwing : clamp(this.shot.dist / HOOP.swingPerUnit, 1, HOOP.maxSwing);
         this.shot = null;
@@ -93,6 +101,7 @@ class Ball {
       if (this.vz < 0) {
         if (this.shot && !this.touched) this.events.push({ type: 'airball', x: this.x, y: this.y });
         this.shot = null;
+        this.pass = null; // a pass that hits the floor is just a loose ball
         this.vz = -this.vz * BALL.bounce;
         if (this.vz < BALL.minBounce) this.vz = 0;
       }

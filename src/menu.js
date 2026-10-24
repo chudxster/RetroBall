@@ -29,6 +29,53 @@ function saveLook(look) {
   }
 }
 
+const UPGRADE_STORAGE_KEY = 'retroball.upgrades';
+const UPGRADE_KEYS = ['speed', 'shooting', 'dunking'];
+const MODE_STORAGE_KEY = 'retroball.mode';
+const MODES = ['3v3', 'free'];
+
+// Saved upgrade levels, each a whole number from 0 to UPGRADES.max (anything else counts as 0).
+function loadUpgrades() {
+  let saved = {};
+  try {
+    saved = JSON.parse(localStorage.getItem(UPGRADE_STORAGE_KEY)) || {};
+  } catch (e) {
+    // Storage blocked or corrupt: start from nothing.
+  }
+  const levels = {};
+  for (const key of UPGRADE_KEYS) {
+    const v = saved[key];
+    levels[key] = Number.isInteger(v) && v >= 0 && v <= UPGRADES.max ? v : 0;
+  }
+  return levels;
+}
+
+function saveUpgrades(levels) {
+  try {
+    localStorage.setItem(UPGRADE_STORAGE_KEY, JSON.stringify(levels));
+  } catch (e) {
+    // Not fatal; the levels just won't persist.
+  }
+}
+
+function loadMode() {
+  try {
+    const saved = localStorage.getItem(MODE_STORAGE_KEY);
+    if (MODES.includes(saved)) return saved;
+  } catch (e) {
+    // Storage blocked: use the default.
+  }
+  return '3v3';
+}
+
+function saveMode(mode) {
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, mode);
+  } catch (e) {
+    // Not fatal; the mode just won't persist.
+  }
+}
+
 const Menu = (() => {
   const button = document.getElementById('pause-btn');
   const panel = document.getElementById('menu');
@@ -51,7 +98,8 @@ const Menu = (() => {
   ];
   const POSE_SECONDS = 0.8;
 
-  let player = null;
+  // What the menu edits, supplied by main.js: { look, setLook(look), upgrades, mode(), setMode(mode) }.
+  let game = null;
   let preview = null;
   let look = null;
   let open = false;
@@ -59,7 +107,7 @@ const Menu = (() => {
   let lastFrame = 0;
 
   function init(target) {
-    player = target;
+    game = target;
     look = { ...target.look };
     preview = new Player({ x: 0, y: 0, look });
 
@@ -92,7 +140,7 @@ const Menu = (() => {
     });
     numberInput.addEventListener('change', syncControls);
 
-    for (const step of panel.querySelectorAll('.step')) {
+    for (const step of panel.querySelectorAll('.step[data-step]')) {
       step.addEventListener('click', () => {
         const n = HAIR_STYLE_NAMES.length;
         const i = HAIR_STYLE_NAMES.indexOf(look.hairStyle);
@@ -100,6 +148,9 @@ const Menu = (() => {
       });
     }
 
+    initTabs();
+    initUpgradeView();
+    initModeView();
     initTestView();
 
     button.addEventListener('click', () => setOpen(!open));
@@ -117,19 +168,93 @@ const Menu = (() => {
     syncControls();
   }
 
+  // Tabs: each shows its panel, plus the footer buttons tagged for it (data-for).
+  function initTabs() {
+    const tabs = [...panel.querySelectorAll('.tab')];
+    const footButtons = [...panel.querySelectorAll('.menu-foot [data-for]')];
+    const show = (tab) => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        document.getElementById(t.dataset.panel).hidden = !on;
+      }
+      for (const b of footButtons) b.hidden = b.dataset.for !== tab.dataset.panel;
+    };
+    for (const t of tabs) t.addEventListener('click', () => show(t));
+    show(tabs[0]);
+  }
+
+  // Upgrades: +/- per stat, shown as pips with what the current level does.
+  function initUpgradeView() {
+    const rows = [...panel.querySelectorAll('.upgrade')];
+    const effects = {
+      speed: (n) => `+${Math.round(UPGRADES.speed * n * 100)}% speed`,
+      shooting: (n) => `+${Math.round(UPGRADES.threeGreen * n * 100)}% green on 3s`,
+      dunking: (n) => `+${Math.round(UPGRADES.dunkRange * n * 100)}% range, rim odds up`,
+    };
+    const sync = () => {
+      for (const row of rows) {
+        const key = row.dataset.upgrade;
+        const n = game.upgrades[key];
+        const pips = row.querySelector('.pips');
+        pips.replaceChildren(...Array.from({ length: UPGRADES.max }, (_, i) => {
+          const pip = document.createElement('span');
+          pip.className = i < n ? 'pip on' : 'pip';
+          return pip;
+        }));
+        row.querySelector('.upgrade-effect').textContent = n ? effects[key](n) : '';
+        row.querySelector('[data-delta="-1"]').disabled = n <= 0;
+        row.querySelector('[data-delta="1"]').disabled = n >= UPGRADES.max;
+      }
+    };
+    for (const row of rows) {
+      for (const step of row.querySelectorAll('.step')) {
+        step.addEventListener('click', () => {
+          const key = row.dataset.upgrade;
+          game.upgrades[key] = clamp(game.upgrades[key] + Number(step.dataset.delta), 0, UPGRADES.max);
+          saveUpgrades(game.upgrades);
+          sync();
+        });
+      }
+    }
+    document.getElementById('reset-upgrades').addEventListener('click', () => {
+      for (const key of UPGRADE_KEYS) game.upgrades[key] = 0;
+      saveUpgrades(game.upgrades);
+      sync();
+    });
+    sync();
+  }
+
+  // Game mode: picking a different one starts a new game in it.
+  function initModeView() {
+    const options = [...panel.querySelectorAll('.mode-option')];
+    const sync = () => {
+      for (const o of options) o.setAttribute('aria-pressed', String(o.dataset.mode === game.mode()));
+    };
+    for (const o of options) {
+      o.addEventListener('click', () => {
+        if (o.dataset.mode === game.mode()) return;
+        game.setMode(o.dataset.mode);
+        saveMode(o.dataset.mode);
+        sync();
+      });
+    }
+    sync();
+  }
+
   // Testing view: sliders for the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two
-  // add up past 100% the hang share shrinks; "normal" shows whatever is left. Plus the crowd density, live on CROWD.
+  // add up past 100% the hang share shrinks; "normal" shows whatever is left. Plus the AI level (live on AI) and the
+  // crowd density (live on CROWD).
   const DEFAULT_ODDS = { hangChance: DUNK.hangChance, shatterChance: DUNK.shatterChance };
   const DEFAULT_CROWD = { density: CROWD.density };
+  const DEFAULT_AI = { level: AI.level };
 
   function initTestView() {
-    const playerView = document.getElementById('player-view');
     const testView = document.getElementById('test-view');
-    const toggle = document.getElementById('test-toggle');
-    const resetLook = document.getElementById('reset-look');
     const resetOdds = document.getElementById('reset-odds');
     const sliders = [...testView.querySelectorAll('input[data-odds]')];
     const crowd = document.getElementById('crowd-density');
+    const aiLevel = document.getElementById('ai-level');
 
     const sync = () => {
       for (const s of sliders) {
@@ -140,6 +265,8 @@ const Menu = (() => {
       document.getElementById('normal-chance-value').textContent = `${normal}%`;
       crowd.value = Math.round(CROWD.density * 100);
       document.getElementById('crowd-density-value').textContent = `${crowd.value}%`;
+      aiLevel.value = Math.round(AI.level * 100);
+      document.getElementById('ai-level-value').textContent = `${aiLevel.value}%`;
     };
 
     for (const s of sliders) {
@@ -152,25 +279,22 @@ const Menu = (() => {
       CROWD.density = Number(crowd.value) / 100;
       sync();
     });
+    aiLevel.addEventListener('input', () => {
+      AI.level = Number(aiLevel.value) / 100;
+      sync();
+    });
     resetOdds.addEventListener('click', () => {
       Object.assign(DUNK, DEFAULT_ODDS);
       Object.assign(CROWD, DEFAULT_CROWD);
+      Object.assign(AI, DEFAULT_AI);
       sync();
-    });
-    toggle.addEventListener('click', () => {
-      const testing = testView.hidden;
-      testView.hidden = !testing;
-      playerView.hidden = testing;
-      resetLook.hidden = testing;
-      resetOdds.hidden = !testing;
-      toggle.textContent = testing ? 'Back' : 'Test';
     });
     sync();
   }
 
   function applyLook(next) {
     look = next;
-    player.setLook(look);
+    game.setLook(look);
     preview.setLook(look);
     saveLook(look);
     syncControls();

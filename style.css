@@ -113,16 +113,97 @@ input {
   display: none;
 }
 
-.btn-small {
-  padding: var(--px) calc(var(--px) * 3);
-  color: #94b0c2;
-}
-
-.test-view {
+.stack-view {
   display: flex;
   flex-direction: column;
   gap: calc(var(--px) * 3);
   min-height: calc(var(--px) * 92);
+}
+
+/* Tabs across the top of the pause menu */
+.tabs {
+  justify-content: flex-start;
+  gap: calc(var(--px) * 2);
+  border-bottom: var(--px) solid #333c57;
+}
+
+.tab {
+  margin-bottom: calc(var(--px) * -1);
+  padding: calc(var(--px) * 2) calc(var(--px) * 3);
+  background: none;
+  border: var(--px) solid transparent;
+  color: #94b0c2;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: #f4f4f4;
+}
+
+.tab[aria-selected="true"] {
+  background: #1a1c2c;
+  border-color: #333c57;
+  border-bottom-color: #1a1c2c;
+  color: #ffcd75;
+}
+
+.foot-left {
+  display: flex;
+  gap: calc(var(--px) * 3);
+}
+
+/* Upgrade level pips: filled up to the current level */
+.pips {
+  display: flex;
+  gap: var(--px);
+}
+
+.pip {
+  width: calc(var(--px) * 5);
+  height: calc(var(--px) * 8);
+  background: #262b44;
+  border: var(--px) solid #566c86;
+}
+
+.pip.on {
+  background: #38b764;
+  border-color: #a7f070;
+}
+
+.upgrade-effect {
+  font-size: 0.75em;
+  color: #94b0c2;
+}
+
+/* Game mode choices */
+.mode-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--px) * 2);
+  padding: calc(var(--px) * 4);
+  background: #262b44;
+  border: var(--px) solid #566c86;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode-option:hover {
+  border-color: #f4f4f4;
+}
+
+.mode-option[aria-pressed="true"] {
+  background: #29366f;
+  border-color: #ffcd75;
+}
+
+.mode-name {
+  color: #ffcd75;
+}
+
+.mode-desc {
+  font-size: 0.75em;
+  color: #94b0c2;
 }
 
 .test-note {
@@ -168,10 +249,6 @@ input[type="range"]::-moz-range-thumb {
   background: #ffcd75;
   border: var(--px) solid #1a1c2c;
   border-radius: 0;
-}
-
-.menu-title {
-  color: #ffcd75;
 }
 
 .menu-body {
@@ -245,6 +322,15 @@ input[type="range"]::-moz-range-thumb {
 
 .step:hover {
   background: #3b5dc9;
+}
+
+.step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.step:disabled:hover {
+  background: #333c57;
 }
 
 .value {

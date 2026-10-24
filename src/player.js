@@ -77,6 +77,17 @@ class Player {
     this.hangSway = 0; // px of pendulum swing while hanging on the rim (the legs swing further)
     this.pose = null;  // special poses from a shattered-rim dunk: 'legsDiag' / 'legsUp' (legs kicked out), 'sit'
     this.sitting = false; // knocked onto the floor; can't move until the reset
+    this.team = 0;    // 0 = home (the user's team), 1 = away
+    this.role = 0;    // 0..2 within the team; defenders guard the opponent with the same role
+    this.upgrades = { speed: 0, shooting: 0, dunking: 0 }; // levels; only the user's own player buys any
+    this.meter = null; // this player's shot meter while shooting (and briefly after)
+    this.jump = null;  // { t } while jumping to contest or block
+    this.reachT = 0;   // seconds left of a steal reach (arm out)
+    this.stunT = 0;    // seconds left slowed after a missed reach or losing the ball
+    this.stealCD = 0;
+    this.prevShoot = false; // last tick's shoot / dunk buttons, so Shooting can spot presses
+    this.prevDunk = false;
+    this.mind = {};    // the AI's working memory (see ai.js)
     this.sx = 0;      // screen position of the feet on the floor...
     this.sy = 0;
     this.by = 0;      // ...and of the feet including jump height
@@ -109,13 +120,17 @@ class Player {
     };
   }
 
-  update(dt, move, sprint) {
+  // `speedK` scales top speed (slower AI levels, a stunned defender).
+  update(dt, move, sprint, speedK = 1) {
     this.prevX = this.x;
     this.prevY = this.y;
     this.prevZ = this.z;
+    this.reachT = Math.max(0, this.reachT - dt);
+    this.stunT = Math.max(0, this.stunT - dt);
+    this.stealCD = Math.max(0, this.stealCD - dt);
 
-    // No steering in the air during a jump shot, or while sitting on the floor.
-    const stuck = this.shot || this.sitting;
+    // No steering in the air during a jump shot or a contest jump, or while sitting on the floor.
+    const stuck = this.shot || this.jump || this.sitting;
     let ix = stuck ? 0 : move.x;
     let iy = stuck ? 0 : move.y;
     const len = Math.hypot(ix, iy);
@@ -125,7 +140,8 @@ class Player {
     }
 
     // Steer velocity toward the target at a fixed rate: quick to respond, but with a little weight.
-    const maxSpeed = sprint ? PLAYER.sprintSpeed : PLAYER.runSpeed;
+    const boost = 1 + UPGRADES.speed * this.upgrades.speed;
+    const maxSpeed = (sprint ? PLAYER.sprintSpeed : PLAYER.runSpeed) * boost * (this.stunT > 0 ? DEFENSE.stunSpeed : speedK);
     const tx = ix * maxSpeed;
     const ty = iy * maxSpeed * PLAYER.depthSpeed;
     const dx = tx - this.vx;
@@ -153,6 +169,13 @@ class Player {
 
     if (ix !== 0) this.facing = Math.sign(ix);
     this.view = stuck ? 'side' : this.viewForVelocity();
+
+    if (this.jump) {
+      this.jump.t += dt;
+      const k = this.jump.t / DEFENSE.jumpTime;
+      this.z = k < 1 ? DEFENSE.jumpHeight * Math.sin(Math.PI * k) : 0;
+      if (k >= 1) this.jump = null;
+    }
 
     const speed = Math.hypot(this.vx, this.vy);
     this.stride += speed * dt;
@@ -229,7 +252,12 @@ class Player {
   }
 
   runFrame() {
-    return this.moving && !this.shot ? Math.floor(this.stride / PLAYER.strideLen) % 4 : -1;
+    return this.moving && !this.airborne() ? Math.floor(this.stride / PLAYER.strideLen) % 4 : -1;
+  }
+
+  // In a jump shot, dunk or contest jump.
+  airborne() {
+    return !!(this.shot || this.jump);
   }
 
   // Upper-body bob: up 2px on the passing frames of the run cycle.
@@ -291,7 +319,7 @@ class Player {
 
   // -1..1 over the stride: +1 when the far arm is fully forward (with the near leg forward, run frame 0).
   armSwingPhase() {
-    if (!this.moving || this.shot) return 0;
+    if (!this.moving || this.airborne()) return 0;
     return Math.sin((2 * Math.PI * this.stride) / (4 * PLAYER.strideLen) + Math.PI / 4);
   }
 
@@ -346,7 +374,7 @@ class Player {
     // arms are drawn in front, one at each edge of the torso, so both stay in view.
     const backNear = turn < 0;
     const frontNear = turn >= 0;
-    const armsInFront = turn === 0 && !this.shot;
+    const armsInFront = turn === 0 && !this.airborne();
     const backW = backNear ? 8 : turn > 0 ? 4 : 6;
     const backSkin = backNear ? c.skin : armsInFront ? c.skinMid : c.skinDark;
     const backShade = backNear || armsInFront ? c.skinDark : c.skinDarker;
@@ -363,10 +391,13 @@ class Player {
           [12, -38 + u, frontW, 2, c.trim],             // wristband
           [12, -35 + u + dip, frontW, 1, frontShade],   // knuckles
         ]
-      : this.armChain(11, -50 + u, -swing, -swing + bend, frontW, frontNear && turn > 0 ? 1 : 0, frontSkin, frontShade);
+      : this.reachT > 0
+        ? this.armChain(11, -50 + u, 1.3, 1.5, frontW, 1, frontSkin, frontShade) // steal: arm jabbed out level
+        : this.armChain(11, -50 + u, -swing, -swing + bend, frontW, frontNear && turn > 0 ? 1 : 0, frontSkin, frontShade);
 
     // Jump shot: shooting arm straight up under the ball (with a wrist flick once it's gone), guide arm raised behind.
-    if (this.shot) {
+    // A contest jump throws both hands up the same way.
+    if (this.airborne()) {
       backArm = [
         [-10, -64, 6, 14, c.skinDark],
         [-10, -56, 6, 2, c.trim],

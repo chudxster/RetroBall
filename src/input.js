@@ -5,7 +5,7 @@ const Input = (() => {
   const GAME_KEYS = new Set([
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
-    'ShiftLeft', 'ShiftRight', 'Space', 'KeyF',
+    'ShiftLeft', 'ShiftRight', 'Space', 'KeyE', 'KeyQ',
   ]);
 
   window.addEventListener('keydown', (e) => {
@@ -32,8 +32,13 @@ const Input = (() => {
     shoot() {
       return down.has('Space');
     },
-    dunk() {
-      return down.has('KeyF');
+    // E: dunk with the ball (and let go of the rim), steal on defense.
+    action() {
+      return down.has('KeyE');
+    },
+    // Q: pass with the ball, switch player on defense.
+    pass() {
+      return down.has('KeyQ');
     },
   };
 })();

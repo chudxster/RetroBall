@@ -136,7 +136,77 @@ const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9 };
 const PICKUP = {
   radius: 12,         // how close (in x and y) the player must be to grab a loose ball
   reach: 30,          // highest ball (bottom z) the player can grab
-  delay: 0.5,         // after a shot, the shooter can't grab the ball for this long
+  delay: 0.5,         // after a shot or pass, the thrower can't grab the ball for this long
+};
+
+// Passing (Q with the ball): a fast, flat throw led toward where the receiver is heading.
+const PASS = {
+  speed: 380,         // world units per second
+  minTime: 0.2,
+  fromZ: 26,          // ball height leaving the hands...
+  toZ: 22,            // ...and arriving at the receiver
+  lead: 0.8,          // how much of the receiver's motion to lead them by
+  catchRadius: 16,    // the intended receiver reaches further than PICKUP.radius...
+  catchReach: 45,     // ...and higher
+  aimCone: 0.3,       // holding a direction picks the teammate within this cosine of it
+};
+
+// Defense: steals (E), jumping to contest or block (Space), and players not standing inside each other.
+const DEFENSE = {
+  stealRange: 22,     // how close to the ball (held in front of the handler) the reach has to start
+  stealCooldown: 0.7,
+  reachTime: 0.2,     // seconds the arm stays out on a steal attempt
+  stealStun: 0.4,     // a missed reach leaves the defender slowed this long...
+  stunSpeed: 0.4,     // ...to this fraction of their speed
+  userStealChance: [0.5, 0.25], // the user's odds at the easiest..hardest AI level
+  jumpHeight: 18,
+  jumpTime: 0.5,
+  contestRange: 40,   // defenders inside this shrink the shooter's green zone...
+  contestMax: 0.55,   // ...by up to this share when right on top of them and in the air...
+  contestGround: 0.6, // ...or this fraction of that with their feet on the floor
+  blockRange: 16,     // an airborne defender this close at the release can block it
+  blockMinZ: 6,
+  userBlockChance: 0.5,
+  userIntercept: 0.6, // odds the user's player picks off a pass they get a hand on
+  rimGuard: 22,       // a defender this close to the rim, or to the dunker at takeoff, can stuff the dunk...
+  stuffChance: 0.3,   // ...with these odds each (AI defenders add their block chance)
+  userStuffChance: 0.4,
+  separation: 11,     // players closer than this get pushed apart
+};
+
+// Upgrades for the user's own player, bought in the pause menu (free +/- for now). Effects per level:
+const UPGRADES = {
+  max: 5,
+  speed: 0.04,         // +4% run and sprint speed
+  threeGreen: 0.15,    // +15% green zone width on three-point shots
+  dunkRange: 0.12,     // +12% dunk range
+  hangChance: 0.02,    // +2% rim hang odds
+  shatterChance: 0.004, // +0.4% rim shatter odds
+};
+
+// Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set in the Test panel.
+// The user's teammates play at a fixed level.
+const AI = {
+  level: 0.5,
+  teammateLevel: 0.6,
+  think: [0.5, 0.2],       // seconds between ball-handler decisions
+  reaction: [0.45, 0.12],  // delay before jumping to contest a shot
+  shotError: [0.14, 0.035], // spread of the release point around the middle of the green
+  speed: [0.82, 1],        // fraction of full speed
+  stealRate: [0.1, 0.5],   // steal attempts per second when in range of the ball handler
+  stealChance: [0.15, 0.35],
+  interceptChance: [0.1, 0.35],
+  blockChance: [0.15, 0.4],
+  openGap: 20,        // no defender this close = open enough to shoot
+  pressureGap: 16,    // defender this close = under pressure
+  shootRange: 150,    // won't shoot from farther out than this (unless the hold timer runs out)
+  minHold: 0.5,       // seconds with the ball before considering a jumper
+  maxHold: 7,         // after this long holding the ball, shoot whatever happens
+  guardGapBall: 13,   // how far off the man defenders play, toward their own hoop: on the ball...
+  guardGapOff: 26,    // ...and off it
+  helpRange: 110,     // a ball handler this close to the hoop draws a help defender...
+  helpDepth: 16,      // ...who stands this far out from the rim, toward the ball
+  hangTime: 1.1,      // seconds an AI dunker hangs on the rim on a rim-hang dunk
 };
 
 // Pseudo-perspective: the far sideline sits higher on screen and is squeezed horizontally.

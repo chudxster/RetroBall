@@ -4,15 +4,36 @@ const METER_W = 8;
 const TEXT_SCALE = 2; // the 3x5 font is drawn with 2px pixels at 640x360
 
 function drawHud(ctx, game) {
-  const s = game.stats;
-  const line = `PTS ${s.pts}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}`;
+  const s = game.stats[0];
+  const free = game.mode === 'free';
+  const score = free ? `PTS ${s.pts}` : `HOME ${game.score[0]}  AWAY ${game.score[1]}`;
+  const line = `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}`;
   ctx.fillStyle = COLORS.outline;
   ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
   drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });
 
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
-  drawText(ctx, 'WASD MOVE  SHIFT SPRINT  HOLD SPACE SHOOT  F DUNK', VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  const hint = free
+    ? 'WASD MOVE  SHIFT SPRINT  HOLD SPACE SHOOT  E DUNK'
+    : 'WASD MOVE  SHIFT SPRINT  SPACE SHOOT/BLOCK  E DUNK/STEAL  Q PASS/SWITCH';
+  drawText(ctx, hint, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+}
+
+// A small arrow over the head of the player the user is controlling.
+function drawUserMarker(ctx, p) {
+  const x = p.sx;
+  const y = p.by - Math.round(92 * p.scale);
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(x - 5, y - 1, 11, 2);
+  ctx.fillRect(x - 4, y + 1, 9, 2);
+  ctx.fillRect(x - 3, y + 3, 7, 2);
+  ctx.fillRect(x - 1, y + 5, 3, 2);
+  ctx.fillStyle = COLORS.okay;
+  ctx.fillRect(x - 4, y, 9, 1);
+  ctx.fillRect(x - 3, y + 1, 7, 2);
+  ctx.fillRect(x - 2, y + 3, 5, 2);
+  ctx.fillRect(x, y + 5, 1, 1);
 }
 
 // 2K-style vertical meter beside the shooter: fills while Space is held, green band is the make window.
@@ -47,7 +68,7 @@ function drawShotMeter(ctx, meter, player) {
 function drawHangPrompt(ctx, player, time) {
   if (Math.floor(time * 3) % 2) return;
   const y = player.by - Math.round(96 * player.scale);
-  drawText(ctx, 'F TO LET GO', player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
+  drawText(ctx, 'E TO LET GO', player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
 }
 
 // Floating text anchored to a spot in the world, rising and blinking out.

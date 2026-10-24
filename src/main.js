@@ -11,18 +11,46 @@ shadowLayer.width = VIEW_W;
 shadowLayer.height = VIEW_H;
 const shadowCtx = shadowLayer.getContext('2d');
 
+const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0 });
+
 const state = {
   time: 0,
-  player: new Player({ x: COURT.length / 2 - 40, y: COURT.width / 2 + 20, look: loadLook() }),
+  mode: loadMode(),  // '3v3' or 'free' (free shot: just the user, no AI)
+  look: loadLook(),  // the user's custom look; team colors come from it
+  upgrades: loadUpgrades(),
+  roster: [],        // all six players, in either mode
+  players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
+  user: null,        // the player the user controls
   ball: new Ball(),
-  meter: null,
+  possession: 0,     // team with the ball (or that last had it)
+  score: [0, 0],
+  stats: [newStats(), newStats()],
   popups: [],
   outFor: 0, // how long the loose ball has been behind a backboard
   debris: [],
   fade: null, // { t } while fading to black and back for a reset
   hitStop: 0, // seconds the action freezes for impact (dunk slams)
-  stats: { pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0 },
 };
+
+// A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball.
+function newGame(mode) {
+  state.mode = mode;
+  state.roster = makePlayers(state.look);
+  const star = state.roster[0];
+  star.upgrades = state.upgrades;
+  state.players = mode === 'free' ? [star] : state.roster;
+  state.user = star;
+  state.score = [0, 0];
+  state.stats = [newStats(), newStats()];
+  state.popups = [];
+  state.debris = [];
+  state.fade = null;
+  state.outFor = 0;
+  restoreHoops();
+  lineUp();
+  Play.give(state, star);
+  camera.snap(star.x);
+}
 
 function update(dt) {
   if (state.hitStop > 0) {
@@ -30,31 +58,72 @@ function update(dt) {
     return;
   }
   state.time += dt;
-  const { player: p, ball } = state;
+  const { ball } = state;
   updateFade(dt);
 
   // Hold still while the camera pans back to center or the screen fades for a reset.
-  const frozen = camera.pan || state.fade;
-  const move = frozen ? { x: 0, y: 0 } : Input.move();
-  p.update(dt, move, Input.sprint());
-  Shooting.update(dt, state, !frozen && Input.shoot(), !frozen && Input.dunk(), move);
+  const frozen = !!(camera.pan || state.fade);
+  const ctls = new Map();
+  ctls.set(state.user, userControls(frozen));
+  AIBrain.think(dt, state, ctls, frozen);
+
+  for (const p of state.players) {
+    const c = ctls.get(p);
+    p.update(dt, c.move, c.sprint, p === state.user ? 1 : aiValue(p, AI.speed));
+    if (c.face && !p.airborne() && !p.sitting) p.facing = c.face;
+  }
+  for (const p of state.players) Shooting.update(dt, state, p, ctls.get(p));
+  for (const p of state.players) Play.act(state, p, ctls.get(p));
+  if (ctls.get(state.user).switch) Play.switchPlayer(state);
+  Play.separate(state);
+
   ball.update(dt);
   handleBallEvents();
-  tryPickup();
-  // The out-of-bounds count waits while the player is mid-shot or hanging on the rim.
-  if (!state.fade && !p.shot) checkBallBehindHoop(dt);
+  Play.pickups(state);
+  // The out-of-bounds count waits while anyone is dunking (or hanging on the rim).
+  if (!state.fade && !state.players.some((p) => p.shot && p.shot.dunk)) checkBallBehindHoop(dt);
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);
-  updateScoreboard(dt, state.stats.pts, 0);
+  updateScoreboard(dt, state.score[0], state.score[1]);
 
-  // While the ball is loose, frame both the player and the ball. Zoom out the farther the player is from a hoop.
-  const hoop = nearestHoop(p.x);
-  const fromHoop = Math.hypot(p.x - hoop.x, p.y - hoop.y);
+  // Follow the ball (leading a dribbler). In free shot, frame both the player and a loose ball.
+  // Zoom out the farther the action is from a hoop.
+  const u = state.user;
+  const holder = ball.holder;
+  const focus = holder || (state.mode === 'free' ? { x: (u.x + ball.x) / 2, y: (u.y + ball.y) / 2 } : ball);
+  const hoop = nearestHoop(focus.x);
+  const fromHoop = Math.hypot(focus.x - hoop.x, focus.y - hoop.y);
   const zoomT = clamp((fromHoop - CAMERA.zoomNear) / (CAMERA.zoomFar - CAMERA.zoomNear), 0, 1);
-  const ballX = ball.held ? p.x : ball.x;
-  const tilt = 1 - clamp(Math.abs(ballX - COURT.length / 2) / CAMERA.tiltRange, 0, 1);
-  camera.update(dt, ball.held ? p.x + p.vx * CAMERA.lead : (p.x + ball.x) / 2, lerp(1, CAMERA.zoomMin, zoomT), tilt);
+  const tilt = 1 - clamp(Math.abs(focus.x - COURT.length / 2) / CAMERA.tiltRange, 0, 1);
+  camera.update(dt, holder ? holder.x + holder.vx * CAMERA.lead : focus.x, lerp(1, CAMERA.zoomMin, zoomT), tilt);
+}
+
+// The keyboard, read as a control object (the same shape the AI fills in). Space shoots with the ball and jumps
+// to block (or at least contest) without it; E dunks with the ball and steals on defense; Q passes with the ball and switches player
+// otherwise.
+let prevKeys = {};
+function userControls(frozen) {
+  const keys = frozen ? {} : { shoot: Input.shoot(), action: Input.action(), pass: Input.pass() };
+  const prev = prevKeys;
+  const pressed = (k) => !!keys[k] && !prev[k];
+  prevKeys = keys;
+
+  const u = state.user;
+  const holder = state.ball.holder;
+  const ctl = AIBrain.blank();
+  ctl.move = frozen ? { x: 0, y: 0 } : Input.move();
+  ctl.sprint = !frozen && Input.sprint();
+  ctl.shoot = !!keys.shoot;
+  if (u.hasBall || u.shot) {
+    ctl.dunk = !!keys.action;
+    if (pressed('pass') && u.hasBall) ctl.pass = Play.passTarget(state, u, ctl.move);
+  } else {
+    if (pressed('shoot')) ctl.jump = true;
+    if (pressed('action') && holder && holder.team !== u.team) ctl.steal = true;
+    if (pressed('pass') && !(holder && holder.team === u.team)) ctl.switch = true;
+  }
+  return ctl;
 }
 
 // A loose ball behind either backboard can still be grabbed, but if it stays there for RESET.outTime it comes
@@ -100,53 +169,69 @@ function fadeAlpha() {
   return 1 - (t - FADE.out - FADE.hold) / FADE.in;
 }
 
-// Fresh ball dropped at center court, the player placed on one of six spots around the center circle,
-// and the camera glides over to them (or jumps straight there when the screen is black).
-function resetToCenter(instant = false) {
-  const { player: p, ball } = state;
+// Everyone back to their starting spots, standing, empty-handed. In free shot the lone player goes to one of six
+// spots around the center circle; in 3v3 the teams line up on their own halves.
+function lineUp() {
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
-  const a = (Math.floor(Math.random() * RESET.spots) * 2 * Math.PI) / RESET.spots;
-  const x = cx + Math.cos(a) * COURT.circleR;
-  const y = cy + Math.sin(a) * COURT.circleR;
-  Object.assign(p, { x, y, prevX: x, prevY: y, z: 0, prevZ: 0, vx: 0, vy: 0, shot: null, hasBall: false, hangSway: 0, pose: null, sitting: false });
+  for (const p of state.players) {
+    let at;
+    if (state.mode === 'free') {
+      const a = (Math.floor(Math.random() * RESET.spots) * 2 * Math.PI) / RESET.spots;
+      at = { x: cx + Math.cos(a) * COURT.circleR, y: cy + Math.sin(a) * COURT.circleR };
+    } else {
+      at = formationSpot(p.team, p.role);
+    }
+    Object.assign(p, {
+      x: at.x, y: at.y, prevX: at.x, prevY: at.y, z: 0, prevZ: 0, vx: 0, vy: 0,
+      shot: null, jump: null, meter: null, hasBall: false, hangSway: 0, pose: null, sitting: false,
+      stunT: 0, reachT: 0, mind: {},
+    });
+    if (Math.abs(at.x - cx) > 1) p.facing = at.x < cx ? 1 : -1;
+  }
   for (const h of HOOPS) h.hanging = false;
-  if (Math.abs(x - cx) > 1) p.facing = x < cx ? 1 : -1;
+}
+
+// A fresh ball dropped at center court for a jump ball, everyone lined up, and the camera gliding over to them
+// (or jumping straight there when the screen is black).
+function resetToCenter(instant = false) {
+  const { ball } = state;
+  const cx = COURT.length / 2;
+  const cy = COURT.width / 2;
+  lineUp();
+  state.user = state.players[0];
   ball.respawn(cx, cy, RESET.dropHeight);
-  state.meter = null;
   if (instant) camera.snap(cx);
   else camera.panTo(cx, RESET.panTime);
 }
 
 function handleBallEvents() {
-  const { ball, stats } = state;
+  const { ball } = state;
   for (const e of ball.events) {
     if (e.type === 'score') {
+      const team = e.team || 0;
+      const stats = state.stats[team];
+      state.score[team] += e.points;
       stats.pts += e.points;
       stats.fgm++;
       if (e.points === 3) stats.tpm++;
-      addPopup(state, `+${e.points}`, COLORS.okay, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
+      addPopup(state, `+${e.points}`, team === 0 ? COLORS.okay : COLORS.hint, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
       if (e.dunk) {
         addPopup(state, 'DUNK!', COLORS.bad, e.hoop.x, e.hoop.y, HOOP.rimZ + 26);
         camera.shake = DUNK.shake;
       } else if (e.swish) {
         addPopup(state, 'SWISH', COLORS.line, e.hoop.x, e.hoop.y, HOOP.rimZ + 26);
       }
+      // The other team brings it back in: only they can pick it up.
+      if (state.mode !== 'free') {
+        ball.reserved = 1 - team;
+        state.possession = 1 - team;
+      }
     } else if (e.type === 'airball') {
       addPopup(state, 'AIRBALL', COLORS.bad, e.x, e.y, 20);
     }
   }
   ball.events.length = 0;
-}
-
-// Run over a loose ball (low enough to reach) to grab it.
-function tryPickup() {
-  const { player: p, ball } = state;
-  if (ball.held || p.shot || p.sitting || ball.noPickup > 0 || ball.z > PICKUP.reach) return;
-  if (Math.abs(ball.x - p.x) > PICKUP.radius || Math.abs(ball.y - p.y) > PICKUP.radius) return;
-  ball.held = true;
-  ball.shot = null;
-  p.hasBall = true;
 }
 
 function render(alpha) {
@@ -158,8 +243,8 @@ function render(alpha) {
   drawCourt(ctx);
 
   // Everything standing on the floor is drawn back-to-front by depth.
-  const { player, ball } = state;
-  const movers = ball.held ? [player] : [player, ball];
+  const { ball, user } = state;
+  const movers = ball.held ? [...state.players] : [...state.players, ball];
   for (const m of movers) m.prepare(alpha);
 
   shadowCtx.clearRect(0, 0, VIEW_W, VIEW_H);
@@ -171,12 +256,14 @@ function render(alpha) {
   ctx.drawImage(shadowLayer, 0, 0);
   ctx.globalAlpha = 1;
 
-  const layers = [...benchLayers(player.look.jersey), tableLayer(player.look.jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
+  const jersey = state.look.jersey;
+  const layers = [...benchLayers(jersey), tableLayer(jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
-  if (state.meter) drawShotMeter(ctx, state.meter, player);
-  if (player.shot && player.shot.dunk && player.shot.hang === Infinity && player.shot.released) {
-    drawHangPrompt(ctx, player, state.time);
+  if (state.players.length > 1) drawUserMarker(ctx, user);
+  if (user.meter) drawShotMeter(ctx, user.meter, user);
+  if (user.shot && user.shot.dunk && user.shot.hang === Infinity && user.shot.released) {
+    drawHangPrompt(ctx, user, state.time);
   }
   drawPopups(ctx, state);
   drawHud(ctx, state);
@@ -224,6 +311,16 @@ canvas.addEventListener('pointerdown', () => {
   canvas.focus();
 });
 
-Menu.init(state.player);
+newGame(state.mode);
+Menu.init({
+  look: state.look,
+  setLook(look) {
+    state.look = look;
+    setTeamLooks(state.roster, look);
+  },
+  upgrades: state.upgrades,
+  mode: () => state.mode,
+  setMode: newGame,
+});
 fitCanvas();
 requestAnimationFrame(frame);

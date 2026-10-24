@@ -18,12 +18,14 @@
     </button>
 
     <div id="menu" role="dialog" aria-label="Pause menu" hidden>
-      <div class="menu-head">
-        <span class="menu-title">Paused</span>
-        <button type="button" class="btn" id="resume">Resume</button>
+      <div class="menu-head tabs" role="tablist" aria-label="Pause menu sections">
+        <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true">Player</button>
+        <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
+        <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Mode</button>
+        <button type="button" class="tab" role="tab" data-panel="test-view" aria-selected="false">Test</button>
       </div>
 
-      <div class="menu-body" id="player-view">
+      <div class="menu-body tab-panel" id="player-view" role="tabpanel">
         <canvas id="preview" width="80" height="92" aria-label="Player preview"></canvas>
 
         <div class="controls">
@@ -73,9 +75,48 @@
         </div>
       </div>
 
-      <!-- Testing: dunk outcome odds and crowd density. Not saved; a reload restores the defaults. -->
-      <div class="test-view" id="test-view" hidden>
-        <p class="test-note">Dunk odds (testing)</p>
+      <!-- Upgrades for the user's own player. Free to set for now; saved between visits. -->
+      <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
+        <p class="test-note">Upgrades for your player (free while testing)</p>
+        <div class="row upgrade" data-upgrade="speed">
+          <span class="label">Speed</span>
+          <button type="button" class="step" data-delta="-1" aria-label="Lower speed">-</button>
+          <span class="pips" aria-hidden="true"></span>
+          <button type="button" class="step" data-delta="1" aria-label="Raise speed">+</button>
+          <span class="upgrade-effect"></span>
+        </div>
+        <div class="row upgrade" data-upgrade="shooting">
+          <span class="label">Shooting</span>
+          <button type="button" class="step" data-delta="-1" aria-label="Lower shooting">-</button>
+          <span class="pips" aria-hidden="true"></span>
+          <button type="button" class="step" data-delta="1" aria-label="Raise shooting">+</button>
+          <span class="upgrade-effect"></span>
+        </div>
+        <div class="row upgrade" data-upgrade="dunking">
+          <span class="label">Dunking</span>
+          <button type="button" class="step" data-delta="-1" aria-label="Lower dunking">-</button>
+          <span class="pips" aria-hidden="true"></span>
+          <button type="button" class="step" data-delta="1" aria-label="Raise dunking">+</button>
+          <span class="upgrade-effect"></span>
+        </div>
+      </div>
+
+      <!-- Game mode. Switching starts a new game. -->
+      <div class="tab-panel stack-view" id="mode-view" role="tabpanel" hidden>
+        <p class="test-note">Game mode (switching starts a new game)</p>
+        <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
+          <span class="mode-name">3v3</span>
+          <span class="mode-desc">Full court with AI teammates and opponents</span>
+        </button>
+        <button type="button" class="mode-option" data-mode="free" aria-pressed="false">
+          <span class="mode-name">Free shot</span>
+          <span class="mode-desc">Just you and the ball, either hoop</span>
+        </button>
+      </div>
+
+      <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
+      <div class="tab-panel stack-view" id="test-view" role="tabpanel" hidden>
+        <p class="test-note">Dunk odds</p>
         <div class="row">
           <label for="hang-chance">Rim hang</label>
           <input type="range" id="hang-chance" min="0" max="100" step="1" data-odds="hangChance">
@@ -91,7 +132,13 @@
           <span class="slider-spacer"></span>
           <span class="value pct" id="normal-chance-value"></span>
         </div>
-        <p class="test-note">Arena (testing)</p>
+        <p class="test-note">AI</p>
+        <div class="row">
+          <label for="ai-level">AI level</label>
+          <input type="range" id="ai-level" min="0" max="100" step="1">
+          <span class="value pct" id="ai-level-value"></span>
+        </div>
+        <p class="test-note">Arena</p>
         <div class="row">
           <label for="crowd-density">Crowd</label>
           <input type="range" id="crowd-density" min="0" max="100" step="1">
@@ -100,9 +147,12 @@
       </div>
 
       <div class="menu-foot">
-        <button type="button" class="btn btn-quiet btn-small" id="test-toggle">Test</button>
-        <button type="button" class="btn btn-quiet" id="reset-look">Reset look</button>
-        <button type="button" class="btn btn-quiet" id="reset-odds" hidden>Defaults</button>
+        <span class="foot-left">
+          <button type="button" class="btn btn-quiet" id="reset-look" data-for="player-view">Reset look</button>
+          <button type="button" class="btn btn-quiet" id="reset-upgrades" data-for="upgrade-view" hidden>Reset</button>
+          <button type="button" class="btn btn-quiet" id="reset-odds" data-for="test-view" hidden>Defaults</button>
+        </span>
+        <button type="button" class="btn" id="resume">Resume</button>
       </div>
     </div>
   </div>
@@ -119,9 +169,12 @@
   <script src="src/bench.js"></script>
   <script src="src/scoreboard.js"></script>
   <script src="src/player.js"></script>
+  <script src="src/team.js"></script>
   <script src="src/ball.js"></script>
   <script src="src/hud.js"></script>
   <script src="src/shooting.js"></script>
+  <script src="src/play.js"></script>
+  <script src="src/ai.js"></script>
   <script src="src/menu.js"></script>
   <script src="src/main.js"></script>
 </body>

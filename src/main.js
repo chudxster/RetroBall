@@ -161,12 +161,13 @@ function render(alpha) {
 
   shadowCtx.clearRect(0, 0, VIEW_W, VIEW_H);
   for (const h of HOOPS) drawHoopShadow(shadowCtx, h);
+  drawBenchShadows(shadowCtx);
   for (const m of movers) m.drawShadow(shadowCtx);
   ctx.globalAlpha = SHADOW.alpha;
   ctx.drawImage(shadowLayer, 0, 0);
   ctx.globalAlpha = 1;
 
-  const layers = [...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
+  const layers = [...benchLayers(), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
   if (state.meter) drawShotMeter(ctx, state.meter, player);

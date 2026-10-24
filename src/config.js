@@ -208,6 +208,10 @@ const COLORS = {
   good: '#38b764',
   okay: '#ffcd75',
   bad: '#e43b44',
+  chairMetal: '#8b9bb4',
+  towel: '#f4f4f4',
+  towelShade: '#c7cfdd',
+  bottleCap: '#f4f4f4',
   meterBg: '#262b44',
   meterFill: '#f4f4f4',
 };

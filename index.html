@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>RetroBall</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" width="640" height="360" tabindex="0"></canvas>
+
+    <button id="pause-btn" type="button" aria-label="Pause" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span>
+    </button>
+
+    <div id="menu" role="dialog" aria-label="Pause menu" hidden>
+      <div class="menu-head">
+        <span class="menu-title">Paused</span>
+        <button type="button" class="btn" id="resume">Resume</button>
+      </div>
+
+      <div class="menu-body" id="player-view">
+        <canvas id="preview" width="80" height="92" aria-label="Player preview"></canvas>
+
+        <div class="controls">
+          <div class="row">
+            <label for="skin">Skin</label>
+            <input type="color" id="skin" data-key="skin">
+            <input class="hex" data-key="skin" maxlength="7" spellcheck="false" aria-label="Skin hex">
+          </div>
+          <div class="row presets" id="skin-presets"></div>
+          <div class="row">
+            <span class="label">Hair style</span>
+            <button type="button" class="step" data-step="-1" aria-label="Previous hair style">&lt;</button>
+            <span class="value" id="hair-style-name"></span>
+            <button type="button" class="step" data-step="1" aria-label="Next hair style">&gt;</button>
+          </div>
+          <div class="row">
+            <label for="hair">Hair</label>
+            <input type="color" id="hair" data-key="hair">
+            <input class="hex" data-key="hair" maxlength="7" spellcheck="false" aria-label="Hair hex">
+          </div>
+          <div class="row">
+            <label for="jersey">Jersey</label>
+            <input type="color" id="jersey" data-key="jersey">
+            <input class="hex" data-key="jersey" maxlength="7" spellcheck="false" aria-label="Jersey hex">
+          </div>
+          <div class="row">
+            <label for="shorts">Shorts</label>
+            <input type="color" id="shorts" data-key="shorts">
+            <input class="hex" data-key="shorts" maxlength="7" spellcheck="false" aria-label="Shorts hex">
+          </div>
+          <div class="row">
+            <label for="number">Number</label>
+            <input id="number" class="num" inputmode="numeric" maxlength="2" autocomplete="off">
+          </div>
+          <div class="row">
+            <label for="shoe">Shoes</label>
+            <input type="color" id="shoe" data-key="shoe">
+            <input class="hex" data-key="shoe" maxlength="7" spellcheck="false" aria-label="Shoes hex">
+          </div>
+          <div class="row">
+            <label for="laces">Laces</label>
+            <input type="color" id="laces" data-key="laces">
+            <input class="hex" data-key="laces" maxlength="7" spellcheck="false" aria-label="Laces hex">
+          </div>
+        </div>
+      </div>
+
+      <!-- Testing: dunk outcome odds. Not saved; a reload restores the defaults. -->
+      <div class="test-view" id="test-view" hidden>
+        <p class="test-note">Dunk odds (testing)</p>
+        <div class="row">
+          <label for="hang-chance">Rim hang</label>
+          <input type="range" id="hang-chance" min="0" max="100" step="1" data-odds="hangChance">
+          <span class="value pct" id="hang-chance-value"></span>
+        </div>
+        <div class="row">
+          <label for="shatter-chance">Shatter</label>
+          <input type="range" id="shatter-chance" min="0" max="100" step="1" data-odds="shatterChance">
+          <span class="value pct" id="shatter-chance-value"></span>
+        </div>
+        <div class="row">
+          <span class="label">Normal</span>
+          <span class="slider-spacer"></span>
+          <span class="value pct" id="normal-chance-value"></span>
+        </div>
+      </div>
+
+      <div class="menu-foot">
+        <button type="button" class="btn btn-quiet btn-small" id="test-toggle">Test</button>
+        <button type="button" class="btn btn-quiet" id="reset-look">Reset look</button>
+        <button type="button" class="btn btn-quiet" id="reset-odds" hidden>Default odds</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plain scripts (not modules) so the game runs straight from file:// as well as any web host. Order matters. -->
+  <script src="src/config.js"></script>
+  <script src="src/font.js"></script>
+  <script src="src/sprite.js"></script>
+  <script src="src/input.js"></script>
+  <script src="src/camera.js"></script>
+  <script src="src/court.js"></script>
+  <script src="src/hoop.js"></script>
+  <script src="src/debris.js"></script>
+  <script src="src/player.js"></script>
+  <script src="src/ball.js"></script>
+  <script src="src/hud.js"></script>
+  <script src="src/shooting.js"></script>
+  <script src="src/menu.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>

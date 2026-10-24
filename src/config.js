@@ -143,6 +143,21 @@ const FADE = { out: 0.9, hold: 0.35, in: 0.6 };
 // height outTextZ over the ball's new spot for outTextTime seconds.
 const RESET = { outTime: 3, spots: 6, dropHeight: 25, panTime: 0.9, outTextZ: 36, outTextTime: 2 };
 
+// Fouls: reaching for a steal can be called a foul, more likely the closer the reacher is to the ball handler: no
+// chance from `far` out (the steal reach without upgrades), rising to `maxChance` with bodies touching (`near`, the
+// separation distance). With free throws on (Gamemode tab) the fouled player shoots one from the line; otherwise
+// their team just keeps the ball. Either way the fouler is stuck reaching for `stun` seconds.
+const FOUL = {
+  far: 22,
+  near: 11,
+  maxChance: 0.6,
+  stun: 0.6,
+  ftPoints: 1,
+  ftBack: 3,                 // the shooter stands this far behind the free-throw line
+  aiShootDelay: [0.6, 1.2],  // seconds an AI shooter waits at the line
+  textTime: 2,               // how long "FREE THROW" stays up
+};
+
 const PICKUP = {
   radius: 12,         // how close (in x and y) the player must be to grab a loose ball
   reach: 30,          // highest ball (bottom z) the player can grab

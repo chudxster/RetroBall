@@ -21,7 +21,7 @@
       <div class="menu-head tabs" role="tablist" aria-label="Pause menu sections">
         <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true">Player</button>
         <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
-        <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Mode</button>
+        <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Gamemode</button>
         <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
         <button type="button" class="tab" role="tab" data-panel="test-view" aria-selected="false">Test</button>
       </div>
@@ -122,7 +122,7 @@
         </div>
       </div>
 
-      <!-- Game mode. Switching starts a new game. -->
+      <!-- Game mode (switching starts a new game) and rule toggles (saved, apply right away). -->
       <div class="tab-panel stack-view" id="mode-view" role="tabpanel" hidden>
         <p class="test-note">Game mode (switching starts a new game)</p>
         <button type="button" class="mode-option" data-mode="3v3" aria-pressed="false">
@@ -133,6 +133,12 @@
           <span class="mode-name">Free shot</span>
           <span class="mode-desc">Just you and the ball, either hoop</span>
         </button>
+        <p class="test-note">Rules (3v3)</p>
+        <div class="row">
+          <span class="label">Free throws</span>
+          <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
+          <span class="upgrade-effect">1 shot after a reach-in foul</span>
+        </div>
       </div>
 
       <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->

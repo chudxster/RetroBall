@@ -35,6 +35,29 @@ const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
 const NAME_MAX = 12;
 const MODE_STORAGE_KEY = 'retroball.mode';
 const MODES = ['3v3', 'free'];
+const RULES_STORAGE_KEY = 'retroball.rules';
+const DEFAULT_RULES = { freeThrows: true };
+
+// On/off settings saved as one object: anything saved that isn't a boolean falls back to `defaults`.
+function loadPrefs(key, defaults) {
+  let saved = {};
+  try {
+    saved = JSON.parse(localStorage.getItem(key)) || {};
+  } catch (e) {
+    // Storage blocked or corrupt: use the defaults.
+  }
+  const prefs = { ...defaults };
+  for (const k of Object.keys(defaults)) if (typeof saved[k] === 'boolean') prefs[k] = saved[k];
+  return prefs;
+}
+
+function savePrefs(key, prefs) {
+  try {
+    localStorage.setItem(key, JSON.stringify(prefs));
+  } catch (e) {
+    // Not fatal; the settings just won't persist.
+  }
+}
 
 // Upgrade levels, each a whole number from 0 to UPGRADES.max (anything else counts as 0).
 function cleanLevels(saved) {
@@ -121,8 +144,8 @@ const Menu = (() => {
   ];
   const POSE_SECONDS = 0.8;
 
-  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), mode(), setMode(mode) },
-  // where team is the user's team as loadTeam() returns it.
+  // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), rules, mode(),
+  // setMode(mode) }, where team is the user's team as loadTeam() returns it and rules is { freeThrows }.
   let game = null;
   let syncUpgradeView = () => {};
   let preview = null;
@@ -282,9 +305,24 @@ const Menu = (() => {
     sync();
   }
 
-  // Game mode: picking a different one starts a new game in it.
+  // An ON/OFF button for `prefs[key]`, saved under `storageKey` whenever it flips.
+  function initToggle(button, prefs, key, storageKey) {
+    const sync = () => {
+      button.textContent = prefs[key] ? 'ON' : 'OFF';
+      button.setAttribute('aria-pressed', String(prefs[key]));
+    };
+    button.addEventListener('click', () => {
+      prefs[key] = !prefs[key];
+      savePrefs(storageKey, prefs);
+      sync();
+    });
+    sync();
+  }
+
+  // Gamemode: picking a different mode starts a new game in it. Rule toggles below apply right away.
   function initModeView() {
     const options = [...panel.querySelectorAll('.mode-option')];
+    initToggle(document.getElementById('free-throws'), game.rules, 'freeThrows', RULES_STORAGE_KEY);
     const sync = () => {
       for (const o of options) o.setAttribute('aria-pressed', String(o.dataset.mode === game.mode()));
     };

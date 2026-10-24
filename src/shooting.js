@@ -157,8 +157,11 @@ const Shooting = (() => {
     meter.hideIn = SHOT.meterLinger;
     const stats = game.stats[p.team];
     const hoop = shot.hoop;
-    const points = isThreePoint(p.x, p.y, hoop) ? 3 : 2;
-    stats.fga++;
+    // A free throw counts on its own, not as a field goal.
+    const ft = !!game.freeThrow && game.freeThrow.shooter === p;
+    const points = ft ? FOUL.ftPoints : isThreePoint(p.x, p.y, hoop) ? 3 : 2;
+    if (ft) stats.fta++;
+    else stats.fga++;
     if (points === 3) stats.tpa++;
     p.hasBall = false;
     const from = p.shootingBallPosition();
@@ -184,7 +187,7 @@ const Shooting = (() => {
       z: HOOP.rimZ - BALL.radius,
     };
 
-    ball.launch(from.x, from.y, from.z, target, SHOT.baseTime + dist / SHOT.flightSpeed, { hoop, points, dist, team: p.team });
+    ball.launch(from.x, from.y, from.z, target, SHOT.baseTime + dist / SHOT.flightSpeed, { hoop, points, dist, team: p.team, ft });
     ball.thrower = p;
     ball.lastTeam = p.team;
     if (p === game.user || p.team === 0) addPopup(game, result.label, result.color, p.x, p.y, p.z + 48);

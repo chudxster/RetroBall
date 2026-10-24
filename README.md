@@ -6,8 +6,11 @@ A Retro Bowl-style 2.5D pixel-art basketball game. Plain HTML5 canvas and JavaSc
 
 Open `index.html` in a browser (double-clicking works), or serve the folder from any static host.
 
-Two modes, picked in the pause menu: **3v3 Casual** (full court, AI teammates and opponents, half-court defense) and
-**Free shot** (just you).
+Two modes, picked in the pause menu's Gamemode tab: **3v3 Casual** (full court, AI teammates and opponents, half-court
+defense) and **Free shot** (just you).
+
+Reaching for a steal can be called a foul, more likely the closer you are to the ball handler. With **free throws** on
+(Gamemode tab) the fouled player shoots one from the line for a point; with them off their team just keeps the ball.
 
 Upgrades (pause menu, free while testing): each of the three players on your team has their own levels for speed,
 shooting, dunking, defense and dash, and their own name. In 3v3 each AI opponent gets as many levels as your player in
@@ -18,9 +21,9 @@ the same spot, spread at random (the AI doesn't dash).
 | WASD / arrows | Move: keep holding a direction to speed up (faster after 0.5s, fastest after 1s) | Move |
 | Double-tap W / A / S / D | Dash that way (3 second cooldown) | Dash |
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
-| E | Dunk (range grows with your speed toward the rim) | Steal |
+| E | Dunk (range grows with your speed toward the rim) | Steal (reaching in too close risks a foul) |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball |
-| Esc / P | Pause menu: Player (customize), Upgrades, Mode, Controls (keybinds, dash double-tap timing), Test (dunk odds, AI level, crowd) | |
+| Esc / P | Pause menu: Player (customize), Upgrades, Gamemode (mode, free throws), Controls (keybinds, dash double-tap timing), Test (dunk odds, AI level, crowd) | |
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 

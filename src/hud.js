@@ -7,7 +7,8 @@ function drawHud(ctx, game) {
   const s = game.stats[0];
   const free = game.mode === 'free';
   const score = free ? `PTS ${s.pts}` : `HOME ${game.score[0]}  AWAY ${game.score[1]}`;
-  const line = `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}`;
+  const ft = !free && game.rules.freeThrows ? `  FT ${s.ftm}/${s.fta}` : '';
+  const line = `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}${ft}`;
   ctx.fillStyle = COLORS.outline;
   ctx.fillRect(4, 4, textWidth(line, TEXT_SCALE) + 12, 18);
   drawText(ctx, line, 10, 8, COLORS.line, { scale: TEXT_SCALE });

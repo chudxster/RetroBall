@@ -11,13 +11,14 @@ shadowLayer.width = VIEW_W;
 shadowLayer.height = VIEW_H;
 const shadowCtx = shadowLayer.getContext('2d');
 
-const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0 });
+const newStats = () => ({ pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0 });
 
 const state = {
   time: 0,
   mode: loadMode(),  // '3v3' or 'free' (free shot: just the user, no AI)
   look: loadLook(),  // the user's custom look; team colors come from it
   team: loadTeam(),  // the user's team: [{ name, upgrades }] by role
+  rules: loadPrefs(RULES_STORAGE_KEY, DEFAULT_RULES), // { freeThrows }
   roster: [],        // all six players, in either mode
   players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
   user: null,        // the player the user controls
@@ -30,6 +31,7 @@ const state = {
   debris: [],
   fade: null, // { t } while fading to black and back for a reset
   hitStop: 0, // seconds the action freezes for impact (dunk slams)
+  freeThrow: null, // { shooter, pending } from a foul until the shot is away (pending: called, not lined up yet)
 };
 
 // A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball.
@@ -46,6 +48,7 @@ function newGame(mode) {
   state.debris = [];
   state.fade = null;
   state.outFor = 0;
+  state.freeThrow = null;
   restoreHoops();
   lineUp();
   Play.give(state, star);
@@ -66,6 +69,7 @@ function update(dt) {
   const ctls = new Map();
   ctls.set(state.user, userControls(frozen));
   AIBrain.think(dt, state, ctls, frozen);
+  if (state.freeThrow) freeThrowControls(ctls);
 
   for (const p of state.players) {
     const c = ctls.get(p);
@@ -73,7 +77,11 @@ function update(dt) {
     if (c.face && !p.airborne() && !p.sitting) p.facing = c.face;
   }
   for (const p of state.players) Shooting.update(dt, state, p, ctls.get(p));
+  // The free throw is away: everyone is free to go for the rebound.
+  const ft = state.freeThrow;
+  if (ft && !ft.pending && ft.shooter.shot && ft.shooter.shot.released) state.freeThrow = null;
   for (const p of state.players) Play.act(state, p, ctls.get(p));
+  if (state.freeThrow && state.freeThrow.pending) startFreeThrow(state.freeThrow.shooter);
   if (ctls.get(state.user).switch) Play.switchPlayer(state);
   Play.separate(state);
 
@@ -178,13 +186,15 @@ function fadeAlpha() {
 }
 
 // Everyone back to their starting spots, standing, empty-handed. In free shot the lone player goes to one of six
-// spots around the center circle; in 3v3 the teams line up on their own halves.
-function lineUp() {
+// spots around the center circle; in 3v3 the teams line up on their own halves. `spotFor(p)` picks other spots.
+function lineUp(spotFor = null) {
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
   for (const p of state.players) {
     let at;
-    if (state.mode === 'free') {
+    if (spotFor) {
+      at = spotFor(p);
+    } else if (state.mode === 'free') {
       const a = (Math.floor(Math.random() * RESET.spots) * 2 * Math.PI) / RESET.spots;
       at = { x: cx + Math.cos(a) * COURT.circleR, y: cy + Math.sin(a) * COURT.circleR };
     } else {
@@ -208,6 +218,7 @@ function resetToCenter(instant = false) {
   const cx = COURT.length / 2;
   const cy = COURT.width / 2;
   const lastTeam = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
+  state.freeThrow = null;
   lineUp();
   state.user = state.players[0];
   let focusX = cx;
@@ -223,6 +234,32 @@ function resetToCenter(instant = false) {
   else camera.panTo(focusX, RESET.panTime);
 }
 
+// A foul with free throws on: everyone lines up at the end the shooter attacks, the fouled player just behind the
+// free-throw line with the ball, defenders on the lane spots nearest the hoop and one up top, the shooter's
+// teammates on the next lane spots. Play waits for the one shot (freeThrowControls, AIBrain).
+function startFreeThrow(shooter) {
+  const hoop = attackHoop(shooter.team);
+  const at = (a, dy) => ({ x: hoop.x + hoop.dir * a, y: COURT.width / 2 + dy });
+  const line = COURT.keyDepth - COURT.hoopX + FOUL.ftBack;
+  const lane = COURT.keyHalfWidth + 6;
+  const defense = [at(20, -lane), at(20, lane), at(line + 50, 0)];
+  const offense = [at(44, -lane), at(44, lane)];
+  lineUp((p) => (p === shooter ? at(line, 0) : p.team === shooter.team ? offense.shift() : defense.shift()));
+  for (const p of state.players) p.facing = -hoop.dir;
+  state.user = state.players[0];
+  Play.give(state, shooter);
+  state.freeThrow = { shooter, pending: false };
+  state.outFor = 0;
+  camera.panTo(shooter.x, RESET.panTime);
+  addPopup(state, 'FREE THROW', COLORS.okay, shooter.x, shooter.y, RESET.outTextZ, FOUL.textTime);
+}
+
+// At the line only the shooter does anything, and only shoot; everyone else waits for the release.
+function freeThrowControls(ctls) {
+  const { shooter } = state.freeThrow;
+  for (const [p, c] of ctls) ctls.set(p, { ...AIBrain.blank(), shoot: p === shooter && c.shoot });
+}
+
 function handleBallEvents() {
   const { ball } = state;
   for (const e of ball.events) {
@@ -231,7 +268,8 @@ function handleBallEvents() {
       const stats = state.stats[team];
       state.score[team] += e.points;
       stats.pts += e.points;
-      stats.fgm++;
+      if (e.ft) stats.ftm++;
+      else stats.fgm++;
       if (e.points === 3) stats.tpm++;
       addPopup(state, `+${e.points}`, team === 0 ? COLORS.okay : COLORS.hint, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
       if (e.dunk) {
@@ -348,6 +386,7 @@ Menu.init({
   },
   team: state.team,
   upgradesChanged: () => rollAIUpgrades(state.roster, state.team),
+  rules: state.rules,
   mode: () => state.mode,
   setMode: newGame,
 });

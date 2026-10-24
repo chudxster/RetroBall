@@ -95,7 +95,7 @@ class Ball {
       const hoop = this.shot.hoop;
       if (Math.hypot(this.x - hoop.x, this.y - hoop.y) < HOOP.rimR) {
         const dunk = !!this.shot.dunk;
-        this.events.push({ type: 'score', hoop, team: this.shot.team, points: this.shot.points, swish: !this.touched, dunk });
+        this.events.push({ type: 'score', hoop, team: this.shot.team, points: this.shot.points, swish: !this.touched, dunk, ft: !!this.shot.ft });
         hoop.netT = HOOP.swishTime;
         hoop.netSwing = dunk ? HOOP.maxSwing : clamp(this.shot.dist / HOOP.swingPerUnit, 1, HOOP.maxSwing);
         this.shot = null;

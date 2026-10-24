@@ -3,6 +3,8 @@
 const Play = (() => {
   // Carry out the non-shooting buttons for one player this tick: dash, pass, steal, jump.
   function act(game, p, ctl) {
+    // A foul was just called this tick: nothing else happens until everyone is lined up for the free throw.
+    if (game.freeThrow && game.freeThrow.pending) return;
     if (ctl.dash) p.dash(ctl.dash);
     if (ctl.pass && p.hasBall && !p.shot) pass(game, p, ctl.pass);
     if (ctl.steal) trySteal(game, p);
@@ -65,6 +67,10 @@ const Play = (() => {
     const h = game.ball.holder;
     if (!h || h.team === p.team || h.shot) return;
     if (Math.abs(h.x - p.x) > 1) p.facing = Math.sign(h.x - p.x);
+    if (Math.random() < foulChance(p, h)) {
+      foul(game, p, h);
+      return;
+    }
     const ballX = h.x + h.facing * 8;
     const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p);
     const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
@@ -75,6 +81,20 @@ const Play = (() => {
     } else {
       p.stunT = DEFENSE.stealStun;
     }
+  }
+
+  // Reaching in from closer is riskier: no foul from FOUL.far out, up to FOUL.maxChance pressed against the handler.
+  function foulChance(p, h) {
+    const k = clamp((FOUL.far - courtDist(p, h)) / (FOUL.far - FOUL.near), 0, 1);
+    return FOUL.maxChance * k;
+  }
+
+  // The handler keeps the ball; with free throws on, they go to the line (set up by main.js after this tick's
+  // actions, see startFreeThrow).
+  function foul(game, p, h) {
+    p.stunT = FOUL.stun;
+    addPopup(game, 'FOUL!', COLORS.bad, p.x, p.y, 56);
+    if (game.rules.freeThrows) game.freeThrow = { shooter: h, pending: true };
   }
 
   // How far a player can reach for a steal, and how well they block, with their defense upgrade.
@@ -117,6 +137,7 @@ const Play = (() => {
 
   // How much defenders are bothering a shooter (0..contestMax), scaled down for fadeaways.
   function contest(game, shooter) {
+    if (game.freeThrow) return 0;
     let worst = 0;
     for (const d of opponents(game, shooter)) {
       const dist = courtDist(d, shooter);

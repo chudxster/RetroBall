@@ -45,6 +45,10 @@ const AIBrain = (() => {
       return;
     }
     p.mind.releaseAt = null;
+    if (game.freeThrow) {
+      if (game.freeThrow.shooter === p) atTheLine(dt, p, ctl);
+      return;
+    }
     if (p.jump) return;
     if (ball.holder === p) withBall(dt, game, p, ctl);
     else if (ball.pass && ball.pass.to === p) moveTo(ctl, p, ball.pass.target);
@@ -63,6 +67,17 @@ const AIBrain = (() => {
     const m = p.mind;
     if (m.releaseAt == null) m.releaseAt = shot.center + randn() * aiValue(p, AI.shotError);
     ctl.shoot = shot.fill + dt / shot.meterTime < m.releaseAt;
+  }
+
+  // Free throw: a moment to settle at the line, then shoot.
+  function atTheLine(dt, p, ctl) {
+    const m = p.mind;
+    if (m.lineT == null) m.lineT = rand(...FOUL.aiShootDelay);
+    m.lineT -= dt;
+    if (m.lineT <= 0) {
+      ctl.shoot = true;
+      m.lineT = null;
+    }
   }
 
   function withBall(dt, game, p, ctl) {

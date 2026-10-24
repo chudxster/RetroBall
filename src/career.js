@@ -34,18 +34,20 @@ const Career = (() => {
       { type: 'stat', key: 'blk', n: 2, text: (n) => `BLOCK ${n} SHOTS` },
     ],
     [
-      { type: 'margin', n: 10, text: (n) => `WIN BY ${n}+` },
-      { type: 'stat', key: 'tpm', n: 6, text: (n) => `MAKE ${n} THREES` },
-      { type: 'hold', n: 15, text: (n) => `WIN, HOLD THEM TO ${n}` },
-      { type: 'stat', key: 'dnk', n: 4, text: (n) => `DUNK ${n} TIMES` },
-      { type: 'stat', key: 'stl', n: 6, text: (n) => `GET ${n} STEALS` },
+      { type: 'margin', n: 15, text: (n) => `WIN BY ${n}+` },
+      { type: 'stat', key: 'tpm', n: 8, text: (n) => `MAKE ${n} THREES` },
+      { type: 'hold', n: 12, text: (n) => `WIN, HOLD THEM TO ${n}` },
+      { type: 'stat', key: 'dnk', n: 6, text: (n) => `DUNK ${n} TIMES` },
+      { type: 'stat', key: 'stl', n: 8, text: (n) => `GET ${n} STEALS` },
+      { type: 'stat', key: 'blk', n: 4, text: (n) => `BLOCK ${n} SHOTS` },
     ],
     [
-      { type: 'margin', n: 15, text: (n) => `WIN BY ${n}+` },
-      { type: 'stat', key: 'tpm', n: 9, text: (n) => `MAKE ${n} THREES` },
-      { type: 'hold', n: 8, text: (n) => `WIN, HOLD THEM TO ${n}` },
-      { type: 'stat', key: 'blk', n: 4, text: (n) => `BLOCK ${n} SHOTS` },
-      { type: 'stat', key: 'stl', n: 8, text: (n) => `GET ${n} STEALS` },
+      { type: 'margin', n: 25, text: (n) => `WIN BY ${n}+` },
+      { type: 'stat', key: 'tpm', n: 12, text: (n) => `MAKE ${n} THREES` },
+      { type: 'hold', n: 6, text: (n) => `WIN, HOLD THEM TO ${n}` },
+      { type: 'stat', key: 'blk', n: 7, text: (n) => `BLOCK ${n} SHOTS` },
+      { type: 'stat', key: 'stl', n: 12, text: (n) => `GET ${n} STEALS` },
+      { type: 'stat', key: 'dnk', n: 10, text: (n) => `DUNK ${n} TIMES` },
     ],
   ];
 
@@ -102,16 +104,67 @@ const Career = (() => {
   }
 
   function load() {
-    const saved = loadStored(CAREER_STORAGE_KEY);
-    if (!saved || !Array.isArray(saved.league) || saved.league.length !== LEAGUE.length + 1) return fresh();
+    return clean(loadStored(CAREER_STORAGE_KEY)) || fresh();
+  }
+
+  // A saved (or pasted) career made safe to use, or null if it isn't one: names and levels are cleaned, and anything
+  // the season can't run without must be there and the right shape.
+  function clean(saved) {
+    const n = LEAGUE.length + 1;
+    const isTeam = (i) => Number.isInteger(i) && i >= 0 && i < n;
+    const isPair = (p) => Array.isArray(p) && p.length === 2 && p.every(isTeam);
+    if (!saved || typeof saved !== 'object' || !Array.isArray(saved.league) || saved.league.length !== n) return null;
+    if (!saved.league.every((t) => t && ['w', 'l', 'pf', 'pa', 'strength'].every((k) => Number.isFinite(t[k])))) return null;
+    if (!Array.isArray(saved.schedule) || saved.schedule.length !== n - 1) return null;
+    if (!saved.schedule.every((week) => Array.isArray(week) && week.length === n / 2 && week.every(isPair))) return null;
+    if (!Number.isInteger(saved.season) || saved.season < 1 || !Number.isInteger(saved.week)) return null;
+    if (!['season', 'semis', 'final', 'over'].includes(saved.phase)) return null;
+    if (saved.phase === 'season' && (saved.week < 0 || saved.week >= n - 1)) return null;
+    const p = saved.playoff;
+    if (saved.phase !== 'season' && (!p || !Array.isArray(p.seeds) || !Array.isArray(p.semis) || !p.semis.every(isPair))) return null;
+    if (saved.phase === 'final' && !isPair(p.final)) return null;
+    if (p && ((p.champion !== null && p.champion !== undefined && !isTeam(p.champion)) || !(Array.isArray(p.seeds) && p.seeds.every(isTeam)))) return null;
+    if (saved.phase === 'over' && !['champion', 'final', 'semis', 'missed'].includes(saved.result)) return null;
+    if (saved.last && !(isTeam(saved.last.opp) && Number.isFinite(saved.last.tokens))) saved.last = null;
+    if (saved.offer && !(Array.isArray(saved.offer) && saved.offer.every((o) => o && CHALLENGES[o.tier] && CHALLENGES[o.tier][o.index] && Number.isInteger(o.n)))) {
+      saved.offer = null;
+    }
+    saved.current = null;
+    saved.titles = Number.isInteger(saved.titles) && saved.titles >= 0 ? saved.titles : 0;
+    for (let i = 1; i < n; i++) Object.assign(saved.league[i], LEAGUE[i - 1], { strength: clamp(saved.league[i].strength, 0.05, 0.95) });
     saved.team = ROSTER[0].map((_, i) => {
       const s = (saved.team && saved.team[i]) || {};
       const name = typeof s.name === 'string' ? cleanName(s.name).trim() : '';
       return { name: name || `Player ${i + 1}`, upgrades: cleanLevels(s.upgrades) };
     });
     if (typeof saved.teamName !== 'string' || !saved.teamName.trim()) saved.teamName = 'Home';
+    saved.teamName = saved.teamName.replace(/\s+/g, ' ').trim().slice(0, TEAM_NAME_MAX);
     saved.tokens = Number.isFinite(saved.tokens) ? Math.max(0, Math.floor(saved.tokens)) : 0;
     return saved;
+  }
+
+  // Backup codes: the whole career as text to copy somewhere safe and paste back later (or on another device).
+  const CODE_PREFIX = 'RB1-';
+
+  function exportCode() {
+    const bytes = new TextEncoder().encode(JSON.stringify(c));
+    return CODE_PREFIX + btoa(String.fromCharCode(...bytes));
+  }
+
+  // Replaces the career with the one in `code`; false (and nothing changes) if the code isn't a valid career.
+  function importCode(code) {
+    try {
+      const text = String(code).replace(/\s+/g, '');
+      if (!text.startsWith(CODE_PREFIX)) return false;
+      const bytes = Uint8Array.from(atob(text.slice(CODE_PREFIX.length)), (ch) => ch.charCodeAt(0));
+      const loaded = clean(JSON.parse(new TextDecoder().decode(bytes)));
+      if (!loaded) return false;
+      c = loaded;
+      save();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function save() {
@@ -152,7 +205,7 @@ const Career = (() => {
   function offer(rules) {
     if (!c.offer && next()) {
       const k = lengthK(rules);
-      const tiers = shuffle([0, 1, 2, 3]).slice(0, 3).sort((a, b) => a - b);
+      const tiers = shuffle([0, 1, 2, 3]).slice(0, 3); // in a random order
       c.offer = tiers.map((tier) => {
         const list = CHALLENGES[tier];
         const index = Math.floor(Math.random() * list.length);
@@ -350,6 +403,8 @@ const Career = (() => {
     cost,
     buy,
     setTeamName,
+    exportCode,
+    importCode,
     TEAM_NAME_MAX,
   };
 })();

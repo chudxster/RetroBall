@@ -9,11 +9,13 @@ Open `index.html` in a browser (double-clicking works), or serve the folder from
 **Career** (top of the Gamemode tab; click it to open its panel) is a season in an 8-team league: every team plays
 every other once, then the top 4 play semifinals and a final, and the next season starts with tougher opponents. Each
 AI team has its own colors and strength; their other games are simulated for the standings. Before each game pick
-one of three challenges from different tiers (Easy x1.1, Medium x1.25, Hard x1.5, Pro x2), shown top left during the
-game. A game pays a token per point your team scores, x1.25 for a win or x0.75 for a loss, times the challenge's
+one of three challenges from different tiers, in random order (Easy x1.1, Medium x1.25, Hard x1.5, Pro x2), shown
+top left during the game. A game pays a token per point your team scores, x1.25 for a win or x0.75 for a loss, times the challenge's
 multiplier if you completed it, rounded up. Spend tokens in the Upgrades tab during a career (a level costs 10 x its
-number); the career team has its own names and levels, separate from the free testing upgrades. Career progress is
-saved.
+number); the career team has its own names and levels, separate from the free testing upgrades. Career progress
+saves automatically in the browser after every game and upgrade. The career panel's **Backup code** gives the whole
+career as text to copy somewhere safe and paste back later (another browser or device, or after clearing site data);
+if the browser can't save at all (some private windows), the panel says so and shows the code right away.
 
 The pause menu's Gamemode tab also has **3v3 Casual** (full court, AI teammates and opponents, half-court defense) and,
 under Practice, **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across under

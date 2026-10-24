@@ -482,6 +482,17 @@ function loadStored(key) {
   }
 }
 
+// Whether this browser keeps saved settings at all (not in some private windows or when site storage is blocked).
+function canStore() {
+  try {
+    localStorage.setItem('retroball.check', '1');
+    localStorage.removeItem('retroball.check');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function saveStored(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));

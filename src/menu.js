@@ -207,7 +207,7 @@ const Menu = (() => {
     });
     document.getElementById('game').addEventListener('pointerdown', () => setOpen(false));
     window.addEventListener('keydown', (e) => {
-      const typing = e.target instanceof HTMLInputElement;
+      const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
       if (e.code === 'Escape' || (Input.isBound('pause', e.code) && !typing)) {
         e.preventDefault();
         setOpen(!open);
@@ -559,6 +559,8 @@ const Menu = (() => {
     });
     items.push(table);
 
+    items.push(...saveSection(box));
+
     const restart = el('button', 'btn btn-quiet', confirmRestart ? 'Sure? Click again to start over' : 'New career');
     restart.type = 'button';
     restart.addEventListener('click', () => {
@@ -569,6 +571,58 @@ const Menu = (() => {
     items.push(restart);
 
     box.replaceChildren(...items);
+  }
+
+  // Saving: progress saves itself after every game and purchase. A backup code (copy it, paste it back) covers
+  // browsers that can't save (it opens by itself there, with a warning) and moving to another device.
+  let showCode = false;
+  let codeMessage = '';
+  function saveSection(box) {
+    const stores = canStore();
+    const items = [];
+    const status = el('p', stores ? 'save-ok' : 'save-warn', stores
+      ? 'Progress saves automatically after every game and upgrade.'
+      : 'This browser isn\'t saving (private window or blocked storage). Copy your backup code after each game!');
+    const toggle = el('button', 'btn btn-quiet', showCode ? 'Hide backup code' : 'Backup code');
+    toggle.type = 'button';
+    toggle.addEventListener('click', () => {
+      showCode = !showCode;
+      codeMessage = '';
+      renderCareer(box);
+    });
+    const row = el('div', 'save-row');
+    row.append(status, toggle);
+    items.push(row);
+    if (!showCode && stores) return items;
+
+    const code = el('textarea', 'save-code');
+    Object.assign(code, { readOnly: true, rows: 3, spellcheck: false, value: Career.exportCode() });
+    code.setAttribute('aria-label', 'Your backup code');
+    const copy = el('button', 'btn', 'Copy code');
+    copy.type = 'button';
+    copy.addEventListener('click', () => {
+      code.select();
+      const done = () => { copy.textContent = 'Copied!'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(code.value).then(done, () => document.execCommand('copy') && done());
+      else if (document.execCommand('copy')) done();
+    });
+    const paste = el('textarea', 'save-code');
+    Object.assign(paste, { rows: 2, spellcheck: false, placeholder: 'Paste a backup code here' });
+    paste.setAttribute('aria-label', 'Paste a backup code');
+    const load = el('button', 'btn btn-quiet', 'Load code');
+    load.type = 'button';
+    load.addEventListener('click', () => {
+      const ok = Career.importCode(paste.value);
+      codeMessage = ok ? 'Loaded! Your career is back.' : 'That code didn\'t work: copy the whole thing, starting with RB1-';
+      if (ok) {
+        game.upgradesChanged();
+        syncUpgradeView();
+      }
+      renderCareer(box);
+    });
+    items.push(el('p', 'mode-desc', 'Your code (keep it somewhere safe):'), code, copy, paste, load);
+    if (codeMessage) items.push(el('p', codeMessage.startsWith('Loaded') ? 'save-ok' : 'save-warn', codeMessage));
+    return items;
   }
 
   // Controls: the double-tap dash window and a key button per action. Clicking a button waits for the next key

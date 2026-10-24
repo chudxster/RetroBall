@@ -630,3 +630,43 @@ input[type="color"]::-moz-color-swatch {
   opacity: 0.35;
   cursor: default;
 }
+
+/* Career saving: the status line, and the backup code to copy or paste */
+.save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--px) * 3);
+}
+
+.save-ok,
+.save-warn {
+  margin: 0;
+  font-size: 0.75em;
+}
+
+.save-ok {
+  color: #38b764;
+}
+
+.save-warn {
+  color: #e43b44;
+}
+
+.save-code {
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(var(--px) * 2);
+  font: inherit;
+  font-size: 0.6em;
+  color: inherit;
+  text-transform: none;
+  word-break: break-all;
+  resize: vertical;
+  background: #262b44;
+  border: var(--px) solid #94b0c2;
+}
+
+.career-panel > .btn {
+  align-self: flex-start;
+}

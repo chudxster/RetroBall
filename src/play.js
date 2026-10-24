@@ -202,28 +202,28 @@ const Play = (() => {
       && (courtDist(q, hoop) < DEFENSE.rimGuard || courtDist(q, p) < DEFENSE.rimGuard * 0.7));
   }
 
-  // A dunk attempt into a guarded rim may get stuffed: the dunker goes up, the ball comes back out loose.
+  // A dunk attempt into a guarded rim may get stuffed: the dunker goes up, the ball comes back out loose. Only the
+  // guard nearest the dunker gets a try.
   function tryStuff(game, p, hoop) {
-    for (const d of rimGuards(game, p, hoop)) {
-      const chance = ((isHuman(game, d) ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5) + blockBonus(d)) * DEFENSE.stuffOdds;
-      if (Math.random() >= chance) continue;
-      p.hasBall = false;
-      p.jump = { t: 0 };
-      p.vx = 0;
-      p.vy = 0;
-      game.stats[p.team].fga++;
-      // Swatted back out toward the court.
-      const to = { x: p.x + hoop.dir * rand(20, 45), y: p.y + rand(-25, 25), z: 0 };
-      game.ball.launch(p.x, p.y, 40, to, 0.55, null);
-      game.ball.thrower = p;
-      game.ball.lastTeam = d.team;
-      if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
-      startJump(d);
-      addPopup(game, 'STUFFED!', COLORS.bad, d.x, d.y, 60);
-      cheerCrowd(CROWD.hype.stuff, d);
-      return true;
-    }
-    return false;
+    const d = rimGuards(game, p, hoop).sort((a, b) => courtDist(a, p) - courtDist(b, p))[0];
+    if (!d) return false;
+    const chance = ((isHuman(game, d) ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.25) + blockBonus(d)) * DEFENSE.stuffOdds;
+    if (Math.random() >= chance) return false;
+    p.hasBall = false;
+    p.jump = { t: 0 };
+    p.vx = 0;
+    p.vy = 0;
+    game.stats[p.team].fga++;
+    // Swatted back out toward the court.
+    const to = { x: p.x + hoop.dir * rand(20, 45), y: p.y + rand(-25, 25), z: 0 };
+    game.ball.launch(p.x, p.y, 40, to, 0.55, null);
+    game.ball.thrower = p;
+    game.ball.lastTeam = d.team;
+    if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
+    startJump(d);
+    addPopup(game, 'STUFFED!', COLORS.bad, d.x, d.y, 60);
+    cheerCrowd(CROWD.hype.stuff, d);
+    return true;
   }
 
   // Getting back on defense: a player whose team doesn't have the ball, still beyond their pick-up line and heading

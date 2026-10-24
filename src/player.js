@@ -91,6 +91,7 @@ class Player {
     this.colors = {
       skin: look.skin,
       skinLight: mix(look.skin, COLORS.line, 0.25),
+      skinMid: shade(look.skin, 0.92), // far arm when both arms are in view (side-on), just off the near one
       skinDark: shade(look.skin, 0.8), // far-side limbs are a shade darker for depth
       skinDarker: shade(look.skin, 0.65),
       hair: look.hair,
@@ -347,8 +348,8 @@ class Player {
     const frontNear = turn >= 0;
     const armsInFront = turn === 0 && !this.shot;
     const backW = backNear ? 8 : turn > 0 ? 4 : 6;
-    const backSkin = backNear ? c.skin : c.skinDark;
-    const backShade = backNear ? c.skinDark : c.skinDarker;
+    const backSkin = backNear ? c.skin : armsInFront ? c.skinMid : c.skinDark;
+    const backShade = backNear || armsInFront ? c.skinDark : c.skinDarker;
     let backArm = this.armChain(-11, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
     const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
     const frontSkin = frontNear ? c.skin : c.skinDark;

@@ -127,7 +127,15 @@ input {
   border-bottom: var(--px) solid #333c57;
 }
 
-/* Smaller than the menu text so all six fit on one row. */
+/* The testing sliders at the bottom of the Gamemode tab, set off from the real settings above. */
+.test-section {
+  min-height: 0;
+  margin-top: calc(var(--px) * 3);
+  padding-top: calc(var(--px) * 4);
+  border-top: var(--px) solid #333c57;
+}
+
+/* Smaller than the menu text so every tab fits on one row. */
 .tab {
   margin-bottom: calc(var(--px) * -1);
   padding: calc(var(--px) * 2) calc(var(--px) * 2);

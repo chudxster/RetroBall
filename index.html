@@ -24,7 +24,6 @@
         <button type="button" class="tab" role="tab" data-panel="mode-view" aria-selected="false">Gamemode</button>
         <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
         <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false">UI</button>
-        <button type="button" class="tab" role="tab" data-panel="test-view" aria-selected="false">Test</button>
       </div>
 
       <div class="menu-body tab-panel" id="player-view" role="tabpanel">
@@ -140,6 +139,39 @@
           <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
           <span class="upgrade-effect">1 shot after a reach-in foul</span>
         </div>
+
+        <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
+        <div class="stack-view test-section" id="test-view">
+          <p class="test-note">Testing (not saved)</p>
+          <p class="test-note">Dunk odds</p>
+          <div class="row">
+            <label for="hang-chance">Rim hang</label>
+            <input type="range" id="hang-chance" min="0" max="100" step="1" data-odds="hangChance">
+            <span class="value pct" id="hang-chance-value"></span>
+          </div>
+          <div class="row">
+            <label for="shatter-chance">Shatter</label>
+            <input type="range" id="shatter-chance" min="0" max="100" step="1" data-odds="shatterChance">
+            <span class="value pct" id="shatter-chance-value"></span>
+          </div>
+          <div class="row">
+            <span class="label">Normal</span>
+            <span class="slider-spacer"></span>
+            <span class="value pct" id="normal-chance-value"></span>
+          </div>
+          <p class="test-note">AI</p>
+          <div class="row">
+            <label for="ai-level">AI level</label>
+            <input type="range" id="ai-level" min="0" max="100" step="1">
+            <span class="value pct" id="ai-level-value"></span>
+          </div>
+          <p class="test-note">Arena</p>
+          <div class="row">
+            <label for="crowd-density">Crowd</label>
+            <input type="range" id="crowd-density" min="0" max="100" step="1">
+            <span class="value pct" id="crowd-density-value"></span>
+          </div>
+        </div>
       </div>
 
       <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->
@@ -164,43 +196,11 @@
         </div>
       </div>
 
-      <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
-      <div class="tab-panel stack-view" id="test-view" role="tabpanel" hidden>
-        <p class="test-note">Dunk odds</p>
-        <div class="row">
-          <label for="hang-chance">Rim hang</label>
-          <input type="range" id="hang-chance" min="0" max="100" step="1" data-odds="hangChance">
-          <span class="value pct" id="hang-chance-value"></span>
-        </div>
-        <div class="row">
-          <label for="shatter-chance">Shatter</label>
-          <input type="range" id="shatter-chance" min="0" max="100" step="1" data-odds="shatterChance">
-          <span class="value pct" id="shatter-chance-value"></span>
-        </div>
-        <div class="row">
-          <span class="label">Normal</span>
-          <span class="slider-spacer"></span>
-          <span class="value pct" id="normal-chance-value"></span>
-        </div>
-        <p class="test-note">AI</p>
-        <div class="row">
-          <label for="ai-level">AI level</label>
-          <input type="range" id="ai-level" min="0" max="100" step="1">
-          <span class="value pct" id="ai-level-value"></span>
-        </div>
-        <p class="test-note">Arena</p>
-        <div class="row">
-          <label for="crowd-density">Crowd</label>
-          <input type="range" id="crowd-density" min="0" max="100" step="1">
-          <span class="value pct" id="crowd-density-value"></span>
-        </div>
-      </div>
-
       <div class="menu-foot">
         <span class="foot-left">
           <button type="button" class="btn btn-quiet" id="reset-look" data-for="player-view">Reset look</button>
           <button type="button" class="btn btn-quiet" id="reset-upgrades" data-for="upgrade-view" hidden>Reset</button>
-          <button type="button" class="btn btn-quiet" id="reset-odds" data-for="test-view" hidden>Defaults</button>
+          <button type="button" class="btn btn-quiet" id="reset-odds" data-for="mode-view" hidden>Test defaults</button>
           <button type="button" class="btn btn-quiet" id="reset-controls" data-for="controls-view" hidden>Defaults</button>
         </span>
         <button type="button" class="btn" id="resume">Resume</button>

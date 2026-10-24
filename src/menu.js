@@ -415,7 +415,7 @@ const Menu = (() => {
     sync();
   }
 
-  // Testing view: sliders for the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two
+  // Testing sliders (bottom of the Gamemode tab): the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two
   // add up past 100% the hang share shrinks; "normal" shows whatever is left. Plus the AI level (live on AI) and the
   // crowd density (live on CROWD).
   const DEFAULT_ODDS = { hangChance: DUNK.hangChance, shatterChance: DUNK.shatterChance };

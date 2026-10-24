@@ -180,6 +180,10 @@ const DASH = {
   doubleTap: 0.125,   // the second tap must come within this many seconds of the first
 };
 
+// Free shot: calling for the ball (Q) sends it flying back to the player as a pass, taking distance / callSpeed
+// seconds, kept within callTime.
+const CALL = { speed: 300, time: [0.3, 1] };
+
 // Passing (Q with the ball): a fast, flat throw led toward where the receiver is heading.
 const PASS = {
   speed: 380,         // world units per second

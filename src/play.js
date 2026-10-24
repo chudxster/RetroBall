@@ -33,6 +33,18 @@ const Play = (() => {
     if (Math.abs(tx - from.x) > 1) from.facing = Math.sign(tx - from.x);
   }
 
+  // Free shot: the ball flies back to `p` from wherever it is, led toward where they're heading, and only they can
+  // catch it. If it hits something on the way it's just loose again.
+  function callBall(game, p) {
+    const { ball } = game;
+    const time = clamp(Math.hypot(p.x - ball.x, p.y - ball.y) / CALL.speed, ...CALL.time);
+    const target = { x: p.x + p.vx * time * PASS.lead, y: p.y + p.vy * time * PASS.lead };
+    ball.launch(ball.x, ball.y, ball.z, { ...target, z: PASS.toZ }, time, null);
+    ball.pass = { to: p, team: p.team, target, rolls: new Map() };
+    ball.reserved = p.team;
+    ball.thrower = null; // the player usually shot it, which would otherwise keep them off it for a moment
+  }
+
   // Who the user's pass goes to: the teammate closest to the held direction, or with no direction held, the most
   // open one (nearer is a little better).
   function passTarget(game, from, move) {
@@ -315,5 +327,5 @@ const Play = (() => {
     }
   }
 
-  return { act, pass, passTarget, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, nearestTo, switchPlayer, pickups, separate };
+  return { act, pass, passTarget, callBall, trySteal, startJump, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, nearestTo, switchPlayer, pickups, separate };
 })();

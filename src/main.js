@@ -22,6 +22,7 @@ const state = {
   roster: [],        // all six players, in either mode
   players: [],       // the ones on the court: everyone in 3v3, just the user's player in free shot
   user: null,        // the player the user controls
+  ref: null,         // the referee (3v3 only; see ref.js)
   ball: new Ball(),
   possession: 0,     // team with the ball (or that last had it)
   score: [0, 0],
@@ -41,6 +42,7 @@ function newGame(mode) {
   const star = state.roster[0];
   rollAIUpgrades(state.roster, state.team);
   state.players = mode === 'free' ? [star] : state.roster;
+  state.ref = mode === 'free' ? null : Ref.make();
   state.user = star;
   state.score = [0, 0];
   state.stats = [newStats(), newStats()];
@@ -76,6 +78,7 @@ function update(dt) {
     p.update(dt, c.move, Play.retreatBoost(state, p, c.move));
     if (c.face && !p.airborne() && !p.sitting) p.facing = c.face;
   }
+  Ref.update(dt, state, frozen);
   for (const p of state.players) Shooting.update(dt, state, p, ctls.get(p));
   // The free throw is away: everyone is free to go for the rebound.
   const ft = state.freeThrow;
@@ -219,6 +222,7 @@ function resetToCenter(instant = false) {
   const cy = COURT.width / 2;
   const lastTeam = ball.lastTeam === null ? 1 - state.possession : ball.lastTeam;
   state.freeThrow = null;
+  if (state.ref) state.ref.hasBall = false;
   lineUp();
   state.user = state.players[0];
   let focusX = cx;
@@ -235,9 +239,11 @@ function resetToCenter(instant = false) {
 }
 
 // A foul with free throws on: everyone lines up at the end the shooter attacks, the fouled player just behind the
-// free-throw line with the ball, defenders on the lane spots nearest the hoop and one up top, the shooter's
-// teammates on the next lane spots. Play waits for the one shot (freeThrowControls, AIBrain).
+// free-throw line, defenders on the lane spots nearest the hoop and one up top, the shooter's teammates on the
+// next lane spots. The ref holds the ball in the lane and passes it in after REF.passDelay (Ref.update). Play
+// waits for the one shot (freeThrowControls, AIBrain).
 function startFreeThrow(shooter) {
+  const { ball, ref } = state;
   const hoop = attackHoop(shooter.team);
   const at = (a, dy) => ({ x: hoop.x + hoop.dir * a, y: COURT.width / 2 + dy });
   const line = COURT.keyDepth - COURT.hoopX + FOUL.ftBack;
@@ -246,9 +252,14 @@ function startFreeThrow(shooter) {
   const offense = [at(44, -lane), at(44, lane)];
   lineUp((p) => (p === shooter ? at(line, 0) : p.team === shooter.team ? offense.shift() : defense.shift()));
   for (const p of state.players) p.facing = -hoop.dir;
-  state.user = state.players[0];
-  Play.give(state, shooter);
-  state.freeThrow = { shooter, pending: false };
+  const spot = at(REF.spot, 0);
+  Object.assign(ref, { x: spot.x, y: spot.y, prevX: spot.x, prevY: spot.y, vx: 0, vy: 0, facing: hoop.dir, hasBall: true });
+  Object.assign(ball, { held: true, holder: null, shot: null, pass: null, lockT: 0, x: spot.x, y: spot.y, z: 20 });
+  ball.reserved = shooter.team;
+  ball.lastTeam = shooter.team;
+  state.possession = shooter.team;
+  state.user = shooter.team === 0 ? shooter : state.players[0];
+  state.freeThrow = { shooter, pending: false, refT: REF.passDelay };
   state.outFor = 0;
   camera.panTo(shooter.x, RESET.panTime);
   addPopup(state, 'FREE THROW', COLORS.okay, shooter.x, shooter.y, RESET.outTextZ, FOUL.textTime);
@@ -301,6 +312,7 @@ function render(alpha) {
   // Everything standing on the floor is drawn back-to-front by depth.
   const { ball, user } = state;
   const movers = ball.held ? [...state.players] : [...state.players, ball];
+  if (state.ref) movers.push(state.ref);
   for (const m of movers) m.prepare(alpha);
 
   shadowCtx.clearRect(0, 0, VIEW_W, VIEW_H);

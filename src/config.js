@@ -158,6 +158,13 @@ const FOUL = {
   textTime: 2,               // how long "FREE THROW" stays up
 };
 
+// The referee (3v3 only): walks the strip between the scorer's table and the far sideline (at depth `y`), following
+// the ball's side of the court (`follow` of the way from center toward the ball, at most `range` out) and drifting
+// up to `wander` either way, picking a new drift every `rethink` seconds, at `speed` x a player's pace. At a free
+// throw they stand in the lane `spot` out from the hoop holding the ball and pass it to the shooter after
+// `passDelay` seconds (the shooter can't shoot until then); the pass takes `passTime`.
+const REF = { y: -3, follow: 0.6, range: 120, wander: 20, rethink: [1.5, 3.5], speed: 0.6, spot: 40, passDelay: 2, passTime: 0.45 };
+
 const PICKUP = {
   radius: 12,         // how close (in x and y) the player must be to grab a loose ball
   reach: 30,          // highest ball (bottom z) the player can grab

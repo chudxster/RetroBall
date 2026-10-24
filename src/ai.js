@@ -69,8 +69,9 @@ const AIBrain = (() => {
     ctl.shoot = shot.fill + dt / shot.meterTime < m.releaseAt;
   }
 
-  // Free throw: a moment to settle at the line, then shoot.
+  // Free throw: once the ref has passed it in, a moment to settle at the line, then shoot.
   function atTheLine(dt, p, ctl) {
+    if (!p.hasBall) return;
     const m = p.mind;
     if (m.lineT == null) m.lineT = rand(...FOUL.aiShootDelay);
     m.lineT -= dt;

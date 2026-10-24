@@ -707,6 +707,8 @@ class Player {
   // Jersey number in the 3x5 font with 2px cells. Glyph columns are pre-flipped when facing left so the digits
   // still read correctly.
   numberParts(left, top, color) {
+    // The ref's shirt has black stripes instead of a number.
+    if (this.look.stripes) return [-7, -3, 1, 5].map((x) => [x, top - 2, 2, 14, COLORS.outline]);
     const digits = this.number.slice(0, 2);
     const w = textWidth(digits);
     const parts = [];

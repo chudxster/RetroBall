@@ -10,7 +10,9 @@ Two modes, picked in the pause menu's Gamemode tab: **3v3 Casual** (full court, 
 defense) and **Free shot** (just you).
 
 Reaching for a steal can be called a foul, more likely the closer you are to the ball handler. With **free throws** on
-(Gamemode tab) the fouled player shoots one from the line for a point; with them off their team just keeps the ball.
+(Gamemode tab) the fouled player shoots one from the line for a point: the ref hands them the ball after two seconds.
+With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of the
+scorer's table, following the play.
 
 Upgrades (pause menu, free while testing): each of the three players on your team has their own levels for speed,
 shooting, dunking, defense and dash, and their own name. In 3v3 each AI opponent gets as many levels as your player in
@@ -46,6 +48,7 @@ The game scales itself to fit the frame in whole pixels. Players click the frame
 | `src/player.js` | Player movement and the pixel-art sprite |
 | `src/team.js` | Teams, rosters and team colors, which hoop each team attacks |
 | `src/ai.js` | Computer players: offense, defense, chasing loose balls |
+| `src/ref.js` | The referee: wanders the sideline, passes the ball in for free throws |
 | `src/play.js` | Passing, steals, blocks, contests, pickups and possession |
 | `src/shooting.js` | Shot meter, release grading, dunks |
 | `src/ball.js` | Ball physics: arcs, rim/backboard bounces, scoring |

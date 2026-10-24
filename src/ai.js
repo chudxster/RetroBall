@@ -194,6 +194,11 @@ const AIBrain = (() => {
       target = { x: hoop.x + (hx / hl) * AI.helpDepth, y: hoop.y + (hy / hl) * AI.helpDepth };
     }
 
+    // Half-court defense: nobody follows the offense past the half-court line; they wait on their own half and pick
+    // their man up once he crosses.
+    const limit = COURT.length / 2 - hoop.dir * AI.pickupLine;
+    if ((target.x - limit) * hoop.dir > 0) target = { x: limit, y: target.y };
+
     // A shooter nearby: close out on them and jump to contest after a reaction delay.
     const shooter = opp.find((q) => q.shot && !q.shot.dunk && !q.shot.released && courtDist(q, p) < DEFENSE.contestRange * 1.5);
     if (shooter) {

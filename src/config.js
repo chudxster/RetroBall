@@ -201,8 +201,9 @@ const AI = {
   shootRange: 150,    // won't shoot from farther out than this (unless the hold timer runs out)
   minHold: 0.5,       // seconds with the ball before considering a jumper
   maxHold: 7,         // after this long holding the ball, shoot whatever happens
-  guardGapBall: 13,   // how far off the man defenders play, toward their own hoop: on the ball...
-  guardGapOff: 26,    // ...and off it
+  guardGapBall: 22,   // how far off the man defenders play, toward their own hoop: on the ball...
+  guardGapOff: 38,    // ...and off it
+  pickupLine: 10,     // half-court defense: defenders wait this far inside their own half for the offense to cross
   helpRange: 110,     // a ball handler this close to the hoop draws a help defender...
   helpDepth: 16,      // ...who stands this far out from the rim, toward the ball
   hangTime: 1.1,      // seconds an AI dunker hangs on the rim on a rim-hang dunk
@@ -221,11 +222,11 @@ const PROJ = {
 // bracket; turning eats into the held time (a full reversal fastest).
 const PLAYER = {
   speedBrackets: [
-    { after: 0, speed: 80 },
-    { after: 0.5, speed: 110 },
-    { after: 1, speed: 140 },
+    { after: 0, speed: 70 },
+    { after: 0.5, speed: 90 },
+    { after: 1, speed: 110 },
   ],
-  topSpeed: 140,      // the last bracket's speed (animations scale to it)
+  topSpeed: 110,      // the last bracket's speed (animations scale to it)
   turnLoss: 1.5,      // seconds of held time lost per second, times how sharp the turn is (0 straight .. 2 reversal)
   depthSpeed: 1.6,    // up/down speed multiplier; the court is foreshortened, so depth moves need a boost to feel right
   accel: 800,

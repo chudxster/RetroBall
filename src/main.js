@@ -275,13 +275,13 @@ function render(alpha) {
 }
 
 // Fixed-timestep loop: physics always ticks at 60Hz, rendering interpolates between ticks.
-// While paused the simulation simply stops advancing.
+// While paused (the menu is open, or the game lost focus and shows "click to play") the simulation stops advancing.
 let last = performance.now();
 let acc = 0;
 function frame(now) {
   const elapsed = Math.min((now - last) / 1000, 0.25);
   last = now;
-  if (!Menu.isOpen()) {
+  if (!Menu.isOpen() && document.hasFocus()) {
     acc += elapsed;
     while (acc >= STEP) {
       update(STEP);

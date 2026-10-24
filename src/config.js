@@ -150,8 +150,9 @@ const PICKUP = {
 
 // Dash: double-tap any direction (up, down, left or right) for a short burst that way, then wait out the cooldown.
 const DASH = {
-  speed: 250,         // world units per second during the burst...
-  time: 0.16,         // ...for this long (the dash upgrade stretches it)
+  speed: 250,         // world units per second during the burst (the dash upgrade raises it)...
+  time: 0.16,         // ...for this long
+  depthScale: 0.6,    // up/down dashes cover this fraction of the distance a sideways one would
   cooldown: 3,
   doubleTap: 0.125,   // the second tap must come within this many seconds of the first
 };

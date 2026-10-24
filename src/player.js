@@ -89,6 +89,7 @@ class Player {
     this.dazedT = 0;   // seconds left of stars circling the head after having the ball stolen
     this.stealCD = 0;
     this.dashT = 0;   // seconds left of a dash burst...
+    this.dashSpeed = DASH.speed;
     this.dashDir = { x: 0, y: 0 }; // ...this way (unit vector in control space, like `move`)
     this.dashCD = 0;
     this.prevShoot = false; // last tick's shoot / dunk buttons, so Shooting can spot presses
@@ -177,8 +178,8 @@ class Player {
 
     // Dashing overrides the velocity with a burst, then normal steering takes it back down.
     if (this.dashT > 0 && !stuck) {
-      this.vx = this.dashDir.x * DASH.speed;
-      this.vy = this.dashDir.y * DASH.speed * PLAYER.depthSpeed;
+      this.vx = this.dashDir.x * this.dashSpeed;
+      this.vy = this.dashDir.y * this.dashSpeed * PLAYER.depthSpeed * DASH.depthScale;
       if (this.dashDir.x) this.facing = Math.sign(this.dashDir.x);
     }
 
@@ -211,11 +212,12 @@ class Player {
   }
 
   // Start a dash burst toward `dir` ({ x, y } in control space), if it's off cooldown and the player is free to
-  // move. The dash upgrade makes it last longer, so it goes further.
+  // move. The dash upgrade makes it faster over the same time, so it goes further.
   dash(dir) {
     const len = Math.hypot(dir.x, dir.y);
     if (!len || this.dashCD > 0 || this.airborne() || this.sitting) return;
-    this.dashT = DASH.time * (1 + UPGRADES.dashDistance * this.upgrades.dash);
+    this.dashT = DASH.time;
+    this.dashSpeed = DASH.speed * (1 + UPGRADES.dashDistance * this.upgrades.dash);
     this.dashDir = { x: dir.x / len, y: dir.y / len };
     this.dashCD = DASH.cooldown;
   }

@@ -135,6 +135,61 @@ input {
   border-top: var(--px) solid #333c57;
 }
 
+/* Player tuning: a scrolling list of label + number + reset, with a tip under each */
+.tuning-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tuning-head .test-note {
+  margin: 0;
+}
+
+.tuning-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+  max-height: calc(var(--px) * 96);
+  overflow-y: auto;
+  padding-right: calc(var(--px) * 2);
+}
+
+.tuning-top {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 3);
+}
+
+.tuning-label {
+  flex: 1;
+  color: #94b0c2;
+}
+
+.tuning-item.changed .tuning-label {
+  color: #ffcd75;
+}
+
+.num.tuning-num {
+  width: calc(var(--px) * 40);
+}
+
+/* Only a changed value can be reset; the button keeps its space so the numbers stay lined up. */
+.tuning-reset {
+  visibility: hidden;
+}
+
+.tuning-item.changed .tuning-reset {
+  visibility: visible;
+}
+
+.tuning-tip {
+  display: block;
+  margin-top: var(--px);
+  font-size: 0.7em;
+  color: #566c86;
+}
+
 /* Smaller than the menu text so every tab fits on one row. */
 .tab {
   margin-bottom: calc(var(--px) * -1);

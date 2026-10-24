@@ -172,6 +172,16 @@
             <span class="value pct" id="crowd-density-value"></span>
           </div>
         </div>
+
+        <!-- Player tuning: every config value that shapes how players play, most important first (rows built by
+             menu.js from TUNING). Saved; a changed value can be put back one at a time or all at once. -->
+        <div class="stack-view test-section" id="tuning-view">
+          <div class="tuning-head">
+            <p class="test-note">Player tuning (saved)</p>
+            <button type="button" class="btn btn-quiet" id="reset-tuning">Reset all</button>
+          </div>
+          <div class="tuning-list" id="tuning-list"></div>
+        </div>
       </div>
 
       <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->
@@ -227,6 +237,7 @@
   <script src="src/play.js"></script>
   <script src="src/ai.js"></script>
   <script src="src/ref.js"></script>
+  <script src="src/tuning.js"></script>
   <script src="src/menu.js"></script>
   <script src="src/main.js"></script>
 </body>

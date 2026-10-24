@@ -204,6 +204,7 @@ const Menu = (() => {
     initModeView();
     initControlsView();
     initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
+    initTuningView();
     initTestView();
 
     button.addEventListener('click', () => setOpen(!open));
@@ -413,6 +414,58 @@ const Menu = (() => {
       sync();
     });
     sync();
+  }
+
+  // Player tuning (bottom of the Gamemode tab): a number box per TUNING entry with its tip and default. A changed
+  // value is highlighted and gets a button back to its default; "Reset all" restores every one.
+  function initTuningView() {
+    const list = document.getElementById('tuning-list');
+    const fmt = (v) => String(Number(v.toFixed(4)));
+    const syncs = TUNING.map((entry) => {
+      const item = document.createElement('div');
+      item.className = 'tuning-item';
+      const top = document.createElement('div');
+      top.className = 'tuning-top';
+      const input = document.createElement('input');
+      Object.assign(input, { type: 'number', min: entry.min, max: entry.max, step: entry.step, className: 'num tuning-num' });
+      input.id = `tune-${entry.path.replace(/\./g, '-')}`;
+      const label = document.createElement('label');
+      label.className = 'tuning-label';
+      label.htmlFor = input.id;
+      label.textContent = entry.label;
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.className = 'step tuning-reset';
+      reset.textContent = '↺';
+      reset.title = 'Back to default';
+      reset.setAttribute('aria-label', `Reset ${entry.label} to default`);
+      const tip = document.createElement('span');
+      tip.className = 'tuning-tip';
+      tip.textContent = `${entry.tip} (default ${fmt(Tuning.defaultOf(entry))})`;
+      top.append(label, input, reset);
+      item.append(top, tip);
+      list.append(item);
+
+      const sync = () => {
+        const v = Tuning.get(entry.path);
+        input.value = fmt(v);
+        item.classList.toggle('changed', v !== Tuning.defaultOf(entry));
+      };
+      input.addEventListener('change', () => {
+        Tuning.change(entry, input.value);
+        sync();
+      });
+      reset.addEventListener('click', () => {
+        Tuning.reset(entry);
+        sync();
+      });
+      sync();
+      return sync;
+    });
+    document.getElementById('reset-tuning').addEventListener('click', () => {
+      Tuning.resetAll();
+      for (const sync of syncs) sync();
+    });
   }
 
   // Testing sliders (bottom of the Gamemode tab): the dunk outcome odds, edited live on DUNK. Shatter is rolled first, so if the two

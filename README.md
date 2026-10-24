@@ -29,6 +29,10 @@ the same spot, spread at random (the AI doesn't dash).
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 
+The bottom of the Gamemode tab has testing sliders (dunk odds, AI level, crowd) and **Player tuning**: every number
+that shapes how players move, shoot, dunk, dash, pass and defend, most important first, each with a tip and its
+default. Changes are saved; reset one or all to go back to the defaults.
+
 ## Embed on a website
 
 Upload the folder, then:
@@ -55,5 +59,6 @@ The game scales itself to fit the frame in whole pixels. Players click the frame
 | `src/hoop.js` | Hoops, net, rim bend, shadows |
 | `src/court.js` | Arena, crowd and court drawing |
 | `src/camera.js` | Projection, zoom, tilt, panning |
+| `src/tuning.js` | The player-tuning list (which config values the menu exposes, with tips and limits) |
 | `src/menu.js` | Pause menu tabs: customization, per-player upgrades and names, game mode, controls, test sliders |
 | `src/hud.js` | Score, meter, pop-up text |

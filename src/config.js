@@ -218,6 +218,12 @@ const DEFENSE = {
   rimGuard: 22,       // a defender this close to the rim, or to the dunker at takeoff, can stuff the dunk...
   stuffChance: 0.3,   // ...with these odds each (AI defenders add their block chance)
   userStuffChance: 0.4,
+  // Everyone's steal, block, interception and dunk-stuff odds (the user's and the AI's alike) are multiplied by
+  // these; 1 = as above (set in the Gamemode tab's player tuning).
+  stealOdds: 1,
+  blockOdds: 1,
+  interceptOdds: 1,
+  stuffOdds: 1,
   separation: 11,     // players closer than this get pushed apart
   retreatSpeed: 1.6,  // defenders still in the offense's half run back to their own this much faster
 };

@@ -86,7 +86,7 @@ const Play = (() => {
     const ballX = h.x + h.facing * 8;
     const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p);
     const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
-    const chance = p === game.user ? lerp(...DEFENSE.userStealChance, AI.level) : aiValue(p, AI.stealChance);
+    const chance = (p === game.user ? lerp(...DEFENSE.userStealChance, AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
       addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
@@ -167,7 +167,7 @@ const Play = (() => {
       const range = DEFENSE.blockRange * (1 + UPGRADES.blockRange * d.upgrades.defense);
       if (!d.jump || d.z < DEFENSE.blockMinZ || courtDist(d, shooter) > range) continue;
       const base = d === game.user ? DEFENSE.userBlockChance : aiValue(d, AI.blockChance);
-      const chance = (base + blockBonus(d)) * shooter.shot.contest;
+      const chance = (base + blockBonus(d)) * shooter.shot.contest * DEFENSE.blockOdds;
       if (Math.random() >= chance) continue;
       // Knocked back the way the shooter came from, landing loose.
       const hoop = shooter.shot.hoop;
@@ -191,7 +191,7 @@ const Play = (() => {
   // A dunk attempt into a guarded rim may get stuffed: the dunker goes up, the ball comes back out loose.
   function tryStuff(game, p, hoop) {
     for (const d of rimGuards(game, p, hoop)) {
-      const chance = (d === game.user ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5) + blockBonus(d);
+      const chance = ((d === game.user ? DEFENSE.userStuffChance : DEFENSE.stuffChance + aiValue(d, AI.blockChance) * 0.5) + blockBonus(d)) * DEFENSE.stuffOdds;
       if (Math.random() >= chance) continue;
       p.hasBall = false;
       p.jump = { t: 0 };
@@ -279,7 +279,7 @@ const Play = (() => {
       if (ball.pass && p.team !== ball.pass.team) {
         const rolls = ball.pass.rolls;
         if (!rolls.has(p)) {
-          const chance = p === game.user ? DEFENSE.userIntercept : aiValue(p, AI.interceptChance);
+          const chance = (p === game.user ? DEFENSE.userIntercept : aiValue(p, AI.interceptChance)) * DEFENSE.interceptOdds;
           rolls.set(p, Math.random() < chance);
         }
         if (!rolls.get(p)) continue;

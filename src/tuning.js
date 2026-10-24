@@ -1,5 +1,6 @@
 // Player tuning: the config values that shape how players move, shoot, dunk, dash, pass and defend, editable in
-// the pause menu (bottom of the Gamemode tab), most important first. Each entry names a value by its path in the
+// the pause menu (bottom of the Gamemode tab), most important first. Every one applies to all players, the user's
+// and the AI's alike (the user and the AI have their own steal/block/intercept/stuff odds, so those are scaled). Each entry names a value by its path in the
 // config (`also` lists values that must follow it), with a short tip. Changes are saved; anything left at its
 // default isn't.
 const TUNING_STORAGE_KEY = 'retroball.tuning';
@@ -8,12 +9,12 @@ const TUNING = [
   // Movement (everyone)
   { path: 'PLAYER.speedBrackets.2.speed', also: ['PLAYER.topSpeed'], label: 'Top speed', tip: 'Running speed after holding a direction 1s', min: 40, max: 300, step: 5 },
   { path: 'PLAYER.speedBrackets.1.speed', label: 'Mid speed', tip: 'Running speed after 0.5s', min: 30, max: 300, step: 5 },
-  { path: 'PLAYER.speedBrackets.0.speed', label: 'Start speed', tip: 'Running speed when you start moving', min: 20, max: 300, step: 5 },
+  { path: 'PLAYER.speedBrackets.0.speed', label: 'Start speed', tip: 'Running speed when a player starts moving', min: 20, max: 300, step: 5 },
   { path: 'PLAYER.ballSpeed', label: 'Dribble speed', tip: 'Speed with the ball, as a share of normal', min: 0.3, max: 1.5, step: 0.05 },
-  { path: 'PLAYER.accel', label: 'Acceleration', tip: 'How fast you get up to speed', min: 100, max: 4000, step: 50 },
-  { path: 'PLAYER.decel', label: 'Braking', tip: 'How fast you stop when you let go', min: 100, max: 4000, step: 50 },
+  { path: 'PLAYER.accel', label: 'Acceleration', tip: 'How fast players get up to speed', min: 100, max: 4000, step: 50 },
+  { path: 'PLAYER.decel', label: 'Braking', tip: 'How fast players stop when they let go', min: 100, max: 4000, step: 50 },
   { path: 'PLAYER.depthSpeed', label: 'Up/down speed', tip: 'Boost for moving up and down the court', min: 0.5, max: 3, step: 0.05 },
-  { path: 'PLAYER.turnLoss', label: 'Turn penalty', tip: 'How much turning slows you back down', min: 0, max: 5, step: 0.1 },
+  { path: 'PLAYER.turnLoss', label: 'Turn penalty', tip: 'How much turning slows a player back down', min: 0, max: 5, step: 0.1 },
 
   // Shooting
   { path: 'SHOT.greenMax', label: 'Green (close)', tip: 'Make window on the meter, near the hoop', min: 0.02, max: 0.5, step: 0.01 },
@@ -30,17 +31,17 @@ const TUNING = [
   { path: 'SHOT.deepFrames', label: 'Half-court green', tip: 'Frames of green from past half court', min: 1, max: 20, step: 1 },
   { path: 'SHOT.deepMake.half', label: 'Half-court makes', tip: 'Odds a green half-court shot drops', min: 0, max: 1, step: 0.05 },
   { path: 'SHOT.deepMake.full', label: 'Full-court makes', tip: 'Odds a green full-court shot drops', min: 0, max: 1, step: 0.05 },
-  { path: 'SHOT.jumpHeight', label: 'Jump shot height', tip: 'How high you rise on a jumper', min: 0, max: 40, step: 1 },
+  { path: 'SHOT.jumpHeight', label: 'Jump shot height', tip: 'How high a jump shot rises', min: 0, max: 40, step: 1 },
 
   // Dunking
   { path: 'DUNK.baseRange', label: 'Dunk range', tip: 'How far out a standing dunk works', min: 0, max: 120, step: 1 },
   { path: 'DUNK.rangePerSpeed', label: 'Dunk run-up', tip: 'Extra dunk range per unit of speed', min: 0, max: 1.5, step: 0.05 },
-  { path: 'DEFENSE.userStuffChance', label: 'Your stuff odds', tip: 'Odds you stuff a dunk at the rim', min: 0, max: 1, step: 0.05 },
+  { path: 'DEFENSE.stuffOdds', label: 'Stuff odds', tip: 'Scales everyone\'s odds to stuff a dunk', min: 0, max: 4, step: 0.05 },
 
   // Dash
   { path: 'DASH.speed', label: 'Dash speed', tip: 'Speed of the double-tap burst', min: 50, max: 800, step: 10 },
   { path: 'DASH.time', label: 'Dash length', tip: 'Seconds the burst lasts', min: 0.03, max: 0.6, step: 0.01 },
-  { path: 'DASH.cooldown', label: 'Dash cooldown', tip: 'Seconds before you can dash again', min: 0, max: 10, step: 0.25 },
+  { path: 'DASH.cooldown', label: 'Dash cooldown', tip: 'Seconds before a player can dash again', min: 0, max: 10, step: 0.25 },
   { path: 'DASH.depthScale', label: 'Up/down dash', tip: 'Up/down dash distance vs sideways', min: 0.1, max: 2, step: 0.05 },
 
   // Passing
@@ -48,20 +49,19 @@ const TUNING = [
   { path: 'PASS.lead', label: 'Pass lead', tip: 'How far ahead of a runner passes go', min: 0, max: 2, step: 0.05 },
   { path: 'PASS.catchRadius', label: 'Catch reach', tip: 'How far a receiver can reach for a pass', min: 4, max: 50, step: 1 },
   { path: 'CALL.speed', label: 'Ball recall', tip: 'Free shot: speed the called ball flies back', min: 100, max: 900, step: 10 },
-  { path: 'PICKUP.radius', label: 'Pickup reach', tip: 'How close you must be to grab a loose ball', min: 4, max: 40, step: 1 },
+  { path: 'PICKUP.radius', label: 'Pickup reach', tip: 'How close a player must be to grab a loose ball', min: 4, max: 40, step: 1 },
 
   // Defense
   { path: 'DEFENSE.stealRange', label: 'Steal reach', tip: 'How far a steal can reach', min: 5, max: 60, step: 1 },
-  { path: 'DEFENSE.userStealChance.0', label: 'Steal odds easy', tip: 'Your steal odds vs the easiest AI', min: 0, max: 1, step: 0.05 },
-  { path: 'DEFENSE.userStealChance.1', label: 'Steal odds hard', tip: 'Your steal odds vs the hardest AI', min: 0, max: 1, step: 0.05 },
+  { path: 'DEFENSE.stealOdds', label: 'Steal odds', tip: 'Scales everyone\'s steal success', min: 0, max: 4, step: 0.05 },
   { path: 'FOUL.maxChance', label: 'Foul odds', tip: 'Foul odds reaching in pressed up close', min: 0, max: 1, step: 0.05 },
   { path: 'DEFENSE.stealCooldown', label: 'Steal cooldown', tip: 'Seconds between steal attempts', min: 0, max: 3, step: 0.05 },
   { path: 'DEFENSE.stealStun', label: 'Whiff slowdown', tip: 'Seconds slowed after a missed steal', min: 0, max: 3, step: 0.05 },
   { path: 'DEFENSE.stolenStun', label: 'Stripped stun', tip: 'Seconds dazed after the ball is stolen', min: 0, max: 3, step: 0.05 },
-  { path: 'DEFENSE.userBlockChance', label: 'Block odds', tip: 'Your odds to block a shot you reach', min: 0, max: 1, step: 0.05 },
-  { path: 'DEFENSE.blockRange', label: 'Block reach', tip: 'How close you must be to block', min: 2, max: 50, step: 1 },
+  { path: 'DEFENSE.blockOdds', label: 'Block odds', tip: 'Scales everyone\'s odds to block a shot', min: 0, max: 4, step: 0.05 },
+  { path: 'DEFENSE.blockRange', label: 'Block reach', tip: 'How close a defender must be to block', min: 2, max: 50, step: 1 },
   { path: 'DEFENSE.jumpHeight', label: 'Block jump', tip: 'How high a defensive jump goes', min: 0, max: 50, step: 1 },
-  { path: 'DEFENSE.userIntercept', label: 'Intercept odds', tip: 'Odds you pick off a pass you touch', min: 0, max: 1, step: 0.05 },
+  { path: 'DEFENSE.interceptOdds', label: 'Intercept odds', tip: 'Scales everyone\'s odds to pick off a pass', min: 0, max: 4, step: 0.05 },
   { path: 'DEFENSE.contestMax', label: 'Contest power', tip: 'Most a close-out shrinks the green', min: 0, max: 1, step: 0.05 },
   { path: 'DEFENSE.contestRange', label: 'Contest range', tip: 'How close a defender must be to bother', min: 0, max: 120, step: 1 },
   { path: 'DEFENSE.retreatSpeed', label: 'Get-back speed', tip: 'Speed boost running back on defense', min: 1, max: 3, step: 0.05 },

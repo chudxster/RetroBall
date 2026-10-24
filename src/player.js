@@ -151,7 +151,8 @@ class Player {
 
     // Steer velocity toward the target at a fixed rate: quick to respond, but with a little weight.
     const boost = 1 + UPGRADES.speed * this.upgrades.speed;
-    const maxSpeed = this.bracketSpeed() * boost * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
+    const dribbling = this.hasBall ? PLAYER.ballSpeed : 1;
+    const maxSpeed = this.bracketSpeed() * boost * dribbling * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
     const tx = ix * maxSpeed;
     const ty = iy * maxSpeed * PLAYER.depthSpeed;
     const dx = tx - this.vx;

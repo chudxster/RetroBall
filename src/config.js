@@ -227,6 +227,7 @@ const PLAYER = {
     { after: 1, speed: 110 },
   ],
   topSpeed: 110,      // the last bracket's speed (animations scale to it)
+  ballSpeed: 0.85,    // dribbling slows the ball handler to this fraction of every bracket
   turnLoss: 1.5,      // seconds of held time lost per second, times how sharp the turn is (0 straight .. 2 reversal)
   depthSpeed: 1.6,    // up/down speed multiplier; the court is foreshortened, so depth moves need a boost to feel right
   accel: 800,

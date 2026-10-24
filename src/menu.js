@@ -38,14 +38,18 @@ const Menu = (() => {
   const hairStyleName = document.getElementById('hair-style-name');
   const presetRow = document.getElementById('skin-presets');
 
-  // The preview turns through these poses so every side of the look is visible.
+  // The preview spins through all eight directions like a turntable so every side of the look is visible.
   const PREVIEW_POSES = [
-    { facing: 1, turn: 0 },
-    { facing: 1, turn: -1 },
-    { facing: -1, turn: 0 },
-    { facing: 1, turn: 1 },
+    { facing: 1, view: 'side' },
+    { facing: 1, view: 'frontQ' },
+    { facing: 1, view: 'front' },
+    { facing: -1, view: 'frontQ' },
+    { facing: -1, view: 'side' },
+    { facing: -1, view: 'backQ' },
+    { facing: -1, view: 'back' },
+    { facing: 1, view: 'backQ' },
   ];
-  const POSE_SECONDS = 1.2;
+  const POSE_SECONDS = 0.8;
 
   let player = null;
   let preview = null;
@@ -197,7 +201,7 @@ const Menu = (() => {
 
     const pose = PREVIEW_POSES[Math.floor(previewTime / POSE_SECONDS) % PREVIEW_POSES.length];
     preview.facing = pose.facing;
-    preview.turn = pose.turn;
+    preview.view = pose.view;
     preview.dribbleT += dt * 2;
     preview.sx = 40;
     preview.sy = 86;

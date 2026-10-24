@@ -13,12 +13,13 @@ function makeHoop(dir) {
     bendV: 0,
     hanging: false, // a dunker is on the rim, pulling it down to hangBend
     hangBend: 0,
+    sway: 0,     // px the rim is pulled sideways by a swinging dunker
     broken: false,  // rim shattered off: no rim or net until restoreHoops
   };
 }
 
 function restoreHoops() {
-  for (const h of HOOPS) Object.assign(h, { bend: 0, bendV: 0, hanging: false, broken: false, netT: 0 });
+  for (const h of HOOPS) Object.assign(h, { bend: 0, bendV: 0, hanging: false, broken: false, netT: 0, sway: 0 });
 }
 
 const HOOPS = [makeHoop(1), makeHoop(-1)];
@@ -39,7 +40,13 @@ function updateHoops(dt) {
     const target = h.hanging ? h.hangBend : 0;
     h.bendV += ((target - h.bend) * HOOP.bendStiffness - h.bendV * HOOP.bendDamping) * dt;
     h.bend += h.bendV * dt;
+    if (!h.hanging) h.sway *= Math.exp(-HOOP.swaySettle * dt);
   }
+}
+
+// How far (px) the stand gives under a hanging dunker: the board and rim drop, the pole top leans in.
+function hoopFlex(h) {
+  return { drop: Math.round(h.bend * HOOP.boardFlex), lean: Math.round(h.bend * HOOP.poleLean) * h.dir };
 }
 
 // Each hoop is drawn in two layers so the ball can pass between them: the stand, board and back of the rim
@@ -49,9 +56,10 @@ const HOOP_LAYERS = HOOPS.flatMap((h) => [
   { y: h.y + HOOP.rimR, draw: (ctx) => drawHoopFront(ctx, h) },
 ]);
 
+// Where the rim's center is drawn: its world spot, moved by the stand flexing and any sway.
 function rimScreen(h) {
   const r = project(h.x, h.y, HOOP.rimZ);
-  return { rx: Math.round(r.x), ry: Math.round(r.y) };
+  return { rx: Math.round(r.x + h.sway), ry: Math.round(r.y) + hoopFlex(h).drop };
 }
 
 // The rim as pixel offsets from its center: a 2px elliptical ring split into the far (back) and near (front)
@@ -107,27 +115,34 @@ function drawHoopBack(ctx, h) {
   ctx.fillRect(bx - 6, by - 14, 1, 14);
   ctx.fillRect(bx + 5, by - 14, 1, 14);
 
-  // Pole: lit on one side, shadowed on the other.
+  // Pole: lit on one side, shadowed on the other. Drawn row by row so it can lean when the stand flexes.
+  const flex = hoopFlex(h);
   const poleTop = Math.round(project(h.poleX, h.y, HOOP.poleTop).y);
   const poleBottom = by - 20;
-  ctx.fillStyle = COLORS.outline;
-  ctx.fillRect(bx - 4, poleTop - 1, 9, poleBottom - poleTop + 1);
-  ctx.fillStyle = COLORS.pole;
-  ctx.fillRect(bx - 3, poleTop, 7, poleBottom - poleTop);
-  ctx.fillStyle = COLORS.poleLight;
-  ctx.fillRect(bx - 3, poleTop, 2, poleBottom - poleTop);
-  ctx.fillStyle = COLORS.poleDark;
-  ctx.fillRect(bx + 3, poleTop, 1, poleBottom - poleTop);
+  const leanAt = (y) => Math.round((flex.lean * (poleBottom - y)) / (poleBottom - poleTop));
+  for (let y = poleTop - 1; y < poleBottom; y++) {
+    const x = bx + leanAt(y);
+    ctx.fillStyle = COLORS.outline;
+    ctx.fillRect(x - 4, y, 9, 1);
+    if (y < poleTop) continue;
+    ctx.fillStyle = COLORS.pole;
+    ctx.fillRect(x - 3, y, 7, 1);
+    ctx.fillStyle = COLORS.poleLight;
+    ctx.fillRect(x - 3, y, 2, 1);
+    ctx.fillStyle = COLORS.poleDark;
+    ctx.fillRect(x + 3, y, 1, 1);
+  }
 
-  // Board: a slab seen side-on with a framed white face toward the court.
-  const bsx = Math.round(project(h.boardX, h.y).x);
-  const bt = Math.round(project(h.boardX, h.y, HOOP.boardTop).y);
-  const bb = Math.round(project(h.boardX, h.y, HOOP.boardBottom).y);
+  // Board: a slab seen side-on with a framed white face toward the court. It drops with the flex and drifts a
+  // little with the rim's sway.
+  const bsx = Math.round(project(h.boardX, h.y).x + h.sway * 0.3);
+  const bt = Math.round(project(h.boardX, h.y, HOOP.boardTop).y) + flex.drop;
+  const bb = Math.round(project(h.boardX, h.y, HOOP.boardBottom).y) + flex.drop;
   const x0 = d > 0 ? bsx - 6 : bsx;
   const faceX = d > 0 ? x0 + 3 : x0;
 
-  // Arm from the top of the pole to the back of the board.
-  thickLine(ctx, bx, poleTop + 3, d > 0 ? x0 - 4 : x0 + 8, bt + 8);
+  // Arm from the (leaning) top of the pole to the back of the board.
+  thickLine(ctx, bx + flex.lean, poleTop + 3, d > 0 ? x0 - 4 : x0 + 8, bt + 8);
 
   ctx.fillStyle = COLORS.outline;
   ctx.fillRect(x0 - 1, bt - 1, 9, bb - bt + 2);
@@ -228,20 +243,22 @@ function drawHoopShadow(ctx, h) {
     for (let z = HOOP.boardBottom; z <= HOOP.boardTop; z += 0.5) dot(h.boardX, h.y + dy, z);
   }
 
-  for (let t = 0; t <= 1; t += 0.05) dot(lerp(h.boardX, h.x - h.dir * HOOP.rimR, t), h.y, HOOP.rimZ, 3);
+  // Rim and net shadows follow the rim's sway.
+  const s = scaleAtY(h.y);
+  const rimX = h.x + h.sway / s;
+  for (let t = 0; t <= 1; t += 0.05) dot(lerp(h.boardX, rimX - h.dir * HOOP.rimR, t), h.y, HOOP.rimZ, 3);
   if (h.broken) return;
   for (let a = 0; a < Math.PI * 2; a += Math.PI / 48) {
-    dot(h.x + Math.cos(a) * HOOP.rimR, h.y + Math.sin(a) * HOOP.rimR, HOOP.rimZ);
+    dot(rimX + Math.cos(a) * HOOP.rimR, h.y + Math.sin(a) * HOOP.rimR, HOOP.rimZ);
   }
 
   // Net: a ring per row, narrowing and swinging with the net itself.
-  const s = scaleAtY(h.y);
   const rows = netRows(h);
   rows.forEach(({ hw, shift }, k) => {
     const z = HOOP.rimZ - ((k + 1) * HOOP.netDepth) / rows.length;
     const r = (hw / NET_WIDTHS[0]) * HOOP.rimR;
     for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) {
-      dot(h.x + shift / s + Math.cos(a) * r, h.y + Math.sin(a) * r, z, 1);
+      dot(rimX + shift / s + Math.cos(a) * r, h.y + Math.sin(a) * r, z, 1);
     }
   });
 }

@@ -39,6 +39,9 @@ const HOOP = {
   maxSwing: 10,       // ...up to this many pixels
   bendStiffness: 120, // the rim is a spring: how hard it pulls back to straight...
   bendDamping: 9,     // ...and how quickly its wobble dies out
+  boardFlex: 0.35,    // the whole stand flexes with the rim: board drops this many px per px of rim bend...
+  poleLean: 0.4,      // ...and the pole top leans toward the court this much
+  swaySettle: 6,      // how fast the rim's sideways sway settles once nobody is hanging on it
 };
 
 // Sprites are drawn bigger toward the near sideline, in steps so they don't shimmer while moving.
@@ -91,8 +94,9 @@ const DUNK = {
   risePerUnit: 0.004,
   jumpShare: 0.35,    // ...the first part of it a quick jump to jumpPart of full height, the rest a float above the rim
   jumpPart: 0.85,
-  apexHold: 0.06,     // a beat at the top...
-  slamTime: 0.08,     // ...then the slam down onto the rim, accelerating
+  apexHold: 0.06,     // a beat at the top, hovering slamReach short of the rim...
+  slamTime: 0.12,     // ...then the slam: dropping down and forward into the rim, accelerating
+  slamReach: 14,
   hang: 0.22,         // seconds on the rim...
   fall: 0.3,          // ...and back down
   height: 30,         // peak height, well above the rim before the slam
@@ -104,6 +108,9 @@ const DUNK = {
   hangChance: 0.05,   // odds of a long hang that bends the rim further
   longHang: 1.0,
   hangBend: 6,
+  swayPx: 5,          // hanging, the player (and rim) swing like a pendulum: px of swing...
+  swayPeriod: 0.7,    // ...seconds per swing...
+  swayDecay: 1.5,     // ...dying out at this rate
   shatterChance: 0.01, // odds the rim snaps off after a short hang (then fade out and reset)
   shatterHang: 0.45,
   shatterBend: 8,

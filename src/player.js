@@ -8,41 +8,47 @@ const HAND_Y = -32;       // bottom of the dribbling hand at rest
 const HAND_DIP = 4;       // how far the hand travels with each push
 const PUSH_START = 0.5;   // dribble phase when the push begins (ball at the top)...
 const PUSH_LEN = 0.3;     // ...and how much of the cycle it lasts; the hand rests at the top the rest of the time
-const TURN_SPEED = 25;    // depth speed at which the body turns toward or away from the camera
 const HEAD_X = -8;        // the head is a 16x16 block with its top-left here
 const HEAD_Y = -70;
 const SHOOT_BALL_X = 4;   // ball held overhead while rising for a shot: left edge...
 const SHOOT_BALL_TOP = -80; // ...and top
+const FRONTAL_BALL_X = 8; // ball's left edge in the front/back views, under the dribbling hand
+const VIEW_MIN_SPEED = 0.2; // below this fraction of run speed the player settles back to the side view
 
-// Hair as [hx, hy, w, h] rects relative to the head's top-left, for the side view (facing right) and from behind,
-// plus a few lighter strands for shine.
+// Hair as [hx, hy, w, h] rects relative to the head's top-left: side view (facing right), from the front and
+// from behind, plus a few lighter strands for shine.
 const HAIR_STYLES = {
   short: {
     side: [[1, 0, 14, 1], [0, 1, 16, 3], [0, 4, 6, 5], [6, 4, 2, 1]],
+    front: [[1, 0, 14, 1], [0, 1, 16, 3], [0, 4, 2, 4], [14, 4, 2, 4]],
     back: [[1, 0, 14, 1], [0, 1, 16, 8], [1, 9, 14, 2]],
-    shine: { side: [[3, 1, 7, 1]], back: [[3, 1, 9, 1]] },
+    shine: { side: [[3, 1, 7, 1]], front: [[4, 1, 8, 1]], back: [[3, 1, 9, 1]] },
   },
   buzz: {
     side: [[1, 0, 14, 1], [0, 1, 16, 1], [0, 2, 4, 4]],
+    front: [[1, 0, 14, 1], [0, 1, 16, 2]],
     back: [[1, 0, 14, 1], [0, 1, 16, 4]],
-    shine: { side: [], back: [] },
+    shine: { side: [], front: [], back: [] },
   },
   afro: {
     side: [[2, -6, 12, 1], [0, -5, 16, 1], [-2, -4, 20, 8], [-2, 4, 9, 6], [-1, 10, 6, 1]],
+    front: [[2, -6, 12, 1], [0, -5, 16, 1], [-2, -4, 20, 8], [-2, 4, 3, 7], [15, 4, 3, 7]],
     back: [[2, -6, 12, 1], [0, -5, 16, 1], [-2, -4, 20, 14], [-1, 10, 18, 2]],
-    shine: { side: [[2, -4, 8, 1], [-1, -2, 2, 2]], back: [[3, -4, 10, 1]] },
+    shine: { side: [[2, -4, 8, 1], [-1, -2, 2, 2]], front: [[3, -4, 10, 1]], back: [[3, -4, 10, 1]] },
   },
   mohawk: {
     side: [[3, -6, 10, 2], [2, -4, 12, 2], [1, -2, 14, 2], [0, 0, 4, 3]],
+    front: [[6, -6, 4, 8]],
     back: [[6, -6, 4, 16]],
-    shine: { side: [[4, -5, 6, 1]], back: [[7, -5, 1, 6]] },
+    shine: { side: [[4, -5, 6, 1]], front: [[7, -5, 1, 6]], back: [[7, -5, 1, 6]] },
   },
   long: {
     side: [[1, 0, 14, 1], [0, 1, 16, 3], [0, 4, 6, 5], [-3, 2, 5, 18], [-2, 20, 3, 2]],
+    front: [[1, 0, 14, 1], [0, 1, 16, 4], [-2, 2, 4, 18], [14, 2, 4, 18]],
     back: [[1, -1, 14, 1], [-1, 0, 18, 4], [-3, 4, 22, 16], [-2, 20, 20, 2]],
-    shine: { side: [[3, 1, 7, 1], [-2, 6, 1, 8]], back: [[3, 0, 10, 1], [0, 6, 1, 10]] },
+    shine: { side: [[3, 1, 7, 1], [-2, 6, 1, 8]], front: [[4, 1, 8, 1], [-1, 6, 1, 10]], back: [[3, 0, 10, 1], [0, 6, 1, 10]] },
   },
-  bald: { side: [], back: [], shine: { side: [], back: [] } },
+  bald: { side: [], front: [], back: [], shine: { side: [], front: [], back: [] } },
 };
 const HAIR_STYLE_NAMES = Object.keys(HAIR_STYLES);
 
@@ -57,11 +63,12 @@ class Player {
     this.vx = 0;
     this.vy = 0;
     this.facing = facing;
-    this.turn = 0;
+    this.view = 'side'; // see update(): side, frontQ / backQ (45 degrees), front / back
     this.stride = 0;
     this.dribbleT = 0;
     this.hasBall = true;
     this.shot = null; // set by Shooting while the player is in a jump shot
+    this.hangSway = 0; // px of pendulum swing while hanging on the rim (the legs swing further)
     this.sx = 0;      // screen position of the feet on the floor...
     this.sy = 0;
     this.by = 0;      // ...and of the feet including jump height
@@ -135,13 +142,34 @@ class Player {
     this.y = cy;
 
     if (ix !== 0) this.facing = Math.sign(ix);
-    // -1 = turned away from the camera (moving up), 1 = turned toward it (moving down), 0 = side-on.
-    this.turn = this.shot ? 0 : this.vy < -TURN_SPEED ? -1 : this.vy > TURN_SPEED ? 1 : 0;
+    this.view = this.shot ? 'side' : this.viewForVelocity();
 
     const speed = Math.hypot(this.vx, this.vy);
     this.stride += speed * dt;
     this.dribbleT += dt * lerp(2, 3.2, Math.min(speed / PLAYER.sprintSpeed, 1));
     this.moving = speed > 10;
+  }
+
+  // Which way the body is turned, from the direction of travel in 8 directions: side-on for left/right,
+  // three-quarter views for diagonals (frontQ toward the camera, backQ away), and straight front/back for down/up.
+  // Speeds are normalized so a diagonal key press reads as 45 degrees despite the faster depth movement.
+  viewForVelocity() {
+    const nx = this.vx / PLAYER.runSpeed;
+    const ny = this.vy / (PLAYER.runSpeed * PLAYER.depthSpeed);
+    if (Math.hypot(nx, ny) < VIEW_MIN_SPEED) return 'side';
+    const angle = (Math.atan2(Math.abs(ny), Math.abs(nx)) * 180) / Math.PI;
+    if (angle < 22.5) return 'side';
+    if (angle < 67.5) return ny > 0 ? 'frontQ' : 'backQ';
+    return ny > 0 ? 'front' : 'back';
+  }
+
+  isFrontal() {
+    return this.view === 'front' || this.view === 'back';
+  }
+
+  // Ball's left edge (in sprite pixels, facing right) while dribbling in the current view.
+  dribbleBallX() {
+    return this.isFrontal() ? FRONTAL_BALL_X : BALL_OFFSET_X;
   }
 
   prepare(alpha) {
@@ -162,7 +190,7 @@ class Player {
 
     if (this.hasBall && !this.shot) {
       const bw = w(this.ballZ() > DRIBBLE_HEIGHT / 2 ? 8 : 12);
-      const center = sx + this.facing * w(BALL_OFFSET_X + BALL_SIZE / 2);
+      const center = sx + this.facing * w(this.dribbleBallX() + BALL_SIZE / 2);
       ctx.fillRect(center - (bw >> 1) + 2, sy - 2, bw - 4, 1);
       ctx.fillRect(center - (bw >> 1), sy - 1, bw, 2);
       ctx.fillRect(center - (bw >> 1) + 2, sy + 1, bw - 4, 1);
@@ -211,18 +239,56 @@ class Player {
 
   // Sprite as a list of [dx, dy, w, h, color] rects, relative to the feet, drawn facing right. Later rects cover earlier ones.
   bodyParts() {
+    return this.isFrontal() ? this.frontalParts() : this.profileParts();
+  }
+
+  // The head, hair and face for any view. `hairView` picks the hair variant; `face` rects (relative to the
+  // head's top-left) are drawn on top of the hair.
+  headParts(u, hairView, face) {
+    const c = this.colors;
+    const hx = HEAD_X;
+    const hy = HEAD_Y + u;
+    const style = HAIR_STYLES[this.look.hairStyle] || HAIR_STYLES.short;
+    return [
+      // Neck, rounded head with a top highlight (hidden under most hair) and a shaded jaw.
+      [-3, -55 + u, 6, 3, c.skinDark],
+      [hx + 1, hy, 14, 16, c.skin],
+      [hx, hy + 1, 16, 14, c.skin],
+      [hx + 4, hy + 2, 4, 1, c.skinLight],
+      [hx + 2, hy + 15, 12, 1, c.skinDark],
+      ...style[hairView].map(([x, y, w, h]) => [hx + x, hy + y, w, h, c.hair]),
+      ...style.shine[hairView].map(([x, y, w, h]) => [hx + x, hy + y, w, h, c.hairShine]),
+      ...face.map(([x, y, w, h, color]) => [hx + x, hy + y, w, h, color]),
+    ];
+  }
+
+  // An eye: mostly white with a small pupil at column `pupil` (relative to the eye's left edge).
+  eye(x, y, pupil, w = 3) {
+    return [
+      [x, y, w, 2, COLORS.line],
+      [x + pupil, y, 1, 2, COLORS.eye],
+    ];
+  }
+
+  // Side-on and three-quarter views (moving left/right or diagonally).
+  profileParts() {
     const c = this.colors;
     const frame = this.runFrame();
-    const [front, back] = frame < 0 ? [0, 0] : LEG_SHIFT[frame];
+    // Diagonal steps cover less sideways ground, so the stride is shorter in the three-quarter views.
+    const strideK = this.view === 'side' ? 1 : 0.67;
+    // Hanging from the rim, the legs dangle together and trail the swing further than the hands.
+    const dangle = Math.round(this.hangSway * 0.6) * this.facing;
+    const [front, back] = frame < 0 ? [dangle, dangle] : LEG_SHIFT[frame].map((s) => Math.round(s * strideK));
     const u = this.bob();
     const dip = this.hasBall && !this.shot ? this.dribblePose().dip : 0;
     const armSwing = frame === 0 ? 4 : frame === 2 ? -4 : 0;
+    const turn = this.view === 'frontQ' ? 1 : this.view === 'backQ' ? -1 : 0;
 
     // Whichever arm is nearer the camera is drawn wider, unshaded and in front of the body.
-    const backNear = this.turn < 0;
-    const frontNear = this.turn >= 0;
-    const backW = backNear ? 8 : this.turn > 0 ? 4 : 6;
-    const backH = backNear ? 18 : this.turn > 0 ? 14 : 16;
+    const backNear = turn < 0;
+    const frontNear = turn >= 0;
+    const backW = backNear ? 8 : turn > 0 ? 4 : 6;
+    const backH = backNear ? 18 : turn > 0 ? 14 : 16;
     const backX = -14 + armSwing + (backW === 4 ? 2 : 0);
     const backSkin = backNear ? c.skin : c.skinDark;
     const backTop = -50 + u;
@@ -232,7 +298,7 @@ class Player {
       [backX, backTop + backH - 6, backW, 2, c.trim],
       [backX, backTop + backH - 2, backW, 1, backNear ? c.skinDark : c.skinDarker],
     ];
-    const frontW = this.turn > 0 ? 8 : this.turn < 0 ? 4 : 6;
+    const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
     const frontSkin = frontNear ? c.skin : c.skinDark;
     const frontShade = frontNear ? c.skinDark : c.skinDarker;
     let frontArm = [
@@ -274,26 +340,24 @@ class Player {
       [x, -2, 8, 2, c.sole],
     ];
 
-    // Turned away from the camera: no face, the back of the hair style, and an ear on each side.
-    const away = this.turn < 0;
-    const hx = HEAD_X;
-    const hy = HEAD_Y + u;
-    const style = HAIR_STYLES[this.look.hairStyle] || HAIR_STYLES.short;
-    const view = away ? 'back' : 'side';
-    const hair = [
-      ...style[view].map(([x, y, w, h]) => [hx + x, hy + y, w, h, c.hair]),
-      ...style.shine[view].map(([x, y, w, h]) => [hx + x, hy + y, w, h, c.hairShine]),
-    ];
-    const ears = [
-      [hx - 2, hy + 7, 2, 4, c.skinDark],
-      [hx + 16, hy + 7, 2, 4, c.skinDark],
-    ];
-    // Kept simple: an ear, one eye and a nose bump.
-    const face = [
-      [hx + 5, hy + 7, 2, 3, c.skinDark],     // ear
-      [hx + 12, hy + 6, 2, 2, COLORS.eye],
-      [hx + 16, hy + 8, 1, 2, c.skin],        // nose
-    ];
+    // Faces kept simple: ear, eye(s), nose. Side-on shows one eye; three-quarter front shows both with the ear
+    // further back; three-quarter back shows the back of the hair and just the near ear.
+    const face = {
+      side: [
+        [5, 7, 2, 3, c.skinDark],
+        ...this.eye(11, 6, 2),
+        [16, 8, 1, 2, c.skin],
+      ],
+      frontQ: [
+        [2, 7, 2, 3, c.skinDark],
+        ...this.eye(6, 6, 2),
+        ...this.eye(11, 6, 2),
+        [10, 9, 1, 2, c.skinDark],
+        [16, 8, 1, 1, c.skin],
+      ],
+      backQ: [[14, 7, 2, 3, c.skinDark]],
+    }[this.view];
+    const numberLeft = { side: -6, frontQ: -4, backQ: -8 }[this.view];
 
     return [
       // Back leg is shaded darker.
@@ -315,26 +379,94 @@ class Player {
       [-10, -52 + u, 4, 20, c.jerseyDark],
       [5, -48 + u, 2, 14, c.jerseyLight],
       [-10, -34 + u, 20, 1, c.jerseyDark],
-      [-4, -52 + u, 8, 2, c.trim],
-      [-2, -52 + u, 4, 1, c.skinDark],
-      [-1, -50 + u, 2, 1, c.trim],
-      ...this.numberParts(-6, -47 + u, c.trim),
+      ...(turn < 0
+        ? [[-4, -52 + u, 8, 1, c.trim]]
+        : [[-4, -52 + u, 8, 2, c.trim], [-2, -52 + u, 4, 1, c.skinDark], [-1, -50 + u, 2, 1, c.trim]]),
+      ...this.numberParts(numberLeft, -47 + u, c.trim),
 
-      // Head: neck, rounded head with a top highlight (hidden under most hair) and a shaded jaw,
-      // then hair, with face details on top when facing the camera.
-      [-3, -55 + u, 6, 3, c.skinDark],
-      [hx + 1, hy, 14, 16, c.skin],
-      [hx, hy + 1, 16, 14, c.skin],
-      [hx + 4, hy + 2, 4, 1, c.skinLight],
-      [hx + 2, hy + 15, 7, 1, c.skinDark],
-      ...(away ? ears : []),
-      ...hair,
-      ...(away ? [] : face),
+      ...this.headParts(u, turn < 0 ? 'back' : 'side', face),
 
       // Near arm goes in front of the body.
       ...(backNear ? backArm : frontArm),
 
       // Armhole straps on both sides of the jersey go last so the arms never cover them.
+      [8, -52 + u, 2, 6, c.trim],
+      [-10, -52 + u, 2, 6, c.trim],
+    ];
+  }
+
+  // Straight toward (front) or away from (back) the camera, moving down/up. Symmetric, so facing only picks which
+  // hand dribbles. Walking lifts each foot in turn and swings the arms opposite.
+  frontalParts() {
+    const c = this.colors;
+    const fromFront = this.view === 'front';
+    const frame = this.runFrame();
+    const u = this.bob();
+    const dip = this.hasBall ? this.dribblePose().dip : 0;
+    const liftL = frame === 0 ? 3 : 0;
+    const liftR = frame === 2 ? 3 : 0;
+    const swing = frame === 0 ? 2 : frame === 2 ? -2 : 0;
+
+    const leg = (x, lift) => [
+      [x, -22 + u, 6, 10 - u - lift, c.skin],
+      [x, -12 - lift, 6, 4, COLORS.sock],
+      [x, -11 - lift, 6, 1, c.jersey],
+      [x - 1, -8 - lift, 8, 6, c.shoe],
+      ...(fromFront
+        ? [[x + 1, -8 - lift, 1, 1, c.laces], [x + 3, -8 - lift, 1, 1, c.laces], [x + 2, -7 - lift, 1, 1, c.laces], [x + 4, -7 - lift, 1, 1, c.laces]]
+        : [[x + 1, -8 - lift, 4, 2, c.sole]]),
+      [x - 1, -2 - lift, 8, 2, c.sole],
+    ];
+
+    // Arms hang at both sides; the dribbling (right, in facing terms) forearm stretches with the push.
+    const arm = (x, dy, push) => [
+      [x, -50 + u + dy, 6, 18 + push, c.skin],
+      [x, -48 + u + dy, 1, 14 + push, c.skinDark],
+      [x, -38 + u + dy, 6, 2, c.trim],
+      [x, -35 + u + dy + push, 6, 1, c.skinDark],
+    ];
+
+    const face = fromFront
+      ? [
+          [-2, 6, 2, 4, c.skinDark],
+          [16, 6, 2, 4, c.skinDark],
+          ...this.eye(3, 7, 1),
+          ...this.eye(10, 7, 1),
+          [7, 10, 2, 1, c.skinDark],
+        ]
+      : [
+          [-2, 7, 2, 4, c.skinDark],
+          [16, 7, 2, 4, c.skinDark],
+        ];
+
+    return [
+      ...leg(-8, liftL),
+      ...leg(2, liftR),
+
+      // Shorts: waistband, stripes down both sides, hem, and a shadow between the legs.
+      [-10, -32 + u, 20, 12, c.shorts],
+      [-10, -32 + u, 20, 2, c.shortsDark],
+      [-1, -25 + u, 2, 3, c.shortsDark],
+      [-10, -30 + u, 1, 8, c.shortsTrim],
+      [9, -30 + u, 1, 8, c.shortsTrim],
+      [-10, -22 + u, 20, 2, c.shortsTrim],
+
+      // Jersey: shaded edges, collar (V-neck in front), hem, centered number.
+      [-10, -52 + u, 20, 20, c.jersey],
+      [-10, -52 + u, 2, 20, c.jerseyDark],
+      [8, -52 + u, 2, 20, c.jerseyDark],
+      [-10, -34 + u, 20, 1, c.jerseyDark],
+      ...(fromFront
+        ? [[-4, -52 + u, 8, 2, c.trim], [-2, -52 + u, 4, 1, c.skinDark], [-1, -50 + u, 2, 1, c.trim]]
+        : [[-4, -52 + u, 8, 1, c.trim]]),
+      ...this.numberParts(-7, -47 + u, c.trim),
+
+      ...this.headParts(u, fromFront ? 'front' : 'back', face),
+
+      ...arm(-16, swing, 0),
+      ...arm(10, -swing, dip),
+
+      // Armhole straps on both sides.
       [8, -52 + u, 2, 6, c.trim],
       [-10, -52 + u, 2, 6, c.trim],
     ];
@@ -360,6 +492,6 @@ class Player {
 
   ballParts() {
     if (this.shot) return ballSprite(SHOOT_BALL_X, SHOOT_BALL_TOP, 0);
-    return ballSprite(BALL_OFFSET_X, this.dribblePose().ballTop, (this.dribbleT % 1) * (BALL_SIZE - 2));
+    return ballSprite(this.dribbleBallX(), this.dribblePose().ballTop, (this.dribbleT % 1) * (BALL_SIZE - 2));
   }
 }

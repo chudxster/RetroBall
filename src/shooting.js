@@ -150,6 +150,15 @@ const Shooting = (() => {
     const reach = -(SHOOT_BALL_TOP + BALL_SIZE) / s;
     const roll = Math.random();
     const outcome = roll < DUNK.shatterChance ? 'shatter' : roll < DUNK.shatterChance + DUNK.hangChance ? 'hang' : 'normal';
+    // The float ends hovering short of the rim (back along the approach), so the slam swoops forward into it.
+    const to = { x: hoop.x - p.facing * ballAhead, y: hoop.y };
+    const ax = to.x - p.x;
+    const ay = to.y - p.y;
+    const approachLen = Math.hypot(ax, ay);
+    const back = Math.min(DUNK.slamReach, approachLen) / Math.max(approachLen, 0.001);
+    const hover = approachLen > 0.001
+      ? { x: to.x - ax * back, y: to.y - ay * back }
+      : { x: to.x - p.facing * DUNK.slamReach, y: to.y };
     p.vx = 0;
     p.vy = 0;
     p.shot = {
@@ -165,7 +174,8 @@ const Shooting = (() => {
       fallFrom: 0,
       hoop,
       from: { x: p.x, y: p.y },
-      to: { x: hoop.x - p.facing * ballAhead, y: hoop.y },
+      hover,
+      to,
     };
     game.meter = null;
   }
@@ -184,11 +194,12 @@ const Shooting = (() => {
     const fallAt = hangAt + shot.hang;
     const endAt = fallAt + DUNK.fall;
 
-    // Glide over to the rim, easing in and out.
+    // Glide up to the hover point short of the rim, easing in and out. After the slam the player stays at the rim.
     const k = Math.min(t / shot.rise, 1);
     const glide = k * k * (3 - 2 * k);
-    p.x = lerp(shot.from.x, shot.to.x, glide);
-    p.y = lerp(shot.from.y, shot.to.y, glide);
+    const at = t < slamAt ? { x: lerp(shot.from.x, shot.hover.x, glide), y: lerp(shot.from.y, shot.hover.y, glide) } : shot.to;
+    p.x = at.x;
+    p.y = at.y;
 
     if (t < apexAt) {
       // A quick jump to most of the height, then a slow float up the rest of the way, well above the rim.
@@ -199,22 +210,33 @@ const Shooting = (() => {
     } else if (t < slamAt) {
       p.z = height;
     } else if (t < hangAt) {
-      // Slam: accelerate down until the ball meets the rim.
+      // Slam: drop down and forward into the rim, accelerating until the ball meets it.
       const s = (t - slamAt) / DUNK.slamTime;
+      p.x = lerp(shot.hover.x, shot.to.x, s);
+      p.y = lerp(shot.hover.y, shot.to.y, s);
       p.z = lerp(height, shot.rimZ, s * s);
     } else if (t < fallAt) {
       if (!shot.released) slam(game, shot);
-      // On the rim: it bends under the player's weight and pulls them down with it.
+      // On the rim: it bends under the player's weight and pulls them down with it, and the player swings
+      // like a pendulum (first forward with their momentum), dragging the rim sideways with them.
+      const s = scaleAtY(hoop.y);
+      const ht = t - hangAt;
       hoop.hanging = true;
       hoop.hangBend = shot.bend;
-      p.z = shot.rimZ - hoop.bend / scaleAtY(hoop.y);
+      hoop.sway = p.facing * DUNK.swayPx * Math.sin((2 * Math.PI * ht) / DUNK.swayPeriod) * Math.exp(-DUNK.swayDecay * ht);
+      p.hangSway = hoop.sway;
+      p.x = shot.to.x + hoop.sway / s;
+      p.z = shot.rimZ - (hoop.bend + hoopFlex(hoop).drop) / s;
     } else {
       if (!shot.falling) {
         shot.falling = true;
         shot.fallFrom = p.z;
+        shot.fallX = shot.to.x + p.hangSway / scaleAtY(hoop.y);
+        p.hangSway = 0;
         hoop.hanging = false;
         if (shot.outcome === 'shatter') shatterRim(game, hoop);
       }
+      p.x = shot.fallX;
       p.z = shot.fallFrom * Math.cos((Math.min((t - fallAt) / DUNK.fall, 1) * Math.PI) / 2);
     }
 

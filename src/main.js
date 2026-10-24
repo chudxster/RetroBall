@@ -105,7 +105,7 @@ function resetToCenter(instant = false) {
   const a = (Math.floor(Math.random() * RESET.spots) * 2 * Math.PI) / RESET.spots;
   const x = cx + Math.cos(a) * COURT.circleR;
   const y = cy + Math.sin(a) * COURT.circleR;
-  Object.assign(p, { x, y, prevX: x, prevY: y, z: 0, prevZ: 0, vx: 0, vy: 0, shot: null, hasBall: false });
+  Object.assign(p, { x, y, prevX: x, prevY: y, z: 0, prevZ: 0, vx: 0, vy: 0, shot: null, hasBall: false, hangSway: 0 });
   if (Math.abs(x - cx) > 1) p.facing = x < cx ? 1 : -1;
   ball.respawn(cx, cy, RESET.dropHeight);
   state.meter = null;

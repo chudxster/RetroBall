@@ -120,8 +120,7 @@ class Player {
     };
   }
 
-  // `speedK` scales top speed (slower AI levels, a stunned defender).
-  update(dt, move, sprint, speedK = 1) {
+  update(dt, move, sprint) {
     this.prevX = this.x;
     this.prevY = this.y;
     this.prevZ = this.z;
@@ -141,7 +140,7 @@ class Player {
 
     // Steer velocity toward the target at a fixed rate: quick to respond, but with a little weight.
     const boost = 1 + UPGRADES.speed * this.upgrades.speed;
-    const maxSpeed = (sprint ? PLAYER.sprintSpeed : PLAYER.runSpeed) * boost * (this.stunT > 0 ? DEFENSE.stunSpeed : speedK);
+    const maxSpeed = (sprint ? PLAYER.sprintSpeed : PLAYER.runSpeed) * boost * (this.stunT > 0 ? DEFENSE.stunSpeed : 1);
     const tx = ix * maxSpeed;
     const ty = iy * maxSpeed * PLAYER.depthSpeed;
     const dx = tx - this.vx;

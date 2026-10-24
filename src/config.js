@@ -192,7 +192,7 @@ const AI = {
   think: [0.5, 0.2],       // seconds between ball-handler decisions
   reaction: [0.45, 0.12],  // delay before jumping to contest a shot
   shotError: [0.14, 0.035], // spread of the release point around the middle of the green
-  speed: [0.82, 1],        // fraction of full speed
+  sprint: false,           // AI players never sprint: they move at the user's normal run speed
   stealRate: [0.1, 0.5],   // steal attempts per second when in range of the ball handler
   stealChance: [0.15, 0.35],
   interceptChance: [0.1, 0.35],

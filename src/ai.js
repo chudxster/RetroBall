@@ -277,7 +277,7 @@ const AIBrain = (() => {
     const dir = toward(p, t);
     const k = Math.min(1, dist / 15);
     ctl.move = { x: dir.x * k, y: dir.y * k };
-    ctl.sprint = sprint;
+    ctl.sprint = sprint && AI.sprint;
   }
 
   function toward(p, t) {

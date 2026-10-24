@@ -69,7 +69,7 @@ function update(dt) {
 
   for (const p of state.players) {
     const c = ctls.get(p);
-    p.update(dt, c.move, c.sprint, p === state.user ? 1 : aiValue(p, AI.speed));
+    p.update(dt, c.move, c.sprint);
     if (c.face && !p.airborne() && !p.sitting) p.facing = c.face;
   }
   for (const p of state.players) Shooting.update(dt, state, p, ctls.get(p));

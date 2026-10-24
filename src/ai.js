@@ -257,6 +257,7 @@ const AIBrain = (() => {
   // bringing it back in goes for it.
   function chasing(game, p) {
     const { ball } = game;
+    if (ball.lockT > 0) return false; // dead ball (rim hang / shatter): nothing to chase yet
     if (ball.reserved !== null && ball.reserved !== p.team) return false;
     const at = landing(ball);
     let best = null;

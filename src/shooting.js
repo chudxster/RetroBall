@@ -350,6 +350,9 @@ const Shooting = (() => {
     game.ball.slam(hoop.x, hoop.y, p.shootingBallPosition().z, DUNK.slamSpeed, { hoop, points: 2, dist: 0, dunk: true, team: p.team });
     game.ball.thrower = p;
     game.ball.lastTeam = p.team;
+    // While someone hangs on the rim (or tears it down) the ball stays dead.
+    if (shot.outcome === 'hang') game.ball.lockT = DUNK.hangLock;
+    if (shot.outcome === 'shatter') game.ball.lockT = Infinity;
     p.hasBall = false;
     game.stats[p.team].fga++;
     hoop.bendV += DUNK.slamKick;

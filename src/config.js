@@ -131,6 +131,7 @@ const DUNK = {
   shatterFall: 0.45,  // seconds falling with the broken rim (vs. `fall` normally)...
   shatterDrift: 6,    // ...drifting back this far, to land sitting down
   sitShake: 0.15,
+  hangLock: 3,        // after a rim-hang slam nobody can grab the ball for this long (a shatter locks it until the reset)
 };
 
 // Fade to black and back: out, hold on black (the reset happens here), then in.

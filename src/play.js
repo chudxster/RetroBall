@@ -198,6 +198,7 @@ const Play = (() => {
     ball.shot = null;
     ball.pass = null;
     ball.reserved = null;
+    ball.lockT = 0;
     ball.lastTeam = p.team;
     p.hasBall = true;
     p.mind.holdT = 0;
@@ -231,7 +232,7 @@ const Play = (() => {
   // its path get one try each at picking it off.
   function pickups(game) {
     const { ball } = game;
-    if (ball.held) return;
+    if (ball.held || ball.lockT > 0) return;
     let best = null;
     let bestD = Infinity;
     for (const p of game.players) {

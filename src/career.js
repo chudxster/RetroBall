@@ -17,37 +17,40 @@ const Career = (() => {
   ];
   const TEAM_NAME_MAX = 12;
 
+  // "1 THREE", "2 THREES" (challenge targets shrink with shorter games, down to 1).
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 'S'}`;
+
   // Challenges by tier (CAREER.tiers), for a 5-minute game; counts and margins scale with the game's length.
   // stat: the team's stat reaches n. win / margin: win (by n or more). hold: win and keep them to n points or fewer.
   const CHALLENGES = [
     [
       { type: 'win', text: () => 'WIN THE GAME' },
-      { type: 'stat', key: 'tpm', n: 2, text: (n) => `MAKE ${n} THREES` },
-      { type: 'stat', key: 'stl', n: 2, text: (n) => `GET ${n} STEALS` },
-      { type: 'stat', key: 'pts', n: 15, text: (n) => `SCORE ${n} POINTS` },
+      { type: 'stat', key: 'tpm', n: 2, text: (n) => `MAKE ${plural(n, 'THREE')}` },
+      { type: 'stat', key: 'stl', n: 2, text: (n) => `GET ${plural(n, 'STEAL')}` },
+      { type: 'stat', key: 'pts', n: 15, text: (n) => `SCORE ${plural(n, 'POINT')}` },
     ],
     [
       { type: 'margin', n: 5, text: (n) => `WIN BY ${n}+` },
-      { type: 'stat', key: 'tpm', n: 4, text: (n) => `MAKE ${n} THREES` },
-      { type: 'stat', key: 'stl', n: 4, text: (n) => `GET ${n} STEALS` },
-      { type: 'stat', key: 'dnk', n: 2, text: (n) => `DUNK ${n} TIMES` },
-      { type: 'stat', key: 'blk', n: 2, text: (n) => `BLOCK ${n} SHOTS` },
+      { type: 'stat', key: 'tpm', n: 4, text: (n) => `MAKE ${plural(n, 'THREE')}` },
+      { type: 'stat', key: 'stl', n: 4, text: (n) => `GET ${plural(n, 'STEAL')}` },
+      { type: 'stat', key: 'dnk', n: 2, text: (n) => `DUNK ${n === 1 ? 'ONCE' : `${n} TIMES`}` },
+      { type: 'stat', key: 'blk', n: 2, text: (n) => `BLOCK ${plural(n, 'SHOT')}` },
     ],
     [
       { type: 'margin', n: 15, text: (n) => `WIN BY ${n}+` },
-      { type: 'stat', key: 'tpm', n: 8, text: (n) => `MAKE ${n} THREES` },
+      { type: 'stat', key: 'tpm', n: 8, text: (n) => `MAKE ${plural(n, 'THREE')}` },
       { type: 'hold', n: 12, text: (n) => `WIN, HOLD THEM TO ${n}` },
-      { type: 'stat', key: 'dnk', n: 6, text: (n) => `DUNK ${n} TIMES` },
-      { type: 'stat', key: 'stl', n: 8, text: (n) => `GET ${n} STEALS` },
-      { type: 'stat', key: 'blk', n: 4, text: (n) => `BLOCK ${n} SHOTS` },
+      { type: 'stat', key: 'dnk', n: 6, text: (n) => `DUNK ${n === 1 ? 'ONCE' : `${n} TIMES`}` },
+      { type: 'stat', key: 'stl', n: 8, text: (n) => `GET ${plural(n, 'STEAL')}` },
+      { type: 'stat', key: 'blk', n: 4, text: (n) => `BLOCK ${plural(n, 'SHOT')}` },
     ],
     [
       { type: 'margin', n: 25, text: (n) => `WIN BY ${n}+` },
-      { type: 'stat', key: 'tpm', n: 12, text: (n) => `MAKE ${n} THREES` },
+      { type: 'stat', key: 'tpm', n: 12, text: (n) => `MAKE ${plural(n, 'THREE')}` },
       { type: 'hold', n: 6, text: (n) => `WIN, HOLD THEM TO ${n}` },
-      { type: 'stat', key: 'blk', n: 7, text: (n) => `BLOCK ${n} SHOTS` },
-      { type: 'stat', key: 'stl', n: 12, text: (n) => `GET ${n} STEALS` },
-      { type: 'stat', key: 'dnk', n: 10, text: (n) => `DUNK ${n} TIMES` },
+      { type: 'stat', key: 'blk', n: 7, text: (n) => `BLOCK ${plural(n, 'SHOT')}` },
+      { type: 'stat', key: 'stl', n: 12, text: (n) => `GET ${plural(n, 'STEAL')}` },
+      { type: 'stat', key: 'dnk', n: 10, text: (n) => `DUNK ${n === 1 ? 'ONCE' : `${n} TIMES`}` },
     ],
   ];
 

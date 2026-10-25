@@ -111,8 +111,14 @@ input {
   margin-bottom: calc(var(--px) * 3);
 }
 
+/* Stuck to the bottom of the menu, so Resume (and the tab's reset) stay in reach on tabs that scroll */
 .menu-foot {
-  margin-top: calc(var(--px) * 3);
+  position: sticky;
+  bottom: calc(var(--px) * -4);
+  margin: calc(var(--px) * 3) calc(var(--px) * -4) calc(var(--px) * -4);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4) calc(var(--px) * 4);
+  background: #1a1c2c;
+  border-top: var(--px) solid #333c57;
 }
 
 .stack-view {
@@ -639,14 +645,17 @@ input[type="color"]::-moz-color-swatch {
   font-size: 0.8em;
 }
 
-/* Main menu: the logo over a panel in the pause menu's style, centered on the demo game behind it */
+/* Main menu: the logo over a panel in the pause menu's style, on the demo game behind it. Both hang from the top,
+   so the logo stays put whichever view (and panel height) is showing. */
 #title {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  padding-top: calc(var(--px) * 8);
   gap: calc(var(--px) * 4);
   color: #f4f4f4;
   font-family: 'Silkscreen', monospace;
@@ -715,6 +724,19 @@ input[type="color"]::-moz-color-swatch {
 
 .title-view.stack-view {
   min-height: 0;
+}
+
+/* The game options' labels on one line ("Free throws", "Half length") */
+#title .row label,
+#title .row .label {
+  width: calc(var(--px) * 62);
+  white-space: nowrap;
+}
+
+/* 2 Player: the stack's gap already spaces the formats, so all three and the keys fit without scrolling */
+#title .duo-format {
+  margin-bottom: 0;
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
 }
 
 

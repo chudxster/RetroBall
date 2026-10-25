@@ -15,7 +15,7 @@ const crowdHype = { peak: 0, t: 0, time: 1, sign: null };
 // A play worth cheering: `level` is the share of fans who jump up (less for the other team). A louder play takes
 // over from a quieter one still going; a quieter one is drowned out.
 function cheerCrowd(level, player, { sign = false, rare = false } = {}) {
-  if (player && player.team !== 0) level *= CROWD.awayHype;
+  if (player && player.team !== 0 && !evenTeams) level *= CROWD.awayHype;
   if (level < crowdLevel()) return;
   crowdHype.peak = level;
   Sfx.play('crowd', { vol: level });

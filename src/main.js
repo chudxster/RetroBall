@@ -64,6 +64,7 @@ function newGame(mode, runBack = false) {
   const career = mode === 'career' ? Career.setup() : null;
   awayKit = career && !colorsClash(career.kit.jersey, state.look.jersey) ? career.kit : null;
   opponentAILevel = career ? career.aiLevel : null;
+  evenTeams = duo && Duo.versus();
   state.abbrs = career ? career.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
   state.challenge = career ? career.challenge : null;
   state.careerResult = null;
@@ -385,7 +386,7 @@ function handleBallEvents() {
       const { hype } = CROWD;
       const cheer = e.dunk ? (e.rare ? hype.rareDunk : hype.dunk) : e.ft ? hype.freeThrow : e.points === 3 ? hype.three : hype.score;
       cheerCrowd(cheer, e.shooter, { sign: !e.ft, rare: e.rare });
-      addPopup(state, `+${e.points}`, team === 0 ? COLORS.okay : COLORS.hint, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
+      addPopup(state, `+${e.points}`, evenTeams ? playColor(state, team) : team === 0 ? COLORS.okay : COLORS.hint, e.hoop.x, e.hoop.y, HOOP.rimZ + 16);
       if (!e.dunk) Sfx.play(e.swish ? 'swish' : 'net', { x: e.hoop.x });
       if (e.dunk) {
         addPopup(state, 'DUNK!', COLORS.bad, e.hoop.x, e.hoop.y, HOOP.rimZ + 26);

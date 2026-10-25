@@ -9,14 +9,15 @@
 // once) and, once your first career season is finished, becomes the Dynasty Room (the Testing build can switch it
 // on in the UI tab). While it's open main.js draws it instead of the demo game.
 const LOCKER = {
-  bounds: { x0: 40, x1: 600, y0: 198, y1: 342 }, // where the player's feet can go
+  bounds: { x0: 40, x1: 590, y0: 198, y1: 342 }, // where the player's feet can go
   speed: 110,      // px per second across (depth goes at PLAYER.depthSpeed of it)
   talkRange: 36,   // how close to stand to talk
   npcRadius: 14,   // nobody walks through anybody
   start: { x: 56, y: 262 },     // just inside the door
-  door: { y0: 220, y1: 300 },   // walking into the left wall between these leaves; into the right wall, the tunnel
+  door: { y0: 220, y1: 300, mid: 262 }, // walking into the left wall between these leaves; the right wall, the tunnel
   caseSpot: { x: 494, y: 204 }, // stand here (ish) to open the trophy case
   dim: 'rgba(13, 14, 22, 0.55)', // the room behind a conversation
+  walkOutTime: 0.8, // seconds of walking on through a doorway before leaving (or the court's question)
 };
 const LAST_GAME_STORAGE_KEY = 'retroball.lastGame';
 
@@ -38,6 +39,7 @@ const Locker = (() => {
   let mood = null;    // 'win' or 'loss' after your last game, for one visit (After the Win); null: normal
   let last = null;    // that game: { won, us, them, opp }
   let dynasty = false;
+  let walkOut = null; // { to: 'menu' or 'court', t }: walking on through a doorway
 
   // The people in the room: where they stand and what they look like. Teammates wear the team's kit and their own
   // looks (main.js); the coach and the reporter dress for work.
@@ -81,6 +83,7 @@ const Locker = (() => {
   function enter() {
     open = true;
     time = 0;
+    walkOut = null;
     talking = null;
     box.hidden = true;
     const saved = loadStored(LAST_GAME_STORAGE_KEY);
@@ -95,6 +98,7 @@ const Locker = (() => {
     for (const n of NPCS) {
       n.player = new Player({ x: n.x, y: n.y, look: n.look() });
       n.player.hasBall = false;
+      n.player.slim = n.id === 'press'; // holding the mic
       if (n.id === 'mate1' || n.id === 'mate2') n.player.setGear(Cosmetics.gearFor(n.id === 'mate1' ? 1 : 2));
       // After a win the teammates have their arms up.
       if (mood === 'win' && n.id !== 'press') n.player.jump = { t: 0 };
@@ -126,6 +130,7 @@ const Locker = (() => {
 
   function onKey(e) {
     if (!open) return;
+    if (walkOut) return; // already on the way out
     if (talking) {
       if (e.code === 'Escape') {
         e.preventDefault();
@@ -317,6 +322,24 @@ const Locker = (() => {
 
   function update(dt) {
     time += dt;
+    // Walking out through a doorway: on through it (the wall hides you as you go), then the main menu or the court's
+    // question.
+    if (walkOut) {
+      const dir = walkOut.to === 'menu' ? -1 : 1;
+      const step = LOCKER.speed * 0.8 * dt;
+      walkOut.t += dt;
+      me.x += dir * step;
+      me.y += (LOCKER.door.mid - me.y) * Math.min(1, dt * 4);
+      Object.assign(me, { moving: true, speed: PLAYER.topSpeed * 0.8, facing: dir, view: 'side' });
+      me.stride += step;
+      if (walkOut.t >= LOCKER.walkOutTime) {
+        const to = walkOut.to;
+        walkOut = null;
+        if (to === 'menu') leave();
+        else openTalk('court');
+      }
+      return;
+    }
     const m = talking ? { x: 0, y: 0 } : Input.move();
     const len = Math.hypot(m.x, m.y) || 1;
     const mx = m.x / len;
@@ -334,13 +357,9 @@ const Locker = (() => {
       }
     }
     const atDoor = y >= LOCKER.door.y0 && y <= LOCKER.door.y1;
-    // Out the door, or into the tunnel.
-    if (!talking && mx < 0 && x <= b.x0 && atDoor) {
-      leave();
-      return;
-    }
-    if (!talking && mx > 0 && x >= b.x1 && atDoor) {
-      openTalk('court');
+    // Out the door, or into the tunnel: on through the doorway first.
+    if (!talking && atDoor && ((mx < 0 && x <= b.x0) || (mx > 0 && x >= b.x1))) {
+      walkOut = { to: mx < 0 ? 'menu' : 'court', t: 0 };
       return;
     }
     const moved = Math.hypot(x - me.x, y - me.y);
@@ -378,13 +397,27 @@ const Locker = (() => {
     if (mood === 'win') drawWinDressing(ctx);
     const people = [{ p: me, x: me.x, y: me.y }, ...NPCS.map((n) => ({ p: n.player, x: n.x, y: n.y, n }))];
     people.sort((a, b) => a.y - b.y);
+    const b = LOCKER.bounds;
+    const outside = me.x < b.x0 || me.x > b.x1; // on the way through a doorway
     for (const { p, x, y } of people) {
       place(p, x, y);
-      p.drawShadow(ctx);
+      if (!(p === me && outside)) p.drawShadow(ctx);
     }
+    // You: drawn over the room, and in a doorway only inside its opening, so the wall hides you as you walk through.
+    const drawMe = () => {
+      for (const area of [[ROOM_AREA], [DOORWAYS.exit, DOORWAYS.court]]) {
+        ctx.save();
+        ctx.beginPath();
+        for (const points of area) polygon(ctx, points);
+        ctx.clip();
+        me.draw(ctx);
+        ctx.restore();
+      }
+    };
     const person = ({ p, n }) => {
       if (n && n.id === 'press') drawCamera(ctx, n);
-      p.draw(ctx);
+      if (p === me) drawMe();
+      else p.draw(ctx);
       if (n && n.id === 'press') rect(ctx, p.sx + p.facing * 9, p.by - 44, 2, 6, '#1a1c2c'); // the mic
       if (n && n.id === 'coach' && mood === 'win') drawGameBall(ctx, p);
       if (n && mood === 'loss' && (n.id === 'mate1' || n.id === 'mate2')) drawTowel(ctx, p);
@@ -399,7 +432,7 @@ const Locker = (() => {
       for (const one of people) if (one.p === me || one.n === speaker) person(one);
     }
     if (!talking) for (const n of NPCS) drawMarker(ctx, n);
-    const who = talking ? null : nearby();
+    const who = talking || walkOut ? null : nearby();
     if (who) {
       const at = who === 'case' ? { x: LOCKER.caseSpot.x, y: 172 } : { x: NPCS.find((n) => n.id === who).x, y: NPCS.find((n) => n.id === who).y - 112 };
       const text = `${Input.keyLabel('action')} ${who === 'case' ? 'TROPHIES' : 'TALK'}`;
@@ -472,42 +505,132 @@ const Locker = (() => {
     for (let i = 0; i < 24; i++) rect(ctx, x + 28 + i * 2, y + 40 + Math.round(Math.sin(i / 4) * 6), 2, 1, ink);
   }
 
-  // The side walls: the black EXIT door on the left (seen edge-on, so it narrows away) and the glowing arch of the
-  // tunnel to the court on the right, each with its sign.
-  function drawSideWalls(ctx, wall, frame, sign) {
+  // The two doorways in the side walls, seen edge-on so they narrow away: corners from the near edge at the front of
+  // the room to the far edge by the back wall. The black EXIT door is on the left, the tunnel to the court on the
+  // right; you walk through them (see walkOut) and the wall hides you as you go.
+  const DOORWAYS = {
+    exit: [[6, 216], [34, 120], [34, 197], [6, 331]],
+    court: [[VIEW_W - 6, 206], [VIEW_W - 60, 104], [VIEW_W - 60, 192], [VIEW_W - 6, 338]], // in the wider right wall
+  };
+  // Everything in front of the side walls (the room itself), for clipping someone walking out through a doorway.
+  const ROOM_AREA = [[40, 0], [VIEW_W - 70, 0], [VIEW_W - 70, 168], [VIEW_W, 360], [0, 360], [40, 168]];
+
+  function polygon(ctx, points) {
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (const [x, y] of points.slice(1)) ctx.lineTo(x, y);
+    ctx.closePath();
+  }
+
+  // A point a share `a` across a doorway (0 the near edge, 1 the far one) and `b` down it (0 its top, 1 the floor).
+  function doorPoint(points, a, b) {
+    const [nt, ft, fb, nb] = points;
+    const top = [lerp(nt[0], ft[0], a), lerp(nt[1], ft[1], a)];
+    const bottom = [lerp(nb[0], fb[0], a), lerp(nb[1], fb[1], a)];
+    return [lerp(top[0], bottom[0], b), lerp(top[1], bottom[1], b)];
+  }
+
+  // A sign hanging from the ceiling on two chains above a doorway, lit from inside.
+  function hangingSign(ctx, cx, y, text, fill, ink) {
+    const w = textWidth(text) + 10;
+    const x = Math.round(cx - w / 2);
+    rect(ctx, x + 3, 14, 1, y - 14, '#566c86');
+    rect(ctx, x + w - 4, 14, 1, y - 14, '#566c86');
+    rect(ctx, x - 1, y - 1, w + 2, 13, '#1a1c2c');
+    rect(ctx, x, y, w, 11, fill);
+    rect(ctx, x, y, w, 1, mix(fill, '#f4f4f4', 0.4));
+    drawText(ctx, text, cx, y + 3, ink, { align: 'center' });
+    ctx.fillStyle = `rgba(${parseInt(fill.slice(1, 3), 16)}, ${parseInt(fill.slice(3, 5), 16)}, ${parseInt(fill.slice(5, 7), 16)}, 0.15)`;
+    ctx.fillRect(x - 3, y + 12, w + 6, 4); // its glow on the wall below
+  }
+
+  // The side walls: the black EXIT door on the left (in a frame deep enough to show the wall's thickness, with the
+  // corridor's light under it) and the tunnel to the court on the right (a lit hallway running away from the room: a
+  // concrete floor with the team runner, cage lights overhead, and the court's glow at the end), each under its sign.
+  function drawSideWalls(ctx, wall, frame, signFill, signInk) {
     const side = (x0, x1) => {
       ctx.fillStyle = wall;
       ctx.beginPath();
-      ctx.moveTo(x0, 14);
-      ctx.lineTo(x1, 30);
-      ctx.lineTo(x1, 168);
-      ctx.lineTo(x0, 360);
+      polygon(ctx, [[x0, 14], [x1, 30], [x1, 168], [x0, 360]]);
       ctx.fill();
     };
     side(0, 40);
-    side(VIEW_W, VIEW_W - 40);
-    const opening = (near, far, inset, color) => {
-      const d = Math.sign(far - near);
-      ctx.fillStyle = color;
+    side(VIEW_W, VIEW_W - 70); // wider, so the tunnel to the court has room to show its depth
+
+    // The exit: the frame, the jamb (the wall's thickness, lit on its inside face), the door, its handle and the
+    // light from the corridor beyond along its bottom.
+    const exit = DOORWAYS.exit;
+    ctx.fillStyle = frame;
+    ctx.beginPath();
+    polygon(ctx, exit);
+    ctx.fill();
+    ctx.fillStyle = '#566c86';
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(exit, 0.82, 0), exit[1], exit[2], doorPoint(exit, 0.82, 1)]);
+    ctx.fill();
+    ctx.fillStyle = '#0b0c14';
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(exit, 0.08, 0.03), doorPoint(exit, 0.82, 0.03), doorPoint(exit, 0.82, 0.97), doorPoint(exit, 0.08, 0.97)]);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 205, 117, 0.35)';
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(exit, 0.08, 0.96), doorPoint(exit, 0.82, 0.96), doorPoint(exit, 0.82, 1), doorPoint(exit, 0.08, 1)]);
+    ctx.fill();
+    const [hx, hy] = doorPoint(exit, 0.7, 0.55);
+    rect(ctx, hx, hy, 2, 6, '#94b0c2');
+    hangingSign(ctx, 22, 94, 'EXIT', signFill, signInk);
+
+    // The tunnel: drawn inside the doorway, as if looking down a hallway that turns toward the court.
+    const court = DOORWAYS.court;
+    ctx.save();
+    ctx.beginPath();
+    polygon(ctx, court);
+    ctx.clip();
+    ctx.fillStyle = '#20263b';
+    ctx.fillRect(VIEW_W - 70, 90, 70, 270);
+    // The hallway's far wall: concrete blocks, darker the deeper they are.
+    for (let i = 0; i < 6; i++) {
+      const a = 0.25 + i * 0.12;
+      ctx.fillStyle = mix('#333c57', '#1a1c2c', i / 6);
       ctx.beginPath();
-      ctx.moveTo(near + d * inset, 216 + inset);
-      ctx.lineTo(far + d * inset, 120 + inset);
-      ctx.lineTo(far - d * inset, 197 - inset);
-      ctx.lineTo(near - d * inset, 331 - inset);
+      polygon(ctx, [doorPoint(court, a, 0), doorPoint(court, a + 0.12, 0), doorPoint(court, a + 0.12, 0.62), doorPoint(court, a, 0.62)]);
       ctx.fill();
-    };
-    opening(6, 34, 0, frame);
-    opening(6, 34, 2, '#0b0c14');
-    rect(ctx, 28, 186, 2, 7, '#94b0c2'); // handle
-    rect(ctx, 6, 102, 30, 12, '#1a1c2c');
-    drawText(ctx, 'EXIT', 21, 106, sign, { align: 'center' });
-    // The tunnel: lit from the court beyond.
-    const glow = 0.85 + Math.sin(time * 2) * 0.1;
-    opening(VIEW_W - 6, VIEW_W - 34, 0, frame);
-    opening(VIEW_W - 6, VIEW_W - 34, 2, `rgba(255, 205, 117, ${glow})`);
-    opening(VIEW_W - 6, VIEW_W - 34, 6, '#f4f4f4');
-    rect(ctx, VIEW_W - 38, 102, 34, 12, '#1a1c2c');
-    drawText(ctx, 'COURT', VIEW_W - 21, 106, '#ffcd75', { align: 'center' });
+    }
+    // The floor, with the team runner and its arrows pointing to the court.
+    ctx.fillStyle = '#566c86';
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(court, 0, 0.62), doorPoint(court, 1, 0.62), doorPoint(court, 1, 1), doorPoint(court, 0, 1)]);
+    ctx.fill();
+    ctx.fillStyle = game.look(0).jersey;
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(court, 0, 0.74), doorPoint(court, 1, 0.7), doorPoint(court, 1, 0.84), doorPoint(court, 0, 0.9)]);
+    ctx.fill();
+    for (let i = 0; i < 3; i++) {
+      const [ax, ay] = doorPoint(court, 0.2 + i * 0.28, 0.8);
+      rect(ctx, ax - 2, ay, 3, 1, '#f4f4f4');
+    }
+    // Cage lights down the ceiling.
+    for (let i = 0; i < 4; i++) {
+      const [lx, ly] = doorPoint(court, 0.12 + i * 0.24, 0.06);
+      rect(ctx, lx - 2, ly, 4, 3, '#ffcd75');
+    }
+    // The court at the end: its light and a glimpse of the floor.
+    const glow = 0.45 + Math.sin(time * 2) * 0.08;
+    ctx.fillStyle = `rgba(255, 205, 117, ${glow})`;
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(court, 0.86, 0), court[1], court[2], doorPoint(court, 0.86, 1)]);
+    ctx.fill();
+    ctx.fillStyle = '#d99c66';
+    ctx.beginPath();
+    polygon(ctx, [doorPoint(court, 0.86, 0.66), doorPoint(court, 1, 0.66), court[2], doorPoint(court, 0.86, 1)]);
+    ctx.fill();
+    ctx.restore();
+    // The doorway's frame, then its sign.
+    ctx.strokeStyle = frame;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    polygon(ctx, court);
+    ctx.stroke();
+    hangingSign(ctx, VIEW_W - 34, 80, 'TO COURT', '#ffcd75', '#1a1c2c');
   }
 
   // The room: ceiling lights, the back wall with the whiteboard, the team's lockers and the trophy case, a bench,
@@ -549,7 +672,7 @@ const Locker = (() => {
     ctx.stroke();
     drawText(ctx, Career.get().teamName.toUpperCase(), 320, 280, jersey, { align: 'center', scale: 3 });
     drawBench(ctx, '#c98d5a', '#8f563b');
-    drawSideWalls(ctx, '#262b44', '#566c86', '#e43b44');
+    drawSideWalls(ctx, '#262b44', '#566c86', '#b13e53', '#f4f4f4');
   }
 
   // The Dynasty Room (after your first career season): a banner for every title under a coffered ceiling, team
@@ -602,12 +725,12 @@ const Locker = (() => {
     drawCase(ctx, '#5a3524', '#1a1c2c', '#ffcd75');
     // The Finals cup on its pedestal, once there's a title.
     if (titles) {
-      rect(ctx, 558, 124, 26, 36, '#94b0c2');
-      rect(ctx, 556, 122, 30, 4, '#c0cbdc');
-      rect(ctx, 562, 104, 18, 12, '#ffcd75');
-      rect(ctx, 568, 116, 6, 6, '#ffcd75');
-      rect(ctx, 558, 106, 4, 6, '#ffcd75');
-      rect(ctx, 580, 106, 4, 6, '#ffcd75');
+      rect(ctx, 550, 124, 18, 36, '#94b0c2');
+      rect(ctx, 548, 122, 22, 4, '#c0cbdc');
+      rect(ctx, 552, 104, 14, 12, '#ffcd75');
+      rect(ctx, 556, 116, 6, 6, '#ffcd75');
+      rect(ctx, 548, 106, 4, 6, '#ffcd75');
+      rect(ctx, 566, 106, 4, 6, '#ffcd75');
     }
 
     // Carpet in the team color, a gold-ringed rug that says DYNASTY
@@ -623,7 +746,7 @@ const Locker = (() => {
     ctx.stroke();
     drawText(ctx, 'DYNASTY', 320, 280, '#ffcd75', { align: 'center', scale: 3 });
     drawBench(ctx, '#8f563b', '#5a3524');
-    drawSideWalls(ctx, '#3a2418', '#ffcd75', '#38b764');
+    drawSideWalls(ctx, '#3a2418', '#ffcd75', '#38b764', '#f4f4f4');
   }
 
   // The trophy case on the back wall: three glass shelves of cups.

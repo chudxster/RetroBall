@@ -46,7 +46,7 @@ test(() => {
 test(() => {
   document.querySelector('[data-go="locker"]').click();
   key('KeyA', true);
-  for (let i = 0; i < 60 && Locker.isOpen(); i++) Locker.update(1 / 60);
+  for (let i = 0; i < 120 && Locker.isOpen(); i++) Locker.update(1 / 60); // walks on through the door first
   key('KeyA', false);
   ok(!Locker.isOpen() && Title.isOpen(), 'out the door: back at the main menu');
 });
@@ -64,7 +64,7 @@ test(() => {
   [...talk.querySelectorAll('.talk-court .btn')].pop().click();
   ok(talk.hidden && Locker.isOpen(), 'Not yet: back in the room');
   key('KeyD', true);
-  for (let i = 0; i < 60 && !document.querySelector('.talk-court'); i++) Locker.update(1 / 60);
+  for (let i = 0; i < 120 && !document.querySelector('.talk-court'); i++) Locker.update(1 / 60);
   key('KeyD', false);
   const week = Career.get().week;
   talk.querySelector('.talk-court .challenge').click();

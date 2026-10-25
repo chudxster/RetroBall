@@ -103,6 +103,7 @@ class Player {
     this.scale = 1;   // sprite size for the current depth
     this.gear = null; // cosmetics worn (see Cosmetics.gearFor): { band, sleeve, goggles, shoes, kit }
     this.trail = [];  // a dunk trail's recent points (see drawDunkTrail)
+    this.slim = false; // slimmer arms (the locker room's reporter)
     this.setLook(look);
   }
 
@@ -515,11 +516,12 @@ class Player {
     const backNear = turn < 0;
     const frontNear = turn >= 0;
     const armsInFront = turn === 0 && !this.airborne();
-    const backW = backNear ? 8 : turn > 0 ? 4 : 6;
+    const slim = this.slim ? 2 : 0; // slimmer arms (the locker room's reporter)
+    const backW = (backNear ? 8 : turn > 0 ? 4 : 6) - slim;
     const backSkin = backNear ? c.skin : armsInFront ? c.skinMid : c.skinDark;
     const backShade = backNear || armsInFront ? c.skinDark : c.skinDarker;
     let backArm = this.armChain(-11, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
-    const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
+    const frontW = (turn > 0 ? 8 : turn < 0 ? 4 : 6) - slim;
     // The near (shooting) arm wears the sleeve, if there is one.
     const frontSkin = c.sleeve || (frontNear ? c.skin : c.skinDark);
     const frontShade = c.sleeve ? c.sleeveDark : frontNear ? c.skinDark : c.skinDarker;
@@ -760,12 +762,17 @@ class Player {
     ];
 
     // Arms hang at both sides; the dribbling (right, in facing terms) forearm stretches with the push.
-    const arm = (x, dy, push, skin = c.skin, dark = c.skinDark) => [
-      [x, -50 + u + dy, 6, 18 + push, skin],
-      [x, -48 + u + dy, 1, 14 + push, dark],
-      [x, -38 + u + dy, 6, 2, c.wrist],
-      [x, -35 + u + dy + push, 6, 1, c.skinDark],
-    ];
+    // (Slim arms are 4 wide, still against the body.)
+    const aw = this.slim ? 4 : 6;
+    const arm = (x0, dy, push, skin = c.skin, dark = c.skinDark) => {
+      const x = x0 < 0 ? x0 + 6 - aw : x0;
+      return [
+        [x, -50 + u + dy, aw, 18 + push, skin],
+        [x, -48 + u + dy, 1, 14 + push, dark],
+        [x, -38 + u + dy, aw, 2, c.wrist],
+        [x, -35 + u + dy + push, aw, 1, c.skinDark],
+      ];
+    };
 
     const face = fromFront
       ? [

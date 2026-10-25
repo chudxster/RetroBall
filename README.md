@@ -33,7 +33,8 @@ teammates at their lockers and a reporter by the TV camera each hand out quests 
 Enter or Space to talk). A quest is a goal for your games, in one game or added up over several (Quick game, career,
 the daily game and 2 Player co-op count); a yellow ! means a quest to pick up, a bouncing green one tokens to claim.
 Claiming pays career tokens and counts toward the Locker Room trophy. The trophy case on the right wall holds
-every trophy you've earned: pick which ones (up to 13) stand on the scoreboard's shelf in games. Esc leaves.
+every trophy you've earned: pick which ones (up to 13) stand on the scoreboard's shelf in games. You come in through
+the black EXIT door on the left wall; walk back out of it (or press Esc) to leave.
 
 **Quick game** is 3v3 Casual (full court, AI teammates and opponents, half-court defense), with a difficulty
 (Rookie, Pro or All-Star: how good the AI opponents are; 2 Player co-op uses it too) and the game options (free

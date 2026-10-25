@@ -12,8 +12,8 @@ test(() => {
   };
   const toCoach = () => {
     document.querySelector('[data-go="locker"]').click();
-    walk('KeyA', 2.05);
-    walk('KeyW', 1.3);
+    walk('KeyD', 0.3); // from just inside the door
+    walk('KeyW', 0.6);
     press('KeyE');
   };
   const talk = document.getElementById('locker-talk');
@@ -41,4 +41,12 @@ test(() => {
   Trophies.toggleShelf('quests');
   ok(!Trophies.shelf().some((t) => t.id === 'quests') && loadStored(TROPHY_STORAGE_KEY).shelf.length === 0, 'the trophy case takes it off (saved)');
   Locker.draw(document.getElementById('game').getContext('2d'));
+});
+// Walking out the black door on the left wall goes back to the main menu.
+test(() => {
+  document.querySelector('[data-go="locker"]').click();
+  key('KeyA', true);
+  for (let i = 0; i < 60 && Locker.isOpen(); i++) Locker.update(1 / 60);
+  key('KeyA', false);
+  ok(!Locker.isOpen() && Title.isOpen(), 'out the door: back at the main menu');
 });

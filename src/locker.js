@@ -2,13 +2,16 @@
 // at the whiteboard, your two teammates at their lockers and a reporter by the TV camera. Walk up to one and press
 // your dunk key (or Enter / Space) to talk: each hands out quests and pays out finished ones (see Quests). The trophy
 // case on the right wall holds every trophy earned; there you pick which ones stand on the scoreboard's shelf in
-// games. Esc goes back to the main menu. While it's open main.js draws it instead of the demo game.
+// games. You come in through a black door on the left side wall; walk back out of it (or press Esc) to go back to the
+// main menu. While it's open main.js draws it instead of the demo game.
 const LOCKER = {
-  bounds: { x0: 24, x1: 616, y0: 198, y1: 342 }, // where the player's feet can go
+  bounds: { x0: 40, x1: 616, y0: 198, y1: 342 }, // where the player's feet can go
   speed: 110,      // px per second across (depth goes at PLAYER.depthSpeed of it)
   talkRange: 36,   // how close to stand to talk
   npcRadius: 14,   // nobody walks through anybody
-  start: { x: 320, y: 312 },
+  start: { x: 56, y: 262 },     // just inside the door
+  door: { y0: 220, y1: 300 },   // walking into the left wall between these leaves
+
   caseSpot: { x: 566, y: 204 }, // stand here (ish) to open the trophy case
 };
 
@@ -56,9 +59,11 @@ const Locker = (() => {
   function enter() {
     open = true;
     time = 0;
+    talking = null;
+    box.hidden = true;
     me = new Player({ x: LOCKER.start.x, y: LOCKER.start.y, look: game.look(0) });
     me.hasBall = false;
-    me.view = 'back';
+    me.view = 'side';
     for (const n of NPCS) {
       n.player = new Player({ x: n.x, y: n.y, look: n.look() });
       n.player.hasBall = false;
@@ -232,6 +237,11 @@ const Locker = (() => {
         y = n.y + ((dy / d) * LOCKER.npcRadius) / 2;
       }
     }
+    // Out the door.
+    if (!talking && mx < 0 && x <= b.x0 && y >= LOCKER.door.y0 && y <= LOCKER.door.y1) {
+      leave();
+      return;
+    }
     const moved = Math.hypot(x - me.x, y - me.y);
     me.x = x;
     me.y = y;
@@ -284,7 +294,7 @@ const Locker = (() => {
       drawText(ctx, text, at.x, at.y, '#ffcd75', { align: 'center', scale: 2 });
     }
     rect(ctx, 0, VIEW_H - 18, VIEW_W, 18, '#1a1c2c');
-    drawText(ctx, `${Input.moveLabel()} WALK  ${Input.keyLabel('action')} TALK  ESC MAIN MENU`, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: 2 });
+    drawText(ctx, `${Input.moveLabel()} WALK  ${Input.keyLabel('action')} TALK  DOOR: MAIN MENU`, VIEW_W / 2, VIEW_H - 14, COLORS.hint, { align: 'center', scale: 2 });
   }
 
   // A quest marker over someone's head: a yellow ! with a quest to hand out, a bouncing green ! with tokens to claim.
@@ -314,6 +324,8 @@ const Locker = (() => {
     rect(ctx, 0, 160, VIEW_W, 8, '#262b44');
 
     // Whiteboard with a play drawn on it
+    ctx.save();
+    ctx.translate(30, 0); // clear of the side wall
     rect(ctx, 18, 36, 116, 84, '#94b0c2');
     rect(ctx, 21, 39, 110, 78, '#f4f4f4');
     drawText(ctx, 'PLAYS', 76, 44, '#566c86', { align: 'center' });
@@ -321,6 +333,7 @@ const Locker = (() => {
     for (const [x, y] of [[54, 62], [86, 86], [112, 98]]) drawText(ctx, 'X', x, y, '#b13e53', { scale: 2 });
     for (let i = 0; i < 24; i++) rect(ctx, 46 + i * 2, 76 + Math.round(Math.sin(i / 4) * 6), 2, 1, '#566c86');
     rect(ctx, 94, 74, 6, 2, '#566c86');
+    ctx.restore();
 
     // Lockers: the team's color, one for each of the three with their name plates
     const body = mix(jersey, '#1a1c2c', 0.35);
@@ -363,6 +376,29 @@ const Locker = (() => {
     rect(ctx, 150, 176, 330, 6, '#c98d5a');
     rect(ctx, 150, 182, 330, 2, '#8f563b');
     for (const x of [160, 310, 466]) rect(ctx, x, 184, 4, 10, '#8f563b');
+
+    // The way out: a black door in the left side wall (seen edge-on, so it narrows away), with a red EXIT sign.
+    ctx.fillStyle = '#262b44';
+    ctx.beginPath();
+    ctx.moveTo(0, 14);
+    ctx.lineTo(40, 30);
+    ctx.lineTo(40, 168);
+    ctx.lineTo(0, 360);
+    ctx.fill();
+    const door = (inset, color) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(6 + inset, 216 + inset);
+      ctx.lineTo(34 + inset, 120 + inset);
+      ctx.lineTo(34 - inset, 197 - inset);
+      ctx.lineTo(6 - inset, 331 - inset);
+      ctx.fill();
+    };
+    door(0, '#566c86');
+    door(2, '#0b0c14');
+    rect(ctx, 28, 186, 2, 7, '#94b0c2'); // handle
+    rect(ctx, 6, 102, 30, 12, '#1a1c2c');
+    drawText(ctx, 'EXIT', 21, 106, '#e43b44', { align: 'center' });
   }
 
   // A cup in a trophy's metal, bottom at `y` (the case's shelves).

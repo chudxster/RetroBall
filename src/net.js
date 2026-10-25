@@ -400,7 +400,7 @@ const Net = (() => {
 // Players and hoops inside are sent as references ({ $p: roster index }, { $h: hoop index }) and turned back.
 const Snapshot = (() => {
   const SKIP_PLAYER = new Set(['mind', 'look', 'upgrades', 'stats', 'prevShoot', 'prevDunk']);
-  const STATE_KEYS = ['time', 'mode', 'score', 'stats', 'popups', 'possession', 'abbrs', 'draft', 'freeThrow', 'fade', 'hitStop', 'outFor', 'clock', 'debris', 'replayReady', 'challenge'];
+  const STATE_KEYS = ['time', 'mode', 'score', 'stats', 'popups', 'possession', 'abbrs', 'draft', 'freeThrow', 'fade', 'hitStop', 'outFor', 'clock', 'debris', 'replayReady', 'challenge', 'countdown', 'goT', 'goalMet'];
 
   // Numbers go as 2 decimals (plenty for drawing, and much smaller); Infinity (an endless rim hang, a dead ball) as
   // BIG, since JSON has no Infinity.
@@ -436,6 +436,10 @@ const Snapshot = (() => {
       camera: fields(camera),
       crowd: { ...crowdHype },
       endsSwapped,
+      // The host's cosmetics for the whole game: the ball and the banner in the rafters (players' gear rides along
+      // in their fields, the rim and net in the hoops').
+      ballSkin,
+      banner: arenaBanner,
     }, replacer);
   }
 
@@ -453,6 +457,8 @@ const Snapshot = (() => {
     Object.assign(camera, s.camera);
     Object.assign(crowdHype, s.crowd);
     endsSwapped = s.endsSwapped;
+    setBallSkin(s.ballSkin || null);
+    arenaBanner = s.banner || null;
   }
 
   return { take, apply };

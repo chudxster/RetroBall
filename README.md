@@ -46,34 +46,36 @@ towels over heads and a blue half-light after a loss. Once your first career sea
 **Dynasty Room**: a banner for every title, open wood stalls with your jerseys, a trophy wall with the Finals cup
 and a DYNASTY rug (with `?dev=1`, the UI tab can switch it on to test).
 
-**Quick game** is 3v3 Casual (full court, AI teammates and opponents, half-court defense), with a difficulty
-(Rookie, Pro or All-Star: how good the AI opponents are; 2 Player co-op uses it too) and the game options (free
-throws, half length, shot clock: Career and 2 Player games use them too) before you tip off.
+**Casual** (a drawer beside the dock) starts a **3v3 game** (full court, AI teammates and opponents, half-court
+defense). Its options sit right under it: the court, a difficulty (Rookie, Pro or All-Star: how good the AI opponents
+are; 2 Player co-op uses it too), the half length, the shot clock and free throws (Career and 2 Player games use those
+rules too).
 
-The **Daily game** (on the Quick game screen) is one short game a day, the same for everyone: today's date picks
+The **Daily game** (in the Casual drawer) is one short game a day, the same for everyone: today's date picks
 the opponent (a league team in its colors), how good they are, their upgrades and a goal, and seeds every random
 roll after tip-off. It always plays two 1.5-minute halves with no upgrades on your side. Your first game each day
 counts: meet the goal on consecutive days to build a streak. Replays are fine but don't change the day's result, and
 leaving a daily game early counts as a miss.
 
-**2 Player** is two people on one keyboard: **Versus 3v3** (each runs a team with two AI teammates), **Versus 1v1**,
+**2 Player** (a drawer beside the dock, Local tab) is two people on one keyboard: **Versus 3v3** (each runs a team with two AI teammates), **Versus 1v1**,
 or **Co-op** (together, plus an AI teammate, against three AI players). Player 1 plays with WASD, R (shoot), E
-(dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets can be changed in Settings (the Controls tab), and only Esc pauses. Before tip-off both players get the same random number of upgrade points and spend them
+(dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets can be changed in Settings (the Controls
+tab), and only Esc pauses. Before tip-off both players get the same random number of upgrade points and spend them
 on a split screen at the same time (up/down to pick, right to add, left to take back, shoot when ready), with both
 players' keys drawn on a shared keyboard below (each player's in their color, lighting up while held): in versus
 they upgrade their whole team, in co-op their own player. At halftime they get more. After the final buzzer player
 1's shoot key **runs it back** with the same pre-game upgrades, player 2's starts a new draft.
 
-**Online** (prototype) is 2 Player versus (1v1 or 3v3) across two browsers: one person hosts a lobby and gets a
+**Online** (prototype; the 2 Player drawer's Online tab) is 2 Player versus (1v1 or 3v3) across two browsers: one person hosts a lobby and gets a
 4-letter code, the other types the code or picks the lobby from the list of open games. Both then see the lobby (who's
 in, the format) and the host presses **Start game**. The game runs on the host's computer: the guest's keys play
 player 2 and the guest's screen shows the host's game. If the guest leaves, the host's lobby opens up again. **Internet** games go through a free public
 relay (EMQX's public MQTT broker, `src/net.js` RELAY; the small mqtt.js library loads from a CDN only when you go
 online), so they need an internet connection, and the traffic isn't private. A relay of our own can replace it in
-one place. **This computer** connects two tabs of the same browser instead, with no internet (for testing). Leaving
+one place. **This PC** connects two tabs of the same browser instead, with no internet (for testing). Leaving
 with Main menu ends the game for both.
 
-**Practice** has **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across
+**Practice** (in the Casual drawer) has **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across
 under the hoop, two from each elbow, three free throws, five threes around the arc), make each to move on, timed,
 with your best time saved.
 
@@ -91,7 +93,7 @@ result and a box score (points, FG, 3PT, FT, steals, blocks, dunks) for each tea
 play again.
 
 Reaching for a steal can be called a foul, more likely the closer you are to the ball handler. With **free throws** on
-(Quick game options) the fouled player shoots one from the line for a point: the ref hands them the ball after two
+(the Casual drawer's options) the fouled player shoots one from the line for a point: the ref hands them the ball after two
 seconds. With them off their team just keeps the ball. The rest of the time the ref walks the sideline in front of
 the scorer's table, following the play.
 
@@ -163,7 +165,7 @@ give it keyboard focus.
 | `src/ai.js` | Computer players: offense, defense, chasing loose balls |
 | `src/clock.js` | 3v3 game clock: halves, overtime, shot clock, final buzzer |
 | `src/practice.js` | Practice drills: Around the World |
-| `src/title.js` | The main menu and its screens: career (challenges, upgrades, standings), quick game, 2 Player, practice |
+| `src/title.js` | The main menu: the dock, the season road and its challenge popover, the Career screen, and the Casual and 2 Player drawers |
 | `src/sfx.js` | Sound effects, generated with Web Audio (no files) |
 | `src/career.js` | Career mode: league, schedule, standings, playoffs, challenges, tokens and bought upgrades |
 | `src/duo.js` | 2 Player mode: formats, the split-screen upgrade draft, run it back |

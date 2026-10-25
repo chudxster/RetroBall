@@ -2,8 +2,8 @@
 // plus a few features: the floor's texture (planks, speckled asphalt or concrete, sport-court tiles, a checkerboard),
 // an outdoor backdrop (sky and skyline instead of the stands), a night tint, glowing lines, and Finals Night's house
 // lights down with a spotlight on the ball. Quick game and Practice play on the court picked on their screens (saved
-// in 'retroball.court'); career plays at home on Classic Hardwood and its Final on Finals Night; everything else
-// (the demo, 2 Player, the daily game) on Classic Hardwood. See setCourt and court.js.
+// in 'retroball.court'), and 2 Player too (online, the host's court); career plays at home on Classic Hardwood and
+// its Final on Finals Night; everything else (the demo, the daily game) on Classic Hardwood. See setCourt and court.js.
 const COURT_STORAGE_KEY = 'retroball.court';
 
 const COURTS = [
@@ -88,7 +88,7 @@ const Courts = (() => {
 
   // Where a game in `mode` is played (newGame): your pick in casual games, Finals Night for the career Final.
   function forMode(mode) {
-    if (mode === '3v3' || mode === 'free' || mode === 'world') return picked;
+    if (mode === '3v3' || mode === 'free' || mode === 'world' || mode === 'duo') return picked;
     if (mode === 'career') {
       const next = Career.next();
       return next && next.label === 'FINAL' ? courtById('finals') : COURTS[0];

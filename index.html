@@ -404,6 +404,13 @@
             <button type="button" class="drawer-tab" role="tab" data-versus-tab="online" aria-selected="false">Online</button>
           </div>
           <div class="versus-panel" id="versus-local" role="tabpanel">
+            <!-- The court (Courts: the same pick as Casual). -->
+            <div class="row court-row">
+              <span class="label">Court</span>
+              <button type="button" class="step" data-court-step="-1" aria-label="Previous court">&lt;</button>
+              <span class="value court-name"></span>
+              <button type="button" class="step" data-court-step="1" aria-label="Next court">&gt;</button>
+            </div>
             <button type="button" class="pick duo-format" data-format="vs3" aria-pressed="false">
               <span class="ico" data-icon="duo"></span><span class="mode-name">Versus 3v3</span><span class="pick-key">Start</span>
               <span class="mode-desc">Each runs a team with two AI teammates</span>

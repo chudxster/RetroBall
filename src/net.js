@@ -440,6 +440,7 @@ const Snapshot = (() => {
       // in their fields, the rim and net in the hoops').
       ballSkin,
       banner: arenaBanner,
+      court: court.id,
     }, replacer);
   }
 
@@ -458,6 +459,7 @@ const Snapshot = (() => {
     Object.assign(crowdHype, s.crowd);
     endsSwapped = s.endsSwapped;
     setBallSkin(s.ballSkin || null);
+    if (s.court && s.court !== court.id) setCourt(courtById(s.court)); // the host's court
     arenaBanner = s.banner || null;
   }
 

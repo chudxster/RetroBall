@@ -2,7 +2,7 @@
 test(() => {
   Title.show('quick');
   document.querySelector('[data-difficulty="2"]').click();
-  document.querySelector('.btn.title-start[data-mode="3v3"]').click();
+  document.querySelector('.title-start[data-mode="3v3"]').click();
   ok(opponentAILevel === DIFFICULTY[2].ai, 'All-Star sets the opponents\' level');
   Career.offer(state.rules);
   Career.begin(0, state.rules);

@@ -2,9 +2,9 @@
 // its Final on Finals Night with the spotlight; everything else on Classic Hardwood. Every court renders.
 test(() => {
   Title.show('quick');
-  ok(document.querySelector('#title-quick .court-name').textContent === 'Classic Hardwood', 'Classic Hardwood by default');
-  document.querySelector('#title-quick [data-court-step="1"]').click();
-  ok(Courts.picked().id === 'college' && document.querySelector('#title-practice .court-name').textContent === 'College Fieldhouse', 'pick the next one (Practice shows it too)');
+  ok(document.querySelector('#title-casual .court-name').textContent === 'Classic Hardwood', 'Classic Hardwood by default');
+  document.querySelector('#title-casual [data-court-step="1"]').click();
+  ok(Courts.picked().id === 'college' && document.querySelector('#title-casual .court-name').textContent === 'College Fieldhouse', 'pick the next one');
   const seen = new Set();
   for (let i = 0; i < 12; i++) {
     Courts.step(1);

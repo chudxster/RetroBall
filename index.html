@@ -340,146 +340,116 @@
           <div class="career-panel" id="career-panel"></div>
         </div>
 
-        <!-- Casual: a quick 3v3 game (with the daily game) or practice. -->
-        <div class="title-view stack-view" id="title-casual" hidden>
-          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Casual</span></div>
-          <button type="button" class="mode-option" data-go="quick">
-            <span class="mode-name">Quick game</span>
-            <span class="mode-desc">3v3 with AI teammates and opponents, plus the daily game</span>
+        <!-- Casual (the Dock Drawer design): a drawer out of the dock with everything for a casual game: a 3v3 game with
+             its options indented under it, today's daily game, and the two practice drills. -->
+        <div class="title-view drawer-view" id="title-casual" hidden>
+          <div class="drawer-head"><span class="title-heading">Casual</span><button type="button" class="btn btn-quiet title-back">&lt; Close</button></div>
+          <button type="button" class="pick title-start" data-mode="3v3">
+            <span class="ico" data-icon="ball"></span><span class="mode-name">3v3 game</span><span class="pick-key">Tip off</span>
+            <span class="mode-desc">Full court, AI teammates and opponents</span>
           </button>
-          <button type="button" class="mode-option" data-go="practice">
-            <span class="mode-name">Practice</span>
-            <span class="mode-desc">Free shot and Around the World</span>
-          </button>
-        </div>
-
-        <!-- 2 Player: two people on one keyboard (Local), or in two browsers (Online). -->
-        <div class="title-view stack-view" id="title-versus" hidden>
-          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">2 Player</span></div>
-          <button type="button" class="mode-option" data-go="duo">
-            <span class="mode-name">Local</span>
-            <span class="mode-desc">Two players, one keyboard</span>
-          </button>
-          <button type="button" class="mode-option" data-go="online">
-            <span class="mode-name">Online</span>
-            <span class="mode-desc">Prototype: host or join with a code</span>
-          </button>
-        </div>
-
-        <!-- Quick game: the game options (Career and 2 Player games use them too), then tip off. -->
-        <div class="title-view stack-view" id="title-quick" data-back="casual" hidden>
-          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Quick game</span></div>
+          <!-- The 3v3 game's options (Career and 2 Player games use the rules too). -->
+          <div class="pick-sub">
+            <div class="row court-row">
+              <span class="label">Court</span>
+              <button type="button" class="step" data-court-step="-1" aria-label="Previous court">&lt;</button>
+              <span class="value court-name"></span>
+              <button type="button" class="step" data-court-step="1" aria-label="Next court">&gt;</button>
+            </div>
+            <!-- How good the AI opponents are (DIFFICULTY; title.js marks the picked one). -->
+            <div class="row difficulty-row">
+              <span class="label">Difficulty</span>
+              <button type="button" class="key-btn" data-difficulty="0" aria-pressed="false">Rookie</button>
+              <button type="button" class="key-btn" data-difficulty="1" aria-pressed="false">Pro</button>
+              <button type="button" class="key-btn" data-difficulty="2" aria-pressed="false">All-Star</button>
+            </div>
+            <div class="row">
+              <label for="half-minutes">Halves</label>
+              <input type="number" id="half-minutes" class="num tuning-num" min="0.5" max="20" step="0.5">
+              <span class="upgrade-effect">minutes</span>
+            </div>
+            <div class="row">
+              <span class="label">Shot clock</span>
+              <button type="button" class="key-btn" id="shot-clock" aria-pressed="false" aria-label="Shot clock"></button>
+              <input type="number" id="shot-seconds" class="num" min="5" max="60" step="1" aria-label="Shot clock seconds">
+              <span class="upgrade-effect">s</span>
+            </div>
+            <div class="row">
+              <span class="label">Free throws</span>
+              <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
+            </div>
+          </div>
           <!-- The daily game (daily.js): today's opponent and goal, your streak; title.js fills it in. -->
-          <div class="daily-card">
-            <span class="mode-name">Daily game</span>
+          <button type="button" class="pick" id="daily-start">
+            <span class="ico" data-icon="trophy"></span><span class="mode-name">Daily game</span><span class="pick-key">Play</span>
             <span class="mode-desc" id="daily-text"></span>
-            <button type="button" class="btn btn-quiet" id="daily-start">Play today's game</button>
-          </div>
-          <!-- The court for casual games (Courts; the same pick in Practice). -->
-          <div class="row court-row">
-            <span class="label">Court</span>
-            <button type="button" class="step" data-court-step="-1" aria-label="Previous court">&lt;</button>
-            <span class="value court-name"></span>
-            <button type="button" class="step" data-court-step="1" aria-label="Next court">&gt;</button>
-          </div>
-          <!-- How good the AI opponents are (DIFFICULTY; title.js marks the picked one). -->
-          <div class="row difficulty-row">
-            <span class="label">Difficulty</span>
-            <button type="button" class="key-btn" data-difficulty="0" aria-pressed="false">Rookie</button>
-            <button type="button" class="key-btn" data-difficulty="1" aria-pressed="false">Pro</button>
-            <button type="button" class="key-btn" data-difficulty="2" aria-pressed="false">All-Star</button>
-          </div>
-          <div class="row">
-            <span class="label">Free throws</span>
-            <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
-            <span class="upgrade-effect">1 shot after a reach-in foul</span>
-          </div>
-          <div class="row">
-            <label for="half-minutes">Half length</label>
-            <input type="number" id="half-minutes" class="num tuning-num" min="0.5" max="20" step="0.5">
-            <span class="upgrade-effect">Minutes per half (2 halves)</span>
-          </div>
-          <div class="row">
-            <span class="label">Shot clock</span>
-            <button type="button" class="key-btn" id="shot-clock" aria-pressed="false" aria-label="Shot clock"></button>
-            <input type="number" id="shot-seconds" class="num" min="5" max="60" step="1" aria-label="Shot clock seconds">
-            <span class="upgrade-effect">seconds</span>
-          </div>
-          <p class="mode-desc">Free throws, half length and the shot clock apply to Career and 2 Player games too; difficulty to 2 Player co-op.</p>
-          <button type="button" class="btn title-start" data-mode="3v3">Tip off</button>
-        </div>
-
-        <!-- 2 Player: two people on one keyboard. Picking a format starts it (with the upgrade draft). -->
-        <div class="title-view stack-view" id="title-duo" data-back="versus" hidden>
-          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">2 Player</span></div>
-          <button type="button" class="mode-option duo-format" data-format="vs3" aria-pressed="false">
-            <span class="mode-name">Versus 3v3</span>
-            <span class="mode-desc">Each runs a team with two AI teammates</span>
           </button>
-          <button type="button" class="mode-option duo-format" data-format="vs1" aria-pressed="false">
-            <span class="mode-name">Versus 1v1</span>
-            <span class="mode-desc">Just the two of you, full court</span>
-          </button>
-          <button type="button" class="mode-option duo-format" data-format="coop" aria-pressed="false">
-            <span class="mode-name">Co-op</span>
-            <span class="mode-desc">You two plus an AI teammate vs three AI</span>
-          </button>
-          <p class="mode-desc" id="duo-keys"></p>
-        </div>
-
-        <!-- Online (prototype, see net.js): host a 2 Player versus game with a code, join one by code or from the
-             lobby finder, over the internet (a public relay) or between tabs of this browser. -->
-        <div class="title-view stack-view" id="title-online" data-back="versus" hidden>
-          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Online</span></div>
-          <p class="mode-desc">Prototype: 2 Player versus with someone in another browser. Internet games go through a public relay.</p>
-          <div class="row">
-            <span class="label">Network</span>
-            <button type="button" class="key-btn" data-network="internet" aria-pressed="false">Internet</button>
-            <button type="button" class="key-btn" data-network="local" aria-pressed="false">This computer</button>
-          </div>
-          <div class="row">
-            <span class="label">Format</span>
-            <button type="button" class="key-btn" data-online-format="vs1" aria-pressed="false">1v1</button>
-            <button type="button" class="key-btn" data-online-format="vs3" aria-pressed="false">3v3</button>
-          </div>
-          <!-- The lobby, once both are in: who's playing, then the host starts the game (it runs on the host's computer). -->
-          <div class="online-lobby" id="online-lobby" hidden>
-            <p class="mode-name" id="online-lobby-title"></p>
-            <p class="mode-desc" id="online-lobby-text"></p>
-            <button type="button" class="btn" id="online-start">Start game</button>
-          </div>
-          <div class="row">
-            <button type="button" class="btn" id="online-host">Host a game</button>
-            <span class="upgrade-effect" id="online-code"></span>
-          </div>
-          <div class="row">
-            <label for="online-join-code">Join code</label>
-            <input type="text" id="online-join-code" class="name" maxlength="4" spellcheck="false" autocomplete="off">
-            <button type="button" class="btn btn-quiet" id="online-join">Join</button>
-          </div>
-          <p class="test-note">Open games</p>
-          <div class="lobby-list" id="online-lobbies"></div>
-          <p class="mode-desc" id="online-status"></p>
-        </div>
-
-        <!-- Practice: just the user's player. -->
-        <div class="title-view stack-view" id="title-practice" data-back="casual" hidden>
-          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Practice</span></div>
-          <div class="row court-row">
-            <span class="label">Court</span>
-            <button type="button" class="step" data-court-step="-1" aria-label="Previous court">&lt;</button>
-            <span class="value court-name"></span>
-            <button type="button" class="step" data-court-step="1" aria-label="Next court">&gt;</button>
-          </div>
-          <button type="button" class="mode-option title-start" data-mode="free">
-            <span class="mode-name">Free shot</span>
+          <p class="drawer-note">Practice</p>
+          <button type="button" class="pick title-start" data-mode="free">
+            <span class="ico" data-icon="cone"></span><span class="mode-name">Free shot</span><span></span>
             <span class="mode-desc">Just you and the ball, either hoop</span>
           </button>
-          <button type="button" class="mode-option title-start" data-mode="world">
-            <span class="mode-name">Around the world</span>
-            <span class="mode-desc">15 spots in order: make each one to move on. Timed.</span>
-            <span class="mode-desc" id="world-best"></span>
+          <button type="button" class="pick title-start" data-mode="world">
+            <span class="ico" data-icon="cone"></span><span class="mode-name">Around the world</span><span class="pick-key" id="world-best"></span>
+            <span class="mode-desc">15 spots in order, timed</span>
           </button>
+        </div>
+
+        <!-- 2 Player (the Dock Drawer design): Local (two people on one keyboard: picking a format starts it, with the
+             upgrade draft) and Online (host or join a code, the lobby finder; see net.js) as tabs. -->
+        <div class="title-view drawer-view" id="title-versus" hidden>
+          <div class="drawer-head"><span class="title-heading">2 Player</span><button type="button" class="btn btn-quiet title-back">&lt; Close</button></div>
+          <div class="drawer-tabs" role="tablist" aria-label="Local or online">
+            <button type="button" class="drawer-tab" role="tab" data-versus-tab="local" aria-selected="true">Local</button>
+            <button type="button" class="drawer-tab" role="tab" data-versus-tab="online" aria-selected="false">Online</button>
+          </div>
+          <div class="versus-panel" id="versus-local" role="tabpanel">
+            <button type="button" class="pick duo-format" data-format="vs3" aria-pressed="false">
+              <span class="ico" data-icon="duo"></span><span class="mode-name">Versus 3v3</span><span class="pick-key">Start</span>
+              <span class="mode-desc">Each runs a team with two AI teammates</span>
+            </button>
+            <button type="button" class="pick duo-format" data-format="vs1" aria-pressed="false">
+              <span class="ico" data-icon="duo"></span><span class="mode-name">Versus 1v1</span><span class="pick-key">Start</span>
+              <span class="mode-desc">Just the two of you, full court</span>
+            </button>
+            <button type="button" class="pick duo-format" data-format="coop" aria-pressed="false">
+              <span class="ico" data-icon="duo"></span><span class="mode-name">Co-op</span><span class="pick-key">Start</span>
+              <span class="mode-desc">You two plus an AI teammate vs three AI</span>
+            </button>
+            <div class="duo-keys" id="duo-keys"></div>
+            <p class="drawer-note">Next: the upgrade draft, both at once</p>
+          </div>
+          <div class="versus-panel" id="versus-online" role="tabpanel" hidden>
+            <div class="row">
+              <span class="label">Format</span>
+              <button type="button" class="key-btn" data-online-format="vs1" aria-pressed="false">1v1</button>
+              <button type="button" class="key-btn" data-online-format="vs3" aria-pressed="false">3v3</button>
+            </div>
+            <div class="row">
+              <span class="label">Network</span>
+              <button type="button" class="key-btn" data-network="internet" aria-pressed="false">Internet</button>
+              <button type="button" class="key-btn" data-network="local" aria-pressed="false">This PC</button>
+            </div>
+            <!-- The lobby, once both are in: who's playing, then the host starts the game (it runs on the host's computer). -->
+            <div class="online-lobby" id="online-lobby" hidden>
+              <p class="mode-name" id="online-lobby-title"></p>
+              <p class="mode-desc" id="online-lobby-text"></p>
+              <button type="button" class="btn" id="online-start">Start game</button>
+            </div>
+            <button type="button" class="pick" id="online-host">
+              <span class="ico" data-icon="globe"></span><span class="mode-name">Host a game</span><span class="pick-key">Host</span>
+              <span class="mode-desc" id="online-code">Get a 4-letter code to send a friend</span>
+            </button>
+            <div class="row">
+              <label for="online-join-code">Join code</label>
+              <input type="text" id="online-join-code" class="name" maxlength="4" spellcheck="false" autocomplete="off">
+              <button type="button" class="btn btn-quiet" id="online-join">Join</button>
+            </div>
+            <p class="drawer-note">Open games</p>
+            <div class="lobby-list" id="online-lobbies"></div>
+            <p class="mode-desc" id="online-status"></p>
+            <p class="drawer-note">Prototype: games go through a public relay</p>
+          </div>
         </div>
       </div>
     </div>

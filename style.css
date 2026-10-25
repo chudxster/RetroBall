@@ -1667,3 +1667,194 @@ input[type="color"]::-moz-color-swatch {
 .locker-talk .case-item.locked .case-cup {
   background: #566c86;
 }
+
+/* Drawers (the Dock Drawer design): Casual and 2 Player slide out beside the home screen's dock, with a gap between
+   the two, and the menu stays on screen: the dock row stays lit, the challenge popover steps aside and the road dims.
+   Laid out in game pixels (the panel's --px is --u). */
+#title.at-home.drawer-open > .title-panel {
+  --px: var(--u);
+  display: block;
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--u) * 168);
+  top: calc(var(--u) * 6);
+  bottom: calc(var(--u) * 82);
+  width: calc(var(--u) * 214);
+  max-height: none;
+  padding: calc(var(--u) * 6) calc(var(--u) * 7);
+  border-color: #ffcd75;
+  font-size: calc(var(--u) * 8);
+}
+
+#title.drawer-open .home-pop {
+  display: none;
+}
+
+#title.drawer-open .home-road {
+  opacity: 0.35;
+}
+
+.dock-row.open {
+  background: #29366f;
+  border-color: #ffcd75;
+}
+
+.drawer-view {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+}
+
+.drawer-view[hidden] {
+  display: none;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: calc(var(--u) * 3);
+  margin-bottom: var(--u);
+  border-bottom: var(--u) solid #333c57;
+  font-size: calc(var(--u) * 10);
+}
+
+.drawer-head .btn {
+  font-size: calc(var(--u) * 6);
+  padding: var(--u) calc(var(--u) * 4);
+}
+
+/* A game to pick: icon, name, the key that starts it, and a line under it */
+.pick {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 11) 1fr auto;
+  align-items: center;
+  gap: var(--u) calc(var(--u) * 4);
+  padding: calc(var(--u) * 3) calc(var(--u) * 4);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+  color: #f4f4f4;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.pick .mode-desc {
+  grid-column: 2 / 4;
+  font-size: calc(var(--u) * 6);
+}
+
+.pick:hover,
+.pick:focus-visible {
+  background: #29366f;
+  border-color: #ffcd75;
+  outline: none;
+}
+
+.pick-key {
+  padding: 0 calc(var(--u) * 2);
+  border: var(--u) solid #566c86;
+  color: #94b0c2;
+  font-size: calc(var(--u) * 6);
+}
+
+.pick-key:empty {
+  display: none;
+}
+
+/* The 3v3 game's options, indented under it */
+.pick-sub {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+  margin-left: calc(var(--u) * 15);
+  padding: calc(var(--u) * 3) calc(var(--u) * 4) calc(var(--u) * 4);
+  border-left: var(--u) solid #ffcd75;
+  font-size: calc(var(--u) * 7);
+}
+
+#title .pick-sub .row label,
+#title .pick-sub .row .label {
+  width: calc(var(--u) * 56);
+}
+
+.pick-sub .key-btn {
+  min-width: 0;
+  height: calc(var(--u) * 10);
+  padding: 0 calc(var(--u) * 3);
+}
+
+.drawer-note {
+  margin: calc(var(--u) * 2) 0 0;
+  font-size: calc(var(--u) * 6);
+  color: #566c86;
+}
+
+/* 2 Player's Local / Online tabs */
+.drawer-tabs {
+  display: flex;
+  margin-bottom: calc(var(--u) * 2);
+}
+
+.drawer-tab {
+  flex: 1;
+  padding: calc(var(--u) * 3) 0;
+  background: #262b44;
+  border: var(--u) solid #566c86;
+  color: #94b0c2;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.drawer-tab[aria-selected="true"] {
+  background: #29366f;
+  border-color: #ffcd75;
+  color: #ffcd75;
+}
+
+.versus-panel {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+}
+
+.versus-panel[hidden] {
+  display: none;
+}
+
+.versus-panel .row {
+  gap: calc(var(--u) * 3);
+}
+
+.versus-panel .key-btn {
+  min-width: 0;
+  height: calc(var(--u) * 10);
+  padding: 0 calc(var(--u) * 3);
+}
+
+/* Local: both players' keys, side by side */
+.duo-keys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 4);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+  font-size: calc(var(--u) * 6);
+}
+
+.duo-keys > div {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+}
+
+.duo-keys-p1 .mode-name {
+  color: #ef7d57;
+}
+
+.duo-keys-p2 .mode-name {
+  color: #41a6f6;
+}

@@ -1,9 +1,9 @@
 // Main menu: the game always opens here, with the AI playing itself behind it (main.js runs a 'demo' game while
 // it's up). One view shows at a time: home (the modes in a dock: Career, Locker room, Casual, 2 Player, plus Customize
 // and Settings, which open the pause menu's tabs; and the career season as a road with this week's challenges),
-// Career (the season, the next game's challenges, buying upgrades, the standings), Casual (Quick game: the game
-// options, then tip off; Practice), 2 Player (Local: the formats; Online). Esc goes back a view; the arrow keys (or
-// WASD) move between buttons, Enter or Space presses one.
+// Career (the season, the next game's challenges, buying upgrades, the standings), and the drawers that slide out
+// beside the dock: Casual (a 3v3 game and its options, the daily game, practice) and 2 Player (Local: the formats;
+// Online). Esc goes back (closes a drawer); the arrow keys (or WASD) move between buttons, Enter or Space presses one.
 const Title = (() => {
   const box = document.getElementById('title');
   const views = [...box.querySelectorAll('.title-view')];
@@ -18,6 +18,14 @@ const Title = (() => {
   let upgradePick = 0;       // which career player the Career screen's upgrades show
   let confirmRestart = false;
   let readyPick = null;      // the home screen's picked challenge, waiting for "ready to play now?"
+  let versusTab = 'local';   // the 2 Player drawer's tab: 'local' or 'online'
+
+  // Casual and 2 Player are drawers out of the home screen's dock (the Dock Drawer design), shown beside it. The
+  // screens they replaced still open them by name: quick and practice the Casual drawer, duo and online the 2 Player
+  // drawer on that tab.
+  const DRAWERS = ['casual', 'versus'];
+  const ALIASES = { quick: ['casual'], practice: ['casual'], duo: ['versus', 'local'], online: ['versus', 'online'] };
+  const onlineOpen = () => view === 'versus' && versusTab === 'online';
 
   const current = () => views.find((v) => v.id === `title-${view}`);
 
@@ -46,6 +54,7 @@ const Title = (() => {
       });
     }
     for (const b of box.querySelectorAll('.title-back')) b.addEventListener('click', back);
+    for (const t of box.querySelectorAll('[data-versus-tab]')) t.addEventListener('click', () => show('versus', { tab: t.dataset.versusTab }));
     for (const s of box.querySelectorAll('span.ico[data-icon]')) s.replaceWith(pixelIcon(s.dataset.icon));
     for (const b of box.querySelectorAll('.title-start')) b.addEventListener('click', () => start(b.dataset.mode));
     for (const b of box.querySelectorAll('.duo-format')) {
@@ -138,27 +147,37 @@ const Title = (() => {
     }
   }
 
-  // Back (and Esc) from a view: to the one it sits under (data-back: Casual for Quick game and Practice, 2 Player for
-  // Local and Online), or home.
+  // Back (and Esc) from a view, or closing a drawer: to the one it sits under (data-back), or home.
   function back() {
     show(current().dataset.back || 'home');
   }
 
-  function show(next = 'home', { focus = true } = {}) {
-    // Leaving the Online screen before the match starts closes the lobby (or the pending join).
-    if (view === 'online' && next !== 'online' && Net.role() && !Net.playing()) Net.leave();
-    view = next;
+  function show(next = 'home', { focus = true, tab = null } = {}) {
+    const [to, aliasTab] = ALIASES[next] || [next];
+    const nextTab = to === 'versus' ? tab || aliasTab || versusTab : versusTab;
+    // Leaving Online before the match starts closes the lobby (or the pending join).
+    if (onlineOpen() && !(to === 'versus' && nextTab === 'online') && Net.role() && !Net.playing()) Net.leave();
+    view = to;
+    versusTab = nextTab;
     open = true;
     box.hidden = false;
     pauseButton.hidden = true;
     confirmRestart = false;
     readyPick = null;
-    for (const v of views) v.hidden = v !== current();
-    box.classList.toggle('at-home', view === 'home');
+    // A drawer shows beside the home screen, whose dock row stays lit.
+    const drawer = DRAWERS.includes(view);
+    for (const v of views) v.hidden = v !== current() && !(drawer && v.id === 'title-home');
+    box.classList.toggle('at-home', view === 'home' || drawer);
+    box.classList.toggle('drawer-open', drawer);
+    for (const r of box.querySelectorAll('.dock-row')) r.classList.toggle('open', r.dataset.go === view);
+    for (const t of box.querySelectorAll('[data-versus-tab]')) t.setAttribute('aria-selected', String(t.dataset.versusTab === versusTab));
+    document.getElementById('versus-local').hidden = versusTab !== 'local';
+    document.getElementById('versus-online').hidden = versusTab !== 'online';
     render();
     if (focus) {
       // The view's main button (Tip off, the first challenge), else its first one past Back.
-      const first = current().querySelector('.btn.title-start, .challenge') || current().querySelector('button:not(.title-back):not(:disabled)');
+      const area = view === 'versus' ? document.getElementById(`versus-${versusTab}`) : current();
+      const first = area.querySelector('.title-start, .challenge') || area.querySelector('button:not(.title-back):not(:disabled)');
       if (first) first.focus();
     }
   }
@@ -176,27 +195,22 @@ const Title = (() => {
 
   function render() {
     for (const n of box.querySelectorAll('.court-name')) n.textContent = Courts.picked().name;
-    if (view === 'home') {
-      renderHome();
-    } else if (view === 'quick') {
+    // The home screen shows behind the drawers too.
+    if (view === 'home' || DRAWERS.includes(view)) renderHome();
+    if (view === 'casual') {
       const d = Daily.status();
-      const played = d.played ? (d.played.done ? 'Goal met today.' : 'Played today, goal missed.') : 'Not played yet today.';
-      document.getElementById('daily-text').textContent = `Today: vs ${d.opp.name}. Goal: ${d.goalText.toLowerCase()}. ${played} `
-        + `Streak ${d.streak} (best ${d.best}). Same game for everyone, 1.5-minute halves, no upgrades.`;
+      const played = d.played ? (d.played.done ? 'goal met today' : 'played today') : `streak ${d.streak}`;
+      document.getElementById('daily-text').textContent = `vs ${d.opp.name}, goal: ${d.goalText.toLowerCase()} (${played})`;
       const picked = difficultyOf(game.rules);
       for (const b of box.querySelectorAll('[data-difficulty]')) b.setAttribute('aria-pressed', String(Number(b.dataset.difficulty) === picked));
+      const best = Practice.best();
+      document.getElementById('world-best').textContent = best === null ? '' : Practice.format(best);
     } else if (view === 'career') {
       renderCareer();
-    } else if (view === 'duo') {
+    } else if (view === 'versus') {
       for (const f of box.querySelectorAll('.duo-format')) f.setAttribute('aria-pressed', String(f.dataset.format === Duo.format()));
-      const keys = (set) => ['shoot', 'action', 'pass'].map((n) => Input.keyLabel(n, set)).join(' ');
-      document.getElementById('duo-keys').textContent = `P1: ${Input.moveLabel('p1')} + ${keys('p1')}. `
-        + `P2: ${Input.moveLabel('p2')} + ${keys('p2')} (shoot, dunk/steal, pass/switch; change them in Settings). Esc pauses.`;
-    } else if (view === 'online') {
-      renderOnline();
-    } else if (view === 'practice') {
-      const best = Practice.best();
-      document.getElementById('world-best').textContent = best === null ? 'Best: none yet' : `Best: ${Practice.format(best)}`;
+      renderDuoKeys();
+      if (onlineOpen()) renderOnline();
     }
   }
 
@@ -310,6 +324,18 @@ const Title = (() => {
     pop.classList.toggle('no-arrow', arrow < 4 || arrow > 180);
   }
 
+  // Local 2 Player: both players' keys side by side (they change in Settings).
+  function renderDuoKeys() {
+    const column = (set, label) => {
+      const k = (name) => Input.keyLabel(name, set);
+      const col = el('div', `duo-keys-${set}`);
+      col.append(el('span', 'mode-name', label), el('span', '', `${Input.moveLabel(set)} move`),
+        el('span', '', `${k('shoot')} shoot  ${k('action')} dunk`), el('span', '', `${k('pass')} pass`));
+      return col;
+    };
+    document.getElementById('duo-keys').replaceChildren(column('p1', 'P1'), column('p2', 'P2'));
+  }
+
   // Online (see Net): pick the format, then host (your code shows, and the game is listed in other players' lobby
   // finders until someone joins) or join by code or from the list. A guest's screen switches to the host's game
   // as soon as the host lets them in.
@@ -345,7 +371,7 @@ const Title = (() => {
         hide();
         stage.querySelector('canvas').focus();
       }
-      if (open && view === 'online') renderOnline();
+      if (open && onlineOpen()) renderOnline();
     };
   }
 
@@ -368,7 +394,7 @@ const Title = (() => {
     }
     document.getElementById('online-host').disabled = !!lobby;
     document.getElementById('online-join').disabled = !!lobby;
-    document.getElementById('online-code').textContent = role === 'host' && !lobby ? `Your code: ${Net.code()} (waiting for a player)` : '';
+    document.getElementById('online-code').textContent = role === 'host' && !lobby ? `Your code: ${Net.code()} (waiting for a player)` : 'Get a 4-letter code to send a friend';
     document.getElementById('online-status').textContent = [role === 'guest' && !lobby ? `Joining ${Net.code()}...` : '', Net.status()].filter(Boolean).join(' ');
     const list = document.getElementById('online-lobbies');
     const games = Net.lobbyList().filter((l) => l.code !== Net.code());

@@ -18,21 +18,24 @@ test(() => {
   Menu.openTab('ui-view');
   ok(showing() === 'controls-view ui-view' && document.getElementById('rail-head').textContent === 'Paused', 'paused in a career game: Settings only');
 });
-// The main menu's bundles: Casual holds Quick game and Practice, 2 Player holds Local and Online; Back (or Esc)
-// goes back to the bundle, then home.
+// The main menu's drawers (the Dock Drawer design): Casual (a 3v3 game with its options, the daily game, practice)
+// and 2 Player (Local and Online tabs) slide out beside the dock, which stays on screen; Close or Esc goes home.
 test(() => {
-  const at = () => [...document.querySelectorAll('.title-view')].find((v) => !v.hidden).id;
+  const showing = () => [...document.querySelectorAll('.title-view')].filter((v) => !v.hidden).map((v) => v.id).join(' ');
   document.querySelector('.dock-row[data-go="casual"]').click();
-  ok(at() === 'title-casual' && document.querySelectorAll('#title-casual .mode-option').length === 2, 'Casual: Quick game, Practice');
-  document.querySelector('#title-casual [data-go="quick"]').click();
-  ok(at() === 'title-quick', 'Quick game opens its options');
-  document.querySelector('#title-quick .title-back').click();
-  ok(at() === 'title-casual', 'Back goes to Casual');
+  ok(showing() === 'title-home title-casual' && document.getElementById('title').classList.contains('drawer-open'), 'Casual opens a drawer beside the dock');
+  ok(document.querySelectorAll('#title-casual .title-start').length === 3 && document.activeElement === document.querySelector('#title-casual .title-start'), '3v3 game, Free shot, Around the world (3v3 focused)');
+  const dock = document.querySelector('.home-dock').getBoundingClientRect();
+  const drawer = document.querySelector('.title-panel').getBoundingClientRect();
+  ok(drawer.left - dock.right > 5, 'a gap between the dock and the drawer');
   window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', bubbles: true }));
-  ok(at() === 'title-home', 'Esc goes home');
+  ok(showing() === 'title-home', 'Esc closes it');
   document.querySelector('.dock-row[data-go="versus"]').click();
-  document.querySelector('#title-versus [data-go="online"]').click();
-  ok(at() === 'title-online', '2 Player > Online');
-  document.querySelector('#title-online .title-back').click();
-  ok(at() === 'title-versus', 'Back to 2 Player');
+  ok(!document.getElementById('versus-local').hidden && document.getElementById('versus-online').hidden, '2 Player: the Local tab');
+  document.querySelector('[data-versus-tab="online"]').click();
+  ok(document.getElementById('versus-local').hidden && !document.getElementById('versus-online').hidden, 'the Online tab');
+  Title.show('duo');
+  ok(showing() === 'title-home title-versus' && !document.getElementById('versus-local').hidden, 'the old screens open the drawers');
+  document.querySelector('#title-versus .title-back').click();
+  ok(showing() === 'title-home', 'Close goes home');
 });

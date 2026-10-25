@@ -7,7 +7,9 @@ A Retro Bowl-style 2.5D pixel-art basketball game. Plain HTML5 canvas and JavaSc
 Open `index.html` in a browser (double-clicking works), or serve the folder from any static host.
 
 The game opens on the **main menu**, with the computer playing a game against itself behind it. A dock on the left
-holds the modes: **Career**, **Locker room**, **Casual** (Quick game and Practice), **2 Player** (Local and Online), **Customize** (your team's look
+holds the modes: **Career**, **Locker room**, **Casual** and **2 Player** (each slides a drawer out beside the dock:
+Casual has a 3v3 game with its options under it, the daily game and the practice drills; 2 Player has Local and
+Online tabs), **Customize** (your team's look
 and names) and **Settings** (controls and display), plus a Fullscreen button. Along the bottom runs your career
 season as a road, a stop for every game: played weeks show their score (green for a win, red for a loss), this
 week's stop is yellow, and the semifinal and final come last. Above this week's stop are its matchup and three

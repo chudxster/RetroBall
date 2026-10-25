@@ -137,6 +137,45 @@ function pips(n) {
   return Array.from({ length: UPGRADES.max }, (_, i) => el('span', i < n ? 'pip on' : 'pip'));
 }
 
+// The menus' pixel icons (the main menu's dock and road, the pause menu's rail), one letter per pixel in the
+// game's palette ('.' is see-through).
+const ICON_COLORS = { k: '#1a1c2c', h: '#e43b44', r: '#b13e53', o: '#ef7d57', y: '#ffcd75', w: '#f4f4f4', v: '#94b0c2', s: '#41a6f6', b: '#3b5dc9', g: '#38b764', l: '#a7f070', t: '#257179', u: '#333c57' };
+const ICONS = {
+  trophy: ['y.yyyyy.y', 'y.yyyyy.y', '.yyyyyyy.', '..yyyyy..', '...yyy...', '....y....', '....y....', '..ooooo..', '..ooooo..'],
+  ball: ['..ookoo..', '.oookooo.', 'ooookoooo', 'ooookoooo', 'kkkkkkkkk', 'ooookoooo', 'ooookoooo', '.oookooo.', '..ookoo..'],
+  duo: ['.........', '.ooo.sss.', '.ooo.sss.', '.........', 'oooo.ssss', 'oooo.ssss', 'oooo.ssss', 'oo.o.s.ss', 'oo.o.s.ss'],
+  cone: ['....o....', '...ooo...', '...www...', '..ooooo..', '..ooooo..', '.wwwwwww.', '.ooooooo.', 'ooooooooo', 'uuuuuuuuu'],
+  globe: ['...sss...', '.ssbsbss.', '.sbbsbbs.', 'sssssssss', 'sbbsbsbbs', 'sssssssss', '.sbbsbbs.', '.ssbsbss.', '...sss...'],
+  jersey: ['.bb...bb.', '.bbb.bbb.', '.bbbbbbb.', '.bbwwwbb.', '.bbbwbbb.', '.bbbwbbb.', '.bbwwwbb.', '.bbbbbbb.', '.bbbbbbb.'],
+  gear: ['...vvv...', '.v.vvv.v.', '..vvvvv..', 'vvv...vvv', 'vvv...vvv', 'vvv...vvv', '..vvvvv..', '.v.vvv.v.', '...vvv...'],
+  full: ['www...www', 'w.......w', 'w.......w', '.........', '.........', '.........', 'w.......w', 'w.......w', 'www...www'],
+  coin: ['..ggg..', '.gllgg.', 'glgggtg', 'glgggtg', 'glgggtg', '.gggtt.', '..ttt..'],
+  go: ['k....', 'kkk..', 'kkkkk', 'kkk..', 'k....'],
+  star: ['...y...', '...y...', 'yyyyyyy', '.yyyyy.', '..yyy..', '.yy.yy.', 'yy...yy'],
+  pad: ['.........', '.vvvvvvv.', 'vvwvvvrvv', 'vwwwvrvrv', 'vvwvvvrvv', 'vvvvvvvvv', 'vv.....vv'],
+  check: ['.....', '....k', '...kk', 'k.kk.', 'kkk..', '.k...'],
+  cross: ['h...h', '.h.h.', '..h..', '.h.h.', 'h...h'],
+};
+
+// An icon as a little canvas, sized in game pixels (--u, see style.css).
+function pixelIcon(name) {
+  const rows = ICONS[name];
+  const c = document.createElement('canvas');
+  c.width = rows[0].length;
+  c.height = rows.length;
+  c.className = 'ico';
+  c.style.width = `calc(var(--u) * ${c.width})`;
+  c.style.height = `calc(var(--u) * ${c.height})`;
+  c.setAttribute('aria-hidden', 'true');
+  const ctx = c.getContext('2d');
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === '.') return;
+    ctx.fillStyle = ICON_COLORS[ch];
+    ctx.fillRect(x, y, 1, 1);
+  }));
+  return c;
+}
+
 // The testing sliders and player tuning (the Dev tab) only show with ?dev=1 in the address.
 const DEV = new URLSearchParams(location.search).get('dev') === '1';
 
@@ -336,6 +375,19 @@ const Menu = (() => {
       for (const b of footButtons) b.hidden = b.dataset.for !== tab.dataset.panel;
     };
     for (const t of tabs) t.addEventListener('click', () => show(t));
+    // The rail: up/down from a tab opens the next one.
+    for (const t of tabs) {
+      t.addEventListener('keydown', (e) => {
+        const step = { ArrowUp: -1, ArrowDown: 1 }[e.code];
+        if (!step) return;
+        e.preventDefault();
+        const live = tabs.filter((x) => !x.hidden);
+        const next = live[(live.indexOf(t) + step + live.length) % live.length];
+        show(next);
+        next.focus();
+      });
+    }
+    for (const s of panel.querySelectorAll('span.ico[data-icon]')) s.replaceWith(pixelIcon(s.dataset.icon));
     show(tabs[0]);
     showTab = (id) => show(tabs.find((t) => t.dataset.panel === id));
   }
@@ -405,55 +457,114 @@ const Menu = (() => {
     sync();
   }
 
-  // Controls: the double-tap dash window and a key button per action. Clicking a button waits for the next key
-  // (Esc cancels); a key already used elsewhere swaps over. Saved by Input.
+  // Controls: the double-tap dash window and the keybinds, for one key set at a time (1 Player, or player 1 or 2 of
+  // 2 Player). A drawn keyboard shows each action's keys in its color; the legend lists the actions with their key.
+  // Click an action, then press a key (or click one on the keyboard; Esc cancels); a key already used elsewhere
+  // swaps over. Saved by Input.
   const KEYBIND_NAMES = {
     up: 'Up', down: 'Down', left: 'Left', right: 'Right',
     shoot: 'Shoot/block', action: 'Dunk/steal', pass: 'Pass/switch', pause: 'Pause',
   };
+  // Each action's color on the keyboard (style.css .act-*).
+  const KEY_ACTION_KINDS = { up: 'move', down: 'move', left: 'move', right: 'move', shoot: 'shoot', action: 'dunk', pass: 'pass', pause: 'pause' };
+  // The drawn keyboard: rows of [code, label, width in keys]; every row is 15 keys wide (null code: a gap).
+  const letters = (s) => [...s].map((ch) => [`Key${ch}`, ch, 1]);
+  const KEYBOARD = [
+    [['Escape', 'Esc', 1], ...[...'1234567890'].map((d) => [`Digit${d}`, d, 1]), ['Minus', '-', 1], ['Equal', '=', 1], ['Backspace', 'Bksp', 2]],
+    [['Tab', 'Tab', 1.5], ...letters('QWERTYUIOP'), ['BracketLeft', '[', 1], ['BracketRight', ']', 1], ['Backslash', '\\', 1.5]],
+    [['CapsLock', 'Caps', 1.75], ...letters('ASDFGHJKL'), ['Semicolon', ';', 1], ['Quote', "'", 1], ['Enter', 'Enter', 2.25]],
+    [['ShiftLeft', 'Shift', 2.25], ...letters('ZXCVBNM'), ['Comma', ',', 1], ['Period', '.', 1], ['Slash', '/', 1], ['ShiftRight', 'Shift', 0.75], ['ArrowUp', '↑', 1], [null, '', 1]],
+    [['ControlLeft', 'Ctrl', 1.5], ['AltLeft', 'Alt', 1.5], ['Space', 'Space', 7], ['AltRight', 'Alt', 2], ['ArrowLeft', '←', 1], ['ArrowDown', '↓', 1], ['ArrowRight', '→', 1]],
+  ];
 
   function initControlsView() {
     const slider = document.getElementById('double-tap');
     const value = document.getElementById('double-tap-value');
-    const list = document.getElementById('keybinds');
-    const duoList = document.getElementById('keybinds-duo');
-    const buttons = []; // { set, name, btn }
-    let listening = null; // { set, name } waiting for a key
+    const keyboard = document.getElementById('keyboard');
+    const legend = document.getElementById('key-legend');
+    const hint = document.getElementById('key-hint');
+    const setButtons = [...panel.querySelectorAll('[data-key-set]')];
+    let set = 'solo';
+    let listening = null; // the action waiting for a key
     let swallowUp = null;
-    const isListening = (b) => !!listening && listening.set === b.set && listening.name === b.name;
+    const caps = []; // { code, btn }
+    const rows = {}; // action name -> legend row
+
+    const bind = (code) => {
+      Input.setBind(set, listening, code);
+      listening = null;
+      sync();
+    };
 
     const sync = () => {
       slider.value = Math.round(Input.settings.doubleTap * 1000);
       value.textContent = `${slider.value}ms`;
-      for (const b of buttons) {
-        b.btn.textContent = isListening(b) ? '...' : Input.keyLabel(b.name, b.set);
-        b.btn.setAttribute('aria-pressed', String(isListening(b)));
+      for (const b of setButtons) b.setAttribute('aria-pressed', String(b.dataset.keySet === set));
+      // Only Esc pauses in 2 Player (the players' keys are all in use).
+      rows.pause.hidden = set !== 'solo';
+      for (const [name, row] of Object.entries(rows)) {
+        row.querySelector('.key-name').textContent = listening === name ? '...' : Input.keyLabel(name, set);
+        row.setAttribute('aria-pressed', String(listening === name));
       }
+      for (const { code, btn } of caps) {
+        const name = code === 'Escape' ? 'pause' : Input.actionFor(set, code);
+        btn.className = `keycap${name ? ` act-${KEY_ACTION_KINDS[name]}` : ''}`;
+        btn.title = name ? KEYBIND_NAMES[name] : '';
+      }
+      keyboard.classList.toggle('picking', !!listening);
+      hint.textContent = listening
+        ? `Press a key (or click one) for ${KEYBIND_NAMES[listening]}. Esc cancels.`
+        : `Click an action to change its key.${set === 'solo' ? ' The arrow keys always move, and Esc always pauses.' : ' Esc pauses.'}`;
     };
 
-    const keyButton = (set, name, text) => {
-      const btn = el('button', 'key-btn');
-      btn.type = 'button';
-      btn.setAttribute('aria-label', `${set === 'solo' ? 'Key' : `${set.toUpperCase()} key`} for ${text}`);
-      const b = { set, name, btn };
-      btn.addEventListener('click', () => {
-        listening = isListening(b) ? null : { set, name };
+    for (const row of KEYBOARD) {
+      const line = el('div', 'keyboard-row');
+      for (const [code, text, width] of row) {
+        let cap;
+        if (code) {
+          cap = el('button', 'keycap', text);
+          cap.type = 'button';
+          cap.tabIndex = -1; // the legend is the keyboard way in; the caps are for the mouse
+          cap.addEventListener('click', () => {
+            if (listening) {
+              if (code !== 'Escape') bind(code);
+              return;
+            }
+            // Not picking: clicking a used key picks its action.
+            const name = Input.actionFor(set, code);
+            if (name && KEYBIND_NAMES[name]) {
+              listening = name;
+              sync();
+            }
+          });
+          caps.push({ code, btn: cap });
+        } else {
+          cap = el('span', 'keycap-gap');
+        }
+        cap.style.gridColumn = `span ${width * 4}`;
+        line.append(cap);
+      }
+      keyboard.append(line);
+    }
+
+    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
+      const row = el('button', `legend-row act-${KEY_ACTION_KINDS[name]}`);
+      row.type = 'button';
+      row.append(el('span', 'legend-swatch'), el('span', 'legend-label', text), el('span', 'key-name'));
+      row.addEventListener('click', () => {
+        listening = listening === name ? null : name;
         sync();
       });
-      buttons.push(b);
-      return btn;
-    };
-
-    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
-      const row = el('div', 'keybind');
-      row.append(el('span', 'keybind-label', text), keyButton('solo', name, text));
-      list.append(row);
+      rows[name] = row;
+      legend.append(row);
     }
-    // 2 Player: each action with player 1's key and player 2's (only Esc pauses there).
-    duoList.append(el('span', ''), el('span', 'keybind-label', 'P1'), el('span', 'keybind-label', 'P2'));
-    for (const [name, text] of Object.entries(KEYBIND_NAMES)) {
-      if (name === 'pause') continue;
-      duoList.append(el('span', 'keybind-label', text), keyButton('p1', name, text), keyButton('p2', name, text));
+
+    for (const b of setButtons) {
+      b.addEventListener('click', () => {
+        set = b.dataset.keySet;
+        listening = null;
+        sync();
+      });
     }
 
     // While waiting for a key, grab it before the game or the pause shortcut sees it (and swallow its key-up so
@@ -462,10 +573,13 @@ const Menu = (() => {
       if (!listening) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (e.code !== 'Escape') Input.setBind(listening.set, listening.name, e.code);
       swallowUp = e.code;
-      listening = null;
-      sync();
+      if (e.code === 'Escape') {
+        listening = null;
+        sync();
+      } else {
+        bind(e.code);
+      }
     }, true);
     window.addEventListener('keyup', (e) => {
       if (e.code !== swallowUp) return;

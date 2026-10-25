@@ -38,8 +38,7 @@ leaving a daily game early counts as a miss.
 
 **2 Player** is two people on one keyboard: **Versus 3v3** (each runs a team with two AI teammates), **Versus 1v1**,
 or **Co-op** (together, plus an AI teammate, against three AI players). Player 1 plays with WASD, R (shoot), E
-(dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets can be changed in Settings (the Controls
-tab), and only Esc pauses. Before tip-off both players get the same random number of upgrade points and spend them
+(dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets can be changed in Settings (the Controls tab), and only Esc pauses. Before tip-off both players get the same random number of upgrade points and spend them
 on a split screen at the same time (up/down to pick, right to add, left to take back, shoot when ready): in versus
 they upgrade their whole team, in co-op their own player. At halftime they get more. After the final buzzer player
 1's shoot key **runs it back** with the same pre-game upgrades, player 2's starts a new draft.
@@ -97,7 +96,7 @@ opponent gets as many levels as your player in the same spot, spread at random (
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal (reaching in too close risks a foul) |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball (free shot: get the ball back where you stand) |
-| Esc / P | Pause menu: Player (customize), Upgrades, Controls (keybinds, dash double-tap timing), UI (stats box), plus Main menu, Restart and Resume | |
+| Esc / P | Pause menu, a dock on the right with its tabs down a rail: Player (customize), Upgrades, Controls (dash double-tap timing, and a drawn keyboard showing each action's keys in its color: click an action, then press or click its new key; 1 Player or either 2 Player player), UI (stats box, sound, trophies), plus Resume, Restart and Main menu | |
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 

@@ -17,236 +17,246 @@
       <span></span><span></span>
     </button>
 
+    <!-- Pause menu (the Side Rail design): a full-height dock on the right, the tabs down a rail on its left with
+         Resume, Restart and Main menu at the rail's foot, and the picked tab beside it (its reset button below it). -->
     <div id="menu" role="dialog" aria-label="Pause menu" hidden>
-      <div class="menu-head tabs" role="tablist" aria-label="Pause menu sections">
-        <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true">Player</button>
-        <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
-        <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
-        <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false">UI</button>
-        <!-- Only with ?dev=1 in the address (see menu.js): playtesting tools, testing sliders and player tuning. -->
-        <button type="button" class="tab" role="tab" data-panel="dev-view" aria-selected="false" hidden>Testing</button>
+      <div class="menu-rail">
+        <p class="rail-head">Paused</p>
+        <div class="tabs" role="tablist" aria-label="Pause menu sections" aria-orientation="vertical">
+          <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true"><span class="ico" data-icon="jersey"></span>Player</button>
+          <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false"><span class="ico" data-icon="star"></span>Upgrades</button>
+          <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false"><span class="ico" data-icon="pad"></span>Controls</button>
+          <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false"><span class="ico" data-icon="gear"></span>UI</button>
+          <!-- Only with ?dev=1 in the address (see menu.js): playtesting tools, testing sliders and player tuning. -->
+          <button type="button" class="tab tab-dev" role="tab" data-panel="dev-view" aria-selected="false" hidden><span class="ico" data-icon="cone"></span>Testing</button>
+        </div>
+        <span class="rail-space"></span>
+        <!-- In a game only (menu.js hides them when the menu was opened from the main menu). -->
+        <button type="button" class="btn rail-resume" id="resume">Resume</button>
+        <button type="button" class="btn btn-quiet" id="restart-game">Restart</button>
+        <button type="button" class="btn btn-quiet rail-leave" id="to-title">Main menu</button>
       </div>
 
-      <div class="menu-body tab-panel" id="player-view" role="tabpanel">
-        <div class="preview-col">
-          <canvas id="preview" width="80" height="92" aria-label="Player preview"></canvas>
-          <div class="faces" role="group" aria-label="Pick a player to customize"></div>
-          <button type="button" class="btn btn-quiet" id="randomize-look">Randomize</button>
-        </div>
+      <div class="menu-main">
+        <div class="menu-body tab-panel" id="player-view" role="tabpanel">
+          <div class="preview-col">
+            <canvas id="preview" width="80" height="92" aria-label="Player preview"></canvas>
+            <div class="faces" role="group" aria-label="Pick a player to customize"></div>
+            <button type="button" class="btn btn-quiet" id="randomize-look">Randomize</button>
+          </div>
 
-        <div class="controls">
-          <div class="row">
-            <label for="skin">Skin</label>
-            <input type="color" id="skin" data-key="skin">
-            <input class="hex" data-key="skin" maxlength="7" spellcheck="false" aria-label="Skin hex">
-          </div>
-          <div class="row presets" id="skin-presets">
-            <span class="label preset-label">Recommended</span>
-          </div>
-          <div class="row">
-            <span class="label">Hair style</span>
-            <button type="button" class="step" data-step="-1" aria-label="Previous hair style">&lt;</button>
-            <span class="value" id="hair-style-name"></span>
-            <button type="button" class="step" data-step="1" aria-label="Next hair style">&gt;</button>
-          </div>
-          <div class="row">
-            <label for="hair">Hair</label>
-            <input type="color" id="hair" data-key="hair">
-            <input class="hex" data-key="hair" maxlength="7" spellcheck="false" aria-label="Hair hex">
-          </div>
-          <div class="row">
-            <label for="jersey">Jersey</label>
-            <input type="color" id="jersey" data-key="jersey">
-            <input class="hex" data-key="jersey" maxlength="7" spellcheck="false" aria-label="Jersey hex">
-          </div>
-          <div class="row">
-            <label for="shorts">Shorts</label>
-            <input type="color" id="shorts" data-key="shorts">
-            <input class="hex" data-key="shorts" maxlength="7" spellcheck="false" aria-label="Shorts hex">
-          </div>
-          <div class="row">
-            <label for="number">Number</label>
-            <input id="number" class="num" inputmode="numeric" maxlength="2" autocomplete="off">
-          </div>
-          <div class="row">
-            <label for="shoe">Shoes</label>
-            <input type="color" id="shoe" data-key="shoe">
-            <input class="hex" data-key="shoe" maxlength="7" spellcheck="false" aria-label="Shoes hex">
-          </div>
-          <div class="row">
-            <label for="laces">Laces</label>
-            <input type="color" id="laces" data-key="laces">
-            <input class="hex" data-key="laces" maxlength="7" spellcheck="false" aria-label="Laces hex">
-          </div>
-        </div>
-      </div>
-
-      <!-- Upgrades and names for each player on the user's team. Free to set for now; saved between visits. -->
-      <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
-        <p class="test-note" id="upgrade-note"></p>
-        <div class="row player-pick">
-          <div class="faces" role="group" aria-label="Pick a player to upgrade"></div>
-          <input id="player-name" class="name" maxlength="12" spellcheck="false" autocomplete="off" aria-label="Player name">
-          <span class="player-num" id="player-num"></span>
-        </div>
-        <div class="row upgrade" data-upgrade="speed">
-          <span class="label">Speed</span>
-          <button type="button" class="step" data-delta="-1" aria-label="Lower speed">-</button>
-          <span class="pips" aria-hidden="true"></span>
-          <button type="button" class="step" data-delta="1" aria-label="Raise speed">+</button>
-          <span class="upgrade-effect"></span>
-        </div>
-        <div class="row upgrade" data-upgrade="shooting">
-          <span class="label">Shooting</span>
-          <button type="button" class="step" data-delta="-1" aria-label="Lower shooting">-</button>
-          <span class="pips" aria-hidden="true"></span>
-          <button type="button" class="step" data-delta="1" aria-label="Raise shooting">+</button>
-          <span class="upgrade-effect"></span>
-        </div>
-        <div class="row upgrade" data-upgrade="dunking">
-          <span class="label">Dunking</span>
-          <button type="button" class="step" data-delta="-1" aria-label="Lower dunking">-</button>
-          <span class="pips" aria-hidden="true"></span>
-          <button type="button" class="step" data-delta="1" aria-label="Raise dunking">+</button>
-          <span class="upgrade-effect"></span>
-        </div>
-        <div class="row upgrade" data-upgrade="defense">
-          <span class="label">Defense</span>
-          <button type="button" class="step" data-delta="-1" aria-label="Lower defense">-</button>
-          <span class="pips" aria-hidden="true"></span>
-          <button type="button" class="step" data-delta="1" aria-label="Raise defense">+</button>
-          <span class="upgrade-effect"></span>
-        </div>
-        <div class="row upgrade" data-upgrade="dash">
-          <span class="label">Dash</span>
-          <button type="button" class="step" data-delta="-1" aria-label="Lower dash">-</button>
-          <span class="pips" aria-hidden="true"></span>
-          <button type="button" class="step" data-delta="1" aria-label="Raise dash">+</button>
-          <span class="upgrade-effect"></span>
-        </div>
-      </div>
-
-      <!-- Testing (only with ?dev=1 in the address): playtesting tools, testing sliders and player tuning. -->
-      <div class="tab-panel stack-view" id="dev-view" role="tabpanel" hidden>
-        <!-- Tools that jump the game to the moment you want to check (menu.js; main.js does the work). The game ones
-             close the menu; each is disabled where it doesn't apply. -->
-        <div id="testing-tools">
-          <p class="test-note">Game (closes the menu)</p>
-          <div class="tool-grid">
-            <button type="button" class="btn btn-quiet" data-tool="endGame">End game</button>
-            <button type="button" class="btn btn-quiet" data-tool="endPeriod">End period</button>
-            <button type="button" class="btn btn-quiet" data-tool="tenSeconds">10 s left</button>
-            <button type="button" class="btn btn-quiet" data-tool="shotClock">Shot clock 3 s</button>
-            <button type="button" class="btn btn-quiet" data-tool="homePoints">Home +3</button>
-            <button type="button" class="btn btn-quiet" data-tool="awayPoints">Away +3</button>
-            <button type="button" class="btn btn-quiet" data-tool="ballToMe">Ball to me</button>
-            <button type="button" class="btn btn-quiet" data-tool="freeThrow" title="Your player is fouled and goes to the line">Free throw</button>
-          </div>
-          <p class="test-note">Career</p>
-          <div class="tool-grid">
-            <button type="button" class="btn btn-quiet" data-tool="tokens">+100 tokens</button>
+          <div class="controls">
+            <div class="row">
+              <label for="skin">Skin</label>
+              <input type="color" id="skin" data-key="skin">
+              <input class="hex" data-key="skin" maxlength="7" spellcheck="false" aria-label="Skin hex">
+            </div>
+            <div class="row presets" id="skin-presets">
+              <span class="label preset-label">Recommended</span>
+            </div>
+            <div class="row">
+              <span class="label">Hair style</span>
+              <button type="button" class="step" data-step="-1" aria-label="Previous hair style">&lt;</button>
+              <span class="value" id="hair-style-name"></span>
+              <button type="button" class="step" data-step="1" aria-label="Next hair style">&gt;</button>
+            </div>
+            <div class="row">
+              <label for="hair">Hair</label>
+              <input type="color" id="hair" data-key="hair">
+              <input class="hex" data-key="hair" maxlength="7" spellcheck="false" aria-label="Hair hex">
+            </div>
+            <div class="row">
+              <label for="jersey">Jersey</label>
+              <input type="color" id="jersey" data-key="jersey">
+              <input class="hex" data-key="jersey" maxlength="7" spellcheck="false" aria-label="Jersey hex">
+            </div>
+            <div class="row">
+              <label for="shorts">Shorts</label>
+              <input type="color" id="shorts" data-key="shorts">
+              <input class="hex" data-key="shorts" maxlength="7" spellcheck="false" aria-label="Shorts hex">
+            </div>
+            <div class="row">
+              <label for="number">Number</label>
+              <input id="number" class="num" inputmode="numeric" maxlength="2" autocomplete="off">
+            </div>
+            <div class="row">
+              <label for="shoe">Shoes</label>
+              <input type="color" id="shoe" data-key="shoe">
+              <input class="hex" data-key="shoe" maxlength="7" spellcheck="false" aria-label="Shoes hex">
+            </div>
+            <div class="row">
+              <label for="laces">Laces</label>
+              <input type="color" id="laces" data-key="laces">
+              <input class="hex" data-key="laces" maxlength="7" spellcheck="false" aria-label="Laces hex">
+            </div>
           </div>
         </div>
 
-        <!-- Odds: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
-        <div class="stack-view test-section" id="test-view">
-          <p class="test-note">Odds and AI (not saved)</p>
-          <p class="test-note">Dunk odds</p>
-          <div class="row">
-            <label for="hang-chance">Rim hang</label>
-            <input type="range" id="hang-chance" min="0" max="100" step="1" data-odds="hangChance">
-            <span class="value pct" id="hang-chance-value"></span>
+        <!-- Upgrades and names for each player on the user's team. Free to set for now; saved between visits. -->
+        <div class="tab-panel stack-view" id="upgrade-view" role="tabpanel" hidden>
+          <p class="test-note" id="upgrade-note"></p>
+          <div class="row player-pick">
+            <div class="faces" role="group" aria-label="Pick a player to upgrade"></div>
+            <input id="player-name" class="name" maxlength="12" spellcheck="false" autocomplete="off" aria-label="Player name">
+            <span class="player-num" id="player-num"></span>
           </div>
-          <div class="row">
-            <label for="shatter-chance">Shatter</label>
-            <input type="range" id="shatter-chance" min="0" max="100" step="1" data-odds="shatterChance">
-            <span class="value pct" id="shatter-chance-value"></span>
+          <div class="row upgrade" data-upgrade="speed">
+            <span class="label">Speed</span>
+            <button type="button" class="step" data-delta="-1" aria-label="Lower speed">-</button>
+            <span class="pips" aria-hidden="true"></span>
+            <button type="button" class="step" data-delta="1" aria-label="Raise speed">+</button>
+            <span class="upgrade-effect"></span>
           </div>
-          <div class="row">
-            <span class="label">Normal</span>
-            <span class="slider-spacer"></span>
-            <span class="value pct" id="normal-chance-value"></span>
+          <div class="row upgrade" data-upgrade="shooting">
+            <span class="label">Shooting</span>
+            <button type="button" class="step" data-delta="-1" aria-label="Lower shooting">-</button>
+            <span class="pips" aria-hidden="true"></span>
+            <button type="button" class="step" data-delta="1" aria-label="Raise shooting">+</button>
+            <span class="upgrade-effect"></span>
           </div>
-          <p class="test-note">AI</p>
-          <div class="row">
-            <label for="ai-level">Demo AI</label>
-            <input type="range" id="ai-level" min="0" max="100" step="1">
-            <span class="value pct" id="ai-level-value"></span>
+          <div class="row upgrade" data-upgrade="dunking">
+            <span class="label">Dunking</span>
+            <button type="button" class="step" data-delta="-1" aria-label="Lower dunking">-</button>
+            <span class="pips" aria-hidden="true"></span>
+            <button type="button" class="step" data-delta="1" aria-label="Raise dunking">+</button>
+            <span class="upgrade-effect"></span>
           </div>
-          <p class="test-note">Arena</p>
-          <div class="row">
-            <label for="crowd-density">Crowd</label>
-            <input type="range" id="crowd-density" min="0" max="100" step="1">
-            <span class="value pct" id="crowd-density-value"></span>
+          <div class="row upgrade" data-upgrade="defense">
+            <span class="label">Defense</span>
+            <button type="button" class="step" data-delta="-1" aria-label="Lower defense">-</button>
+            <span class="pips" aria-hidden="true"></span>
+            <button type="button" class="step" data-delta="1" aria-label="Raise defense">+</button>
+            <span class="upgrade-effect"></span>
+          </div>
+          <div class="row upgrade" data-upgrade="dash">
+            <span class="label">Dash</span>
+            <button type="button" class="step" data-delta="-1" aria-label="Lower dash">-</button>
+            <span class="pips" aria-hidden="true"></span>
+            <button type="button" class="step" data-delta="1" aria-label="Raise dash">+</button>
+            <span class="upgrade-effect"></span>
           </div>
         </div>
 
-        <!-- Player tuning: every config value that shapes how players play, most important first (rows built by
-             menu.js from TUNING). Saved; a changed value can be put back one at a time or all at once. -->
-        <div class="stack-view test-section" id="tuning-view">
-          <div class="tuning-head">
-            <p class="test-note">Player tuning (saved)</p>
-            <button type="button" class="btn btn-quiet" id="reset-tuning">Reset all</button>
+        <!-- Testing (only with ?dev=1 in the address): playtesting tools, testing sliders and player tuning. -->
+        <div class="tab-panel stack-view" id="dev-view" role="tabpanel" hidden>
+          <!-- Tools that jump the game to the moment you want to check (menu.js; main.js does the work). The game ones
+               close the menu; each is disabled where it doesn't apply. -->
+          <div id="testing-tools">
+            <p class="test-note">Game (closes the menu)</p>
+            <div class="tool-grid">
+              <button type="button" class="btn btn-quiet" data-tool="endGame">End game</button>
+              <button type="button" class="btn btn-quiet" data-tool="endPeriod">End period</button>
+              <button type="button" class="btn btn-quiet" data-tool="tenSeconds">10 s left</button>
+              <button type="button" class="btn btn-quiet" data-tool="shotClock">Shot clock 3 s</button>
+              <button type="button" class="btn btn-quiet" data-tool="homePoints">Home +3</button>
+              <button type="button" class="btn btn-quiet" data-tool="awayPoints">Away +3</button>
+              <button type="button" class="btn btn-quiet" data-tool="ballToMe">Ball to me</button>
+              <button type="button" class="btn btn-quiet" data-tool="freeThrow" title="Your player is fouled and goes to the line">Free throw</button>
+            </div>
+            <p class="test-note">Career</p>
+            <div class="tool-grid">
+              <button type="button" class="btn btn-quiet" data-tool="tokens">+100 tokens</button>
+            </div>
           </div>
-          <div class="tuning-list" id="tuning-list"></div>
-        </div>
-      </div>
 
-      <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->
-      <div class="tab-panel stack-view" id="controls-view" role="tabpanel" hidden>
-        <p class="test-note">Dash</p>
-        <div class="row">
-          <label for="double-tap">Double tap</label>
-          <input type="range" id="double-tap" min="50" max="400" step="5">
-          <span class="value pct" id="double-tap-value"></span>
-        </div>
-        <p class="test-note">Keybinds (click, then press a key)</p>
-        <div class="keybinds" id="keybinds"></div>
-        <p class="test-note">2 Player keybinds</p>
-        <div class="keybinds keybinds-duo" id="keybinds-duo"></div>
-      </div>
+          <!-- Odds: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
+          <div class="stack-view test-section" id="test-view">
+            <p class="test-note">Odds and AI (not saved)</p>
+            <p class="test-note">Dunk odds</p>
+            <div class="row">
+              <label for="hang-chance">Rim hang</label>
+              <input type="range" id="hang-chance" min="0" max="100" step="1" data-odds="hangChance">
+              <span class="value pct" id="hang-chance-value"></span>
+            </div>
+            <div class="row">
+              <label for="shatter-chance">Shatter</label>
+              <input type="range" id="shatter-chance" min="0" max="100" step="1" data-odds="shatterChance">
+              <span class="value pct" id="shatter-chance-value"></span>
+            </div>
+            <div class="row">
+              <span class="label">Normal</span>
+              <span class="slider-spacer"></span>
+              <span class="value pct" id="normal-chance-value"></span>
+            </div>
+            <p class="test-note">AI</p>
+            <div class="row">
+              <label for="ai-level">Demo AI</label>
+              <input type="range" id="ai-level" min="0" max="100" step="1">
+              <span class="value pct" id="ai-level-value"></span>
+            </div>
+            <p class="test-note">Arena</p>
+            <div class="row">
+              <label for="crowd-density">Crowd</label>
+              <input type="range" id="crowd-density" min="0" max="100" step="1">
+              <span class="value pct" id="crowd-density-value"></span>
+            </div>
+          </div>
 
-      <!-- On-screen display and sound. Saved between visits. -->
-      <div class="tab-panel stack-view" id="ui-view" role="tabpanel" hidden>
-        <p class="test-note">On screen</p>
-        <div class="row">
-          <span class="label">Stats</span>
-          <button type="button" class="key-btn" id="show-stats" aria-pressed="false" aria-label="Show stats"></button>
-          <span class="upgrade-effect">Score and shooting, top left</span>
+          <!-- Player tuning: every config value that shapes how players play, most important first (rows built by
+               menu.js from TUNING). Saved; a changed value can be put back one at a time or all at once. -->
+          <div class="stack-view test-section" id="tuning-view">
+            <div class="tuning-head">
+              <p class="test-note">Player tuning (saved)</p>
+              <button type="button" class="btn btn-quiet" id="reset-tuning">Reset all</button>
+            </div>
+            <div class="tuning-list" id="tuning-list"></div>
+          </div>
         </div>
-        <div class="row">
-          <span class="label">Shelf</span>
-          <button type="button" class="key-btn" id="show-trophies" aria-pressed="false" aria-label="Show the trophy shelf"></button>
-          <span class="upgrade-effect">Your trophies on top of the scorer's table</span>
-        </div>
-        <p class="test-note">Audio</p>
-        <div class="row">
-          <span class="label">Sound</span>
-          <button type="button" class="key-btn" id="sound-on" aria-pressed="false" aria-label="Sound"></button>
-        </div>
-        <div class="row">
-          <label for="sound-volume">Volume</label>
-          <input type="range" id="sound-volume" min="0" max="100" step="5">
-          <span class="value pct" id="sound-volume-value"></span>
-        </div>
-        <!-- Every trophy family's metal and next goal, and the secrets (??? until earned); built by menu.js. -->
-        <p class="test-note">Trophies</p>
-        <div class="trophy-list" id="trophy-list"></div>
-      </div>
 
-      <div class="menu-foot">
-        <span class="foot-left">
+        <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->
+        <div class="tab-panel stack-view" id="controls-view" role="tabpanel" hidden>
+          <p class="test-note">Dash</p>
+          <div class="row">
+            <label for="double-tap">Double tap</label>
+            <input type="range" id="double-tap" min="50" max="400" step="5">
+            <span class="value pct" id="double-tap-value"></span>
+          </div>
+          <!-- Keybinds: whose keys (1 Player, or either player of 2 Player), a drawn keyboard with each action's keys in
+               its color, and a legend: click an action (or press Enter on it), then press or click its new key. -->
+          <div class="row key-sets" role="group" aria-label="Whose keys">
+            <button type="button" class="key-btn" data-key-set="solo" aria-pressed="true">1 Player</button>
+            <button type="button" class="key-btn" data-key-set="p1" aria-pressed="false">2P: P1</button>
+            <button type="button" class="key-btn" data-key-set="p2" aria-pressed="false">2P: P2</button>
+          </div>
+          <div class="keyboard" id="keyboard"></div>
+          <div class="key-legend" id="key-legend"></div>
+          <p class="key-hint" id="key-hint"></p>
+        </div>
+
+        <!-- On-screen display and sound. Saved between visits. -->
+        <div class="tab-panel stack-view" id="ui-view" role="tabpanel" hidden>
+          <p class="test-note">On screen</p>
+          <div class="row">
+            <span class="label">Stats</span>
+            <button type="button" class="key-btn" id="show-stats" aria-pressed="false" aria-label="Show stats"></button>
+            <span class="upgrade-effect">Score and shooting, top left</span>
+          </div>
+          <div class="row">
+            <span class="label">Shelf</span>
+            <button type="button" class="key-btn" id="show-trophies" aria-pressed="false" aria-label="Show the trophy shelf"></button>
+            <span class="upgrade-effect">Your trophies on top of the scorer's table</span>
+          </div>
+          <p class="test-note">Audio</p>
+          <div class="row">
+            <span class="label">Sound</span>
+            <button type="button" class="key-btn" id="sound-on" aria-pressed="false" aria-label="Sound"></button>
+          </div>
+          <div class="row">
+            <label for="sound-volume">Volume</label>
+            <input type="range" id="sound-volume" min="0" max="100" step="5">
+            <span class="value pct" id="sound-volume-value"></span>
+          </div>
+          <!-- Every trophy family's metal and next goal, and the secrets (??? until earned); built by menu.js. -->
+          <p class="test-note">Trophies</p>
+          <div class="trophy-list" id="trophy-list"></div>
+        </div>
+
+        <div class="menu-foot">
           <button type="button" class="btn btn-quiet" id="reset-look" data-for="player-view">Reset look</button>
           <button type="button" class="btn btn-quiet" id="reset-upgrades" data-for="upgrade-view" hidden>Reset</button>
           <button type="button" class="btn btn-quiet" id="reset-odds" data-for="dev-view" hidden>Test defaults</button>
           <button type="button" class="btn btn-quiet" id="reset-controls" data-for="controls-view" hidden>Defaults</button>
-        </span>
-        <span class="foot-right">
-          <!-- In a game only (menu.js hides them when the menu was opened from the main menu). -->
-          <button type="button" class="btn btn-quiet" id="to-title">Main menu</button>
-          <button type="button" class="btn btn-quiet" id="restart-game">Restart</button>
-          <button type="button" class="btn" id="resume">Resume</button>
-        </span>
+        </div>
       </div>
     </div>
 

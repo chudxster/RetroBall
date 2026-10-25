@@ -152,6 +152,8 @@ const Input = (() => {
     reset,
     save,
     keyLabel: (name, set = 'solo') => label(binds[set][name]),
+    // The action `code` does in `set` (in solo play the arrows always move too), or null.
+    actionFor: (set, code) => Object.keys(binds[set]).find((n) => isBound(set, n, code)) || null,
     moveLabel,
     // The solo pause key (in 2 Player mode only Esc pauses: the keys belong to the players).
     isPause: (code) => !twoPlayer && isBound('solo', 'pause', code),

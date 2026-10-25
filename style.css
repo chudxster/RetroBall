@@ -12,9 +12,11 @@ body {
   justify-content: center;
 }
 
-/* --px is one game pixel in CSS pixels; main.js sets it whenever the game is resized. */
+/* --px is two game pixels in CSS pixels (1/320 of the width); main.js sets it whenever the game is resized. --u is one
+   game pixel: the main menu's home screen and the pause menu are laid out in it. */
 #stage {
   --px: 3px;
+  --u: calc(var(--px) / 2);
   position: relative;
 }
 
@@ -74,16 +76,18 @@ input {
   background: #3b5dc9;
 }
 
-/* Pause menu panel */
+/* Pause menu (the Side Rail design): a full-height dock on the right, laid out in game pixels (its --px is one game
+   pixel, --u), with the tabs down a rail on the left and the picked tab beside it. */
 #menu {
+  --px: var(--u);
   position: absolute;
-  top: calc(var(--px) * 17);
+  top: calc(var(--px) * 3);
   right: calc(var(--px) * 3);
-  width: calc(var(--px) * 236);
-  max-height: calc(var(--px) * 158);
-  overflow-y: auto;
+  bottom: calc(var(--px) * 3);
+  width: calc(var(--px) * 314);
+  display: grid;
+  grid-template-columns: calc(var(--px) * 74) 1fr;
   box-sizing: border-box;
-  padding: calc(var(--px) * 4);
   background: #1a1c2c;
   border: var(--px) solid #f4f4f4;
   box-shadow: calc(var(--px) * 3) calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.5);
@@ -94,12 +98,96 @@ input {
   text-transform: uppercase;
 }
 
+/* The rail: "Paused", the tabs (icon + name; Testing in orange), then Resume, Restart and Main menu at its foot */
+.menu-rail {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 2);
+  min-height: 0;
+  padding: calc(var(--px) * 4) 0;
+  background: #262b44;
+  border-right: var(--px) solid #333c57;
+}
+
+.rail-head {
+  margin: 0;
+  padding: calc(var(--px) * 2) calc(var(--px) * 6) calc(var(--px) * 6);
+  font-size: calc(var(--px) * 9);
+  color: #ffcd75;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 2);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 5) calc(var(--px) * 6);
+  background: none;
+  border: var(--px) solid transparent;
+  border-right: 0;
+  font-size: calc(var(--px) * 7);
+  color: #94b0c2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: #f4f4f4;
+}
+
+/* The open tab joins the content beside it */
+.tab[aria-selected="true"] {
+  margin-right: calc(var(--px) * -1);
+  background: #1a1c2c;
+  border-color: #333c57;
+  color: #ffcd75;
+}
+
+.tab.tab-dev {
+  color: #ef7d57;
+}
+
+.rail-space {
+  flex: 1;
+}
+
+.menu-rail .btn {
+  margin: 0 calc(var(--px) * 4);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  font-size: calc(var(--px) * 6.5);
+  text-align: center;
+}
+
+.menu-rail .rail-resume {
+  padding: calc(var(--px) * 6) calc(var(--px) * 4);
+  font-size: calc(var(--px) * 8);
+}
+
+.menu-rail .rail-leave {
+  background: transparent;
+  border-color: #566c86;
+}
+
+/* The picked tab: the whole height, scrolling if it has to */
+.menu-main {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--px) * 6);
+}
+
 #menu[hidden],
 #menu [hidden] {
   display: none;
 }
 
-.menu-head,
 .menu-foot,
 .tuning-head {
   display: flex;
@@ -107,18 +195,19 @@ input {
   justify-content: space-between;
 }
 
-.menu-head {
-  margin-bottom: calc(var(--px) * 3);
-}
-
-/* Stuck to the bottom of the menu, so Resume (and the tab's reset) stay in reach on tabs that scroll */
+/* The tab's reset button, stuck to the bottom of the content so it stays in reach on tabs that scroll */
 .menu-foot {
   position: sticky;
-  bottom: calc(var(--px) * -4);
-  margin: calc(var(--px) * 3) calc(var(--px) * -4) calc(var(--px) * -4);
-  padding: calc(var(--px) * 3) calc(var(--px) * 4) calc(var(--px) * 4);
+  bottom: calc(var(--px) * -6);
+  justify-content: flex-end;
+  margin: auto calc(var(--px) * -6) calc(var(--px) * -6);
+  padding: calc(var(--px) * 3) calc(var(--px) * 6) calc(var(--px) * 6);
   background: #1a1c2c;
   border-top: var(--px) solid #333c57;
+}
+
+.menu-foot .btn {
+  font-size: 0.8em;
 }
 
 .stack-view {
@@ -126,13 +215,6 @@ input {
   flex-direction: column;
   gap: calc(var(--px) * 3);
   min-height: calc(var(--px) * 92);
-}
-
-/* Tabs across the top of the pause menu */
-.tabs {
-  justify-content: flex-start;
-  gap: calc(var(--px) * 2);
-  border-bottom: var(--px) solid #333c57;
 }
 
 /* Player tuning in the Dev tab, set off from the testing sliders above. */
@@ -237,34 +319,6 @@ input {
   color: #566c86;
 }
 
-/* Smaller than the menu text so every tab fits on one row. */
-.tab {
-  margin-bottom: calc(var(--px) * -1);
-  padding: calc(var(--px) * 2) calc(var(--px) * 2);
-  font-size: 0.8em;
-  background: none;
-  border: var(--px) solid transparent;
-  color: #94b0c2;
-  cursor: pointer;
-}
-
-.tab:hover {
-  color: #f4f4f4;
-}
-
-.tab[aria-selected="true"] {
-  background: #1a1c2c;
-  border-color: #333c57;
-  border-bottom-color: #1a1c2c;
-  color: #ffcd75;
-}
-
-.foot-left,
-.foot-right {
-  display: flex;
-  gap: calc(var(--px) * 3);
-}
-
 /* Upgrade level pips: filled up to the current level */
 .pips {
   display: flex;
@@ -340,25 +394,6 @@ input {
   min-width: calc(var(--px) * 16);
   color: #94b0c2;
   text-align: center;
-}
-
-/* Keybinds: two columns of action + key button */
-.keybinds {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: calc(var(--px) * 2) calc(var(--px) * 6);
-}
-
-.keybind {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(var(--px) * 3);
-}
-
-.keybind-label {
-  font-size: 0.75em;
-  color: #94b0c2;
 }
 
 .key-btn {
@@ -670,24 +705,12 @@ input[type="color"]::-moz-color-swatch {
   align-self: flex-start;
 }
 
-/* 2 Player keybinds: action, player 1's key, player 2's key */
-.keybinds.keybinds-duo {
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: calc(var(--px) * 2) calc(var(--px) * 4);
-}
-
 /* 2 Player formats: a little tighter than the mode buttons */
 .duo-format {
   box-sizing: border-box;
   width: 100%;
   margin-bottom: calc(var(--px) * 2);
   padding: calc(var(--px) * 3) calc(var(--px) * 4);
-}
-
-/* Smaller footer buttons so Main menu, Restart and Resume fit beside the tab's reset button. */
-.menu-foot .btn {
-  font-size: 0.8em;
 }
 
 /* Main menu: the logo over a panel in the pause menu's style, on the demo game behind it. Both hang from the top,
@@ -823,8 +846,8 @@ input[type="color"]::-moz-color-swatch {
   padding: var(--px) calc(var(--px) * 2);
 }
 
-/* Home, the Season Road design: laid out in --u, one game pixel of the 640x360 stage (--px is two), over the demo
-   game. The dock (modes) on the left, the road (this season's games) along the bottom, this week's challenges in a
+/* Home, the Season Road design: laid out in --u (one game pixel of the 640x360 stage), over the demo game.
+   The dock (modes) on the left, the road (this season's games) along the bottom, this week's challenges in a
    popover above its stop. The logo and panel the other views use are hidden here. */
 #title.at-home > .title-logo,
 #title.at-home > .title-panel {
@@ -832,7 +855,6 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .season-home {
-  --u: calc(var(--px) / 2);
   position: absolute;
   inset: 0;
   font-size: calc(var(--u) * 8);
@@ -1214,4 +1236,134 @@ input[type="color"]::-moz-color-swatch {
   font-size: calc(var(--u) * 7);
   padding: calc(var(--u) * 3) calc(var(--u) * 8);
   border-width: var(--u);
+}
+
+/* Controls tab: whose keys, the drawn keyboard and the legend. Each action has a color (--act) used by its keys on
+   the keyboard and its swatch in the legend: move blue, shoot green, dunk orange, pass yellow, pause plum. */
+.act-move {
+  --act: #3b5dc9;
+  --act-ink: #f4f4f4;
+}
+
+.act-shoot {
+  --act: #38b764;
+  --act-ink: #1a1c2c;
+}
+
+.act-dunk {
+  --act: #ef7d57;
+  --act-ink: #1a1c2c;
+}
+
+.act-pass {
+  --act: #ffcd75;
+  --act-ink: #1a1c2c;
+}
+
+.act-pause {
+  --act: #5d275d;
+  --act-ink: #f4f4f4;
+}
+
+.key-sets {
+  gap: calc(var(--px) * 2);
+}
+
+.key-sets .key-btn {
+  min-width: 0;
+  padding: 0 calc(var(--px) * 4);
+  font-size: calc(var(--px) * 7);
+}
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 2);
+}
+
+/* 15 keys to a row, in quarter keys so the wide ones (Tab, Shift, Space) line up */
+.keyboard-row {
+  display: grid;
+  grid-template-columns: repeat(60, 1fr);
+}
+
+.keycap {
+  min-width: 0;
+  height: calc(var(--px) * 14);
+  margin: 0 var(--px);
+  padding: 0;
+  overflow: hidden;
+  background: #262b44;
+  border: var(--px) solid #333c57;
+  color: #566c86;
+  font-size: calc(var(--px) * 6);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.keycap[class*="act-"] {
+  background: var(--act);
+  border-color: #f4f4f4;
+  color: var(--act-ink);
+}
+
+/* Waiting for a key: any key on the keyboard can be clicked */
+.keyboard.picking .keycap:hover {
+  border-color: #ffcd75;
+  color: #ffcd75;
+}
+
+.key-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--px) * 2) calc(var(--px) * 4);
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  background: none;
+  border: var(--px) solid #333c57;
+  font-size: calc(var(--px) * 7);
+  text-align: left;
+  cursor: pointer;
+}
+
+.legend-row[hidden] {
+  display: none;
+}
+
+.legend-row:hover,
+.legend-row:focus-visible,
+.legend-row[aria-pressed="true"] {
+  background: #29366f;
+  border-color: #ffcd75;
+  outline: none;
+}
+
+.legend-swatch {
+  flex: none;
+  width: calc(var(--px) * 8);
+  height: calc(var(--px) * 8);
+  background: var(--act);
+  border: var(--px) solid #f4f4f4;
+}
+
+.key-name {
+  margin-left: auto;
+  color: #94b0c2;
+  font-size: calc(var(--px) * 6);
+}
+
+.legend-row[aria-pressed="true"] .key-name {
+  color: #ffcd75;
+}
+
+.key-hint {
+  margin: 0;
+  color: #566c86;
+  font-size: calc(var(--px) * 6);
+  line-height: 1.3;
 }

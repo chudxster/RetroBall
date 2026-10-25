@@ -258,6 +258,7 @@ function update(dt) {
     state.gameCounted = true;
     Trophies.count(state, null, 'games');
     Quests.gameOver(state);
+    Locker.noteResult({ won: state.score[0] > state.score[1], us: state.score[0], them: state.score[1], opp: state.abbrs[1] });
   }
   Practice.update(dt, state);
   // The out-of-bounds count waits while anyone is dunking (or hanging on the rim). The drill hands the ball back
@@ -761,6 +762,13 @@ Locker.init({
   look: (i) => (i ? { ...state.look, ...state.team[i].look } : state.look),
   name: (i) => state.team[i].name,
   leave: () => Title.show('home'),
+  rules: () => state.rules,
+  // The tunnel's challenge pick starts the next career game, like the main menu's.
+  startCareer(choice) {
+    Career.begin(choice, state.rules);
+    startMode('career');
+  },
+  dynastyTest: () => DEV && state.ui.dynastyTest,
 });
 // (The page may not have the keyboard yet, e.g. in an iframe, so nothing takes focus until it's clicked.)
 Title.show('home', { focus: false });

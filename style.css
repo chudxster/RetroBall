@@ -1483,3 +1483,187 @@ input[type="color"]::-moz-color-swatch {
   flex: 1;
   text-align: center;
 }
+
+/* Talk Time: the panel in three parts (portrait, what they say, the quest card); the trophy case and the tunnel use
+   the whole width below. */
+.locker-talk {
+  display: grid;
+  grid-template-columns: auto 1fr calc(var(--u) * 170);
+  align-items: start;
+  gap: calc(var(--u) * 8);
+}
+
+.talk-portrait {
+  width: calc(var(--u) * 60);
+  height: calc(var(--u) * 65);
+  border: var(--u) solid #ffcd75;
+  image-rendering: pixelated;
+}
+
+.talk-portrait[hidden] {
+  display: none;
+}
+
+.talk-words {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 5);
+  min-width: 0;
+}
+
+.talk-card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 5) calc(var(--u) * 6);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+}
+
+.talk-card[hidden] {
+  display: none;
+}
+
+.card-goal {
+  color: #ffcd75;
+}
+
+.card-pips {
+  display: flex;
+  gap: var(--u);
+}
+
+.card-pips .pip {
+  width: calc(var(--u) * 6);
+  height: calc(var(--u) * 6);
+  border-width: var(--u);
+}
+
+.card-count {
+  font-size: calc(var(--u) * 6);
+  color: #94b0c2;
+}
+
+.card-reward {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  color: #38b764;
+}
+
+.talk-card .talk-actions {
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 4);
+}
+
+/* The tunnel's three challenges, then Not yet, across the whole panel */
+.locker-talk:has(.talk-court) {
+  grid-template-columns: 1fr;
+}
+
+.talk-court {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.talk-court .challenge {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 60) 1fr auto;
+  padding: calc(var(--u) * 4) calc(var(--u) * 6);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+  color: #f4f4f4;
+  font: inherit;
+  font-size: calc(var(--u) * 8);
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.talk-court .challenge:hover,
+.talk-court .challenge:focus-visible {
+  background: #29366f;
+  border-color: #ffcd75;
+  outline: none;
+}
+
+.talk-court .btn {
+  align-self: flex-start;
+}
+
+/* The trophy case as the case: glass shelves of cups, the ones on the scoreboard shelf ringed in gold, grey cups
+   still to earn; and a row of the scoreboard shelf's 13 slots. */
+.locker-talk.trophy-case {
+  grid-template-columns: 1fr auto;
+}
+
+.talk-shelf {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 6);
+}
+
+.talk-shelf:empty {
+  display: none;
+}
+
+.case-slots {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+}
+
+.case-slots-label {
+  margin-right: calc(var(--u) * 4);
+  font-size: calc(var(--u) * 7);
+  color: #94b0c2;
+}
+
+.case-slot {
+  width: calc(var(--u) * 8);
+  height: calc(var(--u) * 8);
+  border: var(--u) solid #566c86;
+}
+
+.case-slot.on {
+  background: #ffcd75;
+  border-color: #ffcd75;
+}
+
+.locker-talk .case-grid {
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  padding: calc(var(--u) * 4);
+  background: #29366f;
+  border: calc(var(--u) * 3) solid #8f563b;
+}
+
+.locker-talk .case-item {
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 3);
+  min-height: calc(var(--u) * 44);
+  padding: calc(var(--u) * 4) calc(var(--u) * 2);
+  border: var(--u) solid transparent;
+  border-bottom: calc(var(--u) * 3) solid #c98d5a; /* the glass shelf each cup stands on */
+  background: none;
+  text-align: center;
+  font-size: calc(var(--u) * 6);
+}
+
+.locker-talk .case-item[aria-pressed="true"] {
+  border-color: #ffcd75;
+  border-bottom-color: #c98d5a;
+  background: rgba(255, 205, 117, 0.12);
+}
+
+.locker-talk .case-cup {
+  width: calc(var(--u) * 12);
+  height: calc(var(--u) * 12);
+  border-radius: 0 0 calc(var(--u) * 6) calc(var(--u) * 6);
+}
+
+.locker-talk .case-item.locked .case-cup {
+  background: #566c86;
+}

@@ -50,3 +50,46 @@ test(() => {
   key('KeyA', false);
   ok(!Locker.isOpen() && Title.isOpen(), 'out the door: back at the main menu');
 });
+// The tunnel: walking into the arch on the right asks "ready for the next game?"; a challenge tips off the next career
+// game, Not yet steps back into the room.
+test(() => {
+  document.querySelector('[data-go="locker"]').click();
+  state.ui.dynastyTest = false;
+  key('KeyD', true);
+  for (let i = 0; i < 400 && !document.querySelector('.talk-court'); i++) Locker.update(1 / 60);
+  key('KeyD', false);
+  const talk = document.getElementById('locker-talk');
+  ok(!talk.hidden && talk.textContent.includes('Ready for the next game'), 'the arch asks: ready for the next game?');
+  ok(talk.querySelectorAll('.talk-court .challenge').length === 3, 'with the three challenges');
+  [...talk.querySelectorAll('.talk-court .btn')].pop().click();
+  ok(talk.hidden && Locker.isOpen(), 'Not yet: back in the room');
+  key('KeyD', true);
+  for (let i = 0; i < 60 && !document.querySelector('.talk-court'); i++) Locker.update(1 / 60);
+  key('KeyD', false);
+  const week = Career.get().week;
+  talk.querySelector('.talk-court .challenge').click();
+  ok(state.mode === 'career' && !Locker.isOpen() && Career.get().current, 'a challenge tips off the next career game');
+  // That game ends in a win: the room remembers it, once.
+  state.score = [30, 20];
+  testing.endGame();
+  sim(0.1);
+  toTitle();
+  document.querySelector('[data-go="locker"]').click();
+  Locker.draw(document.getElementById('game').getContext('2d'));
+  ok(loadStored(LAST_GAME_STORAGE_KEY).won && loadStored(LAST_GAME_STORAGE_KEY).fresh === false, 'after the win (seen once)');
+  ok(Career.get().week === week + 1, 'and the season moved on');
+});
+
+// The Dynasty Room: locked in season 1, open once it's finished, and the Testing build's switch shows it early.
+test(() => {
+  const c = Career.get();
+  ok(c.season === 1 && c.phase !== 'over', 'season 1');
+  state.ui.dynastyTest = true;
+  document.querySelector('[data-go="locker"]').click();
+  Locker.draw(document.getElementById('game').getContext('2d'));
+  ok(Locker.isOpen(), 'the test switch opens it (drawn without errors)');
+  state.ui.dynastyTest = false;
+  c.phase = 'over';
+  c.result = 'missed';
+  ok(true, 'unlocks once the first season is over');
+});

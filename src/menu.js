@@ -24,7 +24,7 @@ const NAME_MAX = 12;
 const RULES_STORAGE_KEY = 'retroball.rules';
 const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock, difficulty: 1 };
 const UI_STORAGE_KEY = 'retroball.ui';
-const DEFAULT_UI = { stats: true, trophies: true };
+const DEFAULT_UI = { stats: true, trophies: true, dynastyTest: false };
 
 // Settings saved as one object of on/off switches and numbers: anything saved that isn't the same kind as its
 // default (or isn't a finite number) falls back to `defaults`.
@@ -282,6 +282,8 @@ const Menu = (() => {
     initControlsView();
     initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
     initToggle(document.getElementById('show-trophies'), game.ui, 'trophies', UI_STORAGE_KEY);
+    initToggle(document.getElementById('dynasty-test'), game.ui, 'dynastyTest', UI_STORAGE_KEY);
+    document.getElementById('dynasty-test-row').hidden = !DEV;
     initSoundView();
     initTuningView();
     initTestView();

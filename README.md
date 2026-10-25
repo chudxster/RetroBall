@@ -34,7 +34,14 @@ Enter or Space to talk). A quest is a goal for your games, in one game or added 
 the daily game and 2 Player co-op count); a yellow ! means a quest to pick up, a bouncing green one tokens to claim.
 Claiming pays career tokens and counts toward the Locker Room trophy. The trophy case on the right wall holds
 every trophy you've earned: pick which ones (up to 13) stand on the scoreboard's shelf in games. You come in through
-the black EXIT door on the left wall; walk back out of it (or press Esc) to leave.
+the black EXIT door on the left wall; walk back out of it (or press Esc) to leave. The glowing arch on the right wall is the tunnel to the
+court: walk into it to be asked "Ready for the next game?" and pick a challenge to tip off your next career game.
+Talking shows the speaker's portrait, their line and a quest card (goal, progress, reward) while the room dims;
+markers show a speech bubble for a new quest, the progress for one under way and a spinning gold token for tokens
+to claim. The room remembers your last game, once: streamers, confetti and the score on the whiteboard after a win,
+towels over heads and a blue half-light after a loss. Once your first career season is finished it becomes the
+**Dynasty Room**: a banner for every title, open wood stalls with your jerseys, a trophy wall with the Finals cup
+and a DYNASTY rug (with `?dev=1`, the UI tab can switch it on to test).
 
 **Quick game** is 3v3 Casual (full court, AI teammates and opponents, half-court defense), with a difficulty
 (Rookie, Pro or All-Star: how good the AI opponents are; 2 Player co-op uses it too) and the game options (free

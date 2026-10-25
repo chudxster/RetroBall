@@ -256,6 +256,12 @@
             <button type="button" class="key-btn" id="show-trophies" aria-pressed="false" aria-label="Show the trophy shelf"></button>
             <span class="upgrade-effect">Your trophies on top of the scorer's table</span>
           </div>
+          <!-- Testing build only (?dev=1): see the Dynasty locker room before it's unlocked. -->
+          <div class="row" id="dynasty-test-row" hidden>
+            <span class="label">Dynasty</span>
+            <button type="button" class="key-btn" id="dynasty-test" aria-pressed="false" aria-label="Dynasty locker room (test)"></button>
+            <span class="upgrade-effect">Dev: the Dynasty locker room before its unlock</span>
+          </div>
           <p class="test-note">Audio</p>
           <div class="row">
             <span class="label">Sound</span>
@@ -477,11 +483,16 @@
         </div>
       </div>
     </div>
-    <!-- The locker room's talk panel (locker.js): who's talking, what they say, and the answers; or the trophy case. -->
+    <!-- The locker room's talk panel (locker.js, the "Talk Time" design): the speaker's portrait, what they say and the
+         quest card with the answers; or the trophy case (its shelf); or the tunnel's "ready for the next game?". -->
     <div id="locker-talk" class="locker-talk" role="dialog" aria-labelledby="locker-talk-name" hidden>
-      <p class="mode-name" id="locker-talk-name"></p>
-      <p class="talk-text" id="locker-talk-text"></p>
-      <div class="talk-actions" id="locker-talk-actions"></div>
+      <canvas class="talk-portrait" id="locker-talk-portrait" width="24" height="26" aria-hidden="true"></canvas>
+      <div class="talk-words">
+        <p class="mode-name" id="locker-talk-name"></p>
+        <p class="talk-text" id="locker-talk-text"></p>
+      </div>
+      <div class="talk-card" id="locker-talk-card"></div>
+      <div class="talk-shelf" id="locker-talk-shelf"></div>
     </div>
   </div>
 

@@ -63,7 +63,27 @@ function tableParts(home, away) {
   ];
 }
 
-function tableLayer(jersey) {
+// The trophy shelf on top of the scoreboard housing: a plank and a little cup per trophy (see Trophies.shelf),
+// left to right, in its metal's color.
+const SHELF_STEP = 9;
+function shelfParts(shelf) {
+  if (!shelf.length) return [];
+  const parts = [[-62, -64, 124, 2, COLORS.boardFrame]];
+  shelf.slice(0, 13).forEach((t, i) => {
+    const x = -58 + i * SHELF_STEP;
+    parts.push(
+      [x + 1, -65, 3, 1, shade(t.color, 0.7)], // base
+      [x + 2, -67, 1, 2, t.color],              // stem
+      [x, -70, 5, 3, t.color],                  // cup
+      [x, -70, 5, 1, mix(t.color, COLORS.line, 0.5)],
+      [x - 1, -69, 1, 1, t.color],              // handles
+      [x + 5, -69, 1, 1, t.color],
+    );
+  });
+  return parts;
+}
+
+function tableLayer(jersey, shelf = []) {
   return {
     y: TABLE.y,
     draw(ctx) {
@@ -72,7 +92,7 @@ function tableLayer(jersey) {
       const ox = Math.round(p.x);
       const oy = Math.round(p.y);
       const k = spriteScale(TABLE.y);
-      drawRects(ctx, tableParts(jersey, awayJersey(jersey)), ox, oy, 1, k);
+      drawRects(ctx, [...tableParts(jersey, awayJersey(jersey)), ...shelfParts(shelf)], ox, oy, 1, k);
       scoreboard.cards.forEach((card, i) => drawFlapCard(ctx, card, ox, oy, k, CARD_X[i], CARD.top));
     },
   };

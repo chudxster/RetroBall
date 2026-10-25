@@ -136,6 +136,34 @@ input {
 }
 
 /* Player tuning in the Dev tab, set off from the testing sliders above. */
+/* UI tab: the trophy list, a cup in its metal's color (empty outline until earned) */
+.trophy-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--px);
+}
+
+.trophy-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 3);
+}
+
+.trophy-cup {
+  flex: none;
+  width: calc(var(--px) * 5);
+  height: calc(var(--px) * 5);
+  border: var(--px) solid #566c86;
+}
+
+.trophy-name {
+  flex: none;
+  width: calc(var(--px) * 56);
+  font-size: 0.8em;
+  white-space: nowrap;
+  color: #94b0c2;
+}
+
 /* Testing tab: the playtesting tools, three to a row */
 .tool-grid {
   display: grid;

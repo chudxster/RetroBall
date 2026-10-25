@@ -319,7 +319,10 @@ const Shooting = (() => {
         shot.fallX = shot.to.x + p.hangSway / scaleAtY(hoop.y);
         p.hangSway = 0;
         hoop.hanging = false;
-        if (shatter) shatterRim(game, hoop);
+        if (shatter) {
+          shatterRim(game, hoop);
+          Trophies.count(game, p, 'shatters');
+        }
       }
       const f = Math.min((t - fallAt) / fallTime, 1);
       if (shatter) {

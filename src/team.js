@@ -43,6 +43,7 @@ function isHuman(game, p) {
 function countStat(game, p, key, n = 1) {
   game.stats[p.team][key] += n;
   if (p.stats) p.stats[key] += n;
+  if (TROPHY_STATS[key] && p.look) Trophies.count(game, p, TROPHY_STATS[key], n); // (p.look: a real player)
 }
 
 // The away team's jersey color, given the home team's (benches and the scorer's table wear it too).

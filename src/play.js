@@ -5,7 +5,10 @@ const Play = (() => {
   function act(game, p, ctl) {
     // A foul was whistled: nothing else happens until everyone is lined up for the free throw.
     if (game.freeThrow && game.freeThrow.pending) return;
-    if (ctl.dash) p.dash(ctl.dash);
+    if (ctl.dash) {
+      p.dash(ctl.dash);
+      Trophies.count(game, p, 'dashes');
+    }
     if (ctl.pass && p.hasBall && !p.shot) pass(game, p, ctl.pass);
     if (ctl.steal) trySteal(game, p);
     if (ctl.jump) startJump(p);
@@ -27,6 +30,7 @@ const Play = (() => {
     }
     ball.launch(sx, sy, PASS.fromZ, { x: tx, y: ty, z: PASS.toZ }, time, null);
     Sfx.play('pass', { x: sx });
+    Trophies.count(game, from, 'passes');
     ball.thrower = from;
     ball.lastTeam = from.team;
     ball.pass = { to, team: from.team, target: { x: tx, y: ty }, rolls: new Map() };
@@ -53,6 +57,7 @@ const Play = (() => {
     const h = game.ball.holder;
     if (!h || h.team !== p.team || h === p) return;
     addPopup(game, 'BALL!', playColor(game, p.team), p.x, p.y, 56);
+    Trophies.count(game, p, 'calls');
     if (!isHuman(game, h)) h.mind.called = { by: p, t: CALL_FOR.window, wait: aiValue(h, AI.reaction) };
   }
 

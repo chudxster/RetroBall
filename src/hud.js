@@ -94,6 +94,21 @@ function drawBanner(ctx, text) {
   drawText(ctx, text, VIEW_W / 2, y + 14, COLORS.okay, { align: 'center', scale: TEXT_SCALE * 2, shadow: COLORS.outline });
 }
 
+// A new trophy (see Trophies): a strip under the top HUD in the metal's color, sliding in and blinking out.
+function drawTrophyToast(ctx, toast) {
+  const slide = Math.min(toast.t / 0.2, 1);
+  if (toast.t > TROPHY_TOAST_TIME - 0.6 && Math.floor(toast.t * 10) % 2) return;
+  const w = textWidth(toast.text, TEXT_SCALE) + 24;
+  const x = Math.round(VIEW_W / 2 - w / 2);
+  const y = Math.round(22 + (slide - 1) * 20);
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillRect(x, y, w, 20);
+  ctx.fillStyle = toast.color;
+  ctx.fillRect(x, y, w, 2);
+  ctx.fillRect(x, y + 18, w, 2);
+  drawText(ctx, toast.text, VIEW_W / 2, y + 5, toast.color, { align: 'center', scale: TEXT_SCALE });
+}
+
 // After the final buzzer: the result, the final score and both teams' stat lines, then how to play again.
 function drawGameOver(ctx, game) {
   const [home, away] = game.score;

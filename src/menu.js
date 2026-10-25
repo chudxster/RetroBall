@@ -24,7 +24,7 @@ const NAME_MAX = 12;
 const RULES_STORAGE_KEY = 'retroball.rules';
 const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock, difficulty: 1 };
 const UI_STORAGE_KEY = 'retroball.ui';
-const DEFAULT_UI = { stats: true };
+const DEFAULT_UI = { stats: true, trophies: true };
 
 // Settings saved as one object of on/off switches and numbers: anything saved that isn't the same kind as its
 // default (or isn't a finite number) falls back to `defaults`.
@@ -228,13 +228,17 @@ const Menu = (() => {
         applyLook({ ...lookOf(pick), hairStyle: HAIR_STYLE_NAMES[(i + Number(step.dataset.step) + n) % n] });
       });
     }
-    document.getElementById('randomize-look').addEventListener('click', () => applyLook(randomLook()));
+    document.getElementById('randomize-look').addEventListener('click', () => {
+      applyLook(randomLook());
+      Trophies.count(null, null, 'randomize');
+    });
 
     initFaces();
     initTabs();
     initUpgradeView();
     initControlsView();
     initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
+    initToggle(document.getElementById('show-trophies'), game.ui, 'trophies', UI_STORAGE_KEY);
     initSoundView();
     initTuningView();
     initTestView();
@@ -664,6 +668,28 @@ const Menu = (() => {
 
   // Footer: in a game, Main menu (in a career game that isn't over, after an "are you sure": it's a forfeit loss) and
   // Restart (not in career: no do-overs); opened from the main menu, just Back.
+  // UI tab: each trophy family (metal so far, count, next goal), then the secrets.
+  function renderTrophies() {
+    const { families, secrets } = Trophies.list();
+    const rows = families.map((f) => {
+      const row = el('div', 'trophy-row');
+      const metal = f.metal >= 0 ? TROPHY_TIERS[f.metal] : null;
+      const cup = el('span', 'trophy-cup');
+      cup.style.background = metal ? metal.color : 'transparent';
+      row.append(cup, el('span', 'trophy-name', f.name), el('span', 'upgrade-effect',
+        `${f.count} ${f.what}${f.next ? `, next at ${f.next}` : ', all metals'}${metal ? ` (${metal.name.toLowerCase()})` : ''}`));
+      return row;
+    });
+    for (const s of secrets) {
+      const row = el('div', 'trophy-row');
+      const cup = el('span', 'trophy-cup');
+      cup.style.background = s.earned ? s.color : 'transparent';
+      row.append(cup, el('span', 'trophy-name', s.name), el('span', 'upgrade-effect', s.earned ? s.what : 'A secret'));
+      rows.push(row);
+    }
+    document.getElementById('trophy-list').replaceChildren(...rows);
+  }
+
   // Testing tab tools: each button runs main.js's tool of the same name; the game ones close the menu so the result
   // plays out. Buttons that don't apply right now (no game clock, the main menu...) are disabled.
   const STAYS_OPEN = ['tokens'];
@@ -722,6 +748,7 @@ const Menu = (() => {
       lastFrame = 0;
       syncFoot(true);
       syncTools();
+      renderTrophies();
       syncUpgradeView(); // the mode (free or career levels) may have changed
       requestAnimationFrame(drawPreview);
     } else {

@@ -72,6 +72,7 @@ function newGame(mode, runBack = false) {
   state.abbrs = career ? career.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
   state.challenge = career ? career.challenge : null;
   state.careerResult = null;
+  state.gameCounted = false;
   state.roster = makePlayers(state.look, state.team);
   for (const p of state.roster) p.stats = newStats(); // each player's own line on the final screen's box score
   const star = state.roster[0];
@@ -177,6 +178,11 @@ function update(dt) {
   Clock.update(dt, state, frozen);
   // A career game's final buzzer: tokens, standings and the next game are settled right away.
   if (state.mode === 'career' && state.clock.over && !state.careerResult) state.careerResult = Career.finish(state);
+  // A finished game (Quick, career, 2 Player) counts toward the Iron Man trophy once.
+  if (state.clock && state.clock.over && !state.gameCounted) {
+    state.gameCounted = true;
+    Trophies.count(state, null, 'games');
+  }
   Practice.update(dt, state);
   // The out-of-bounds count waits while anyone is dunking (or hanging on the rim). The drill hands the ball back
   // itself.
@@ -184,6 +190,7 @@ function update(dt) {
   updateHoops(dt);
   updateDebris(state, dt);
   updatePopups(state, dt);
+  Trophies.update(dt);
   updateCrowd(dt);
   updateScoreboard(dt, state.score[0], state.score[1]);
 
@@ -410,6 +417,7 @@ function handleBallEvents() {
     } else if (e.type === 'airball') {
       addPopup(state, 'AIRBALL', COLORS.bad, e.x, e.y, 20);
       Sfx.play('airball', { x: e.x });
+      if (ball.thrower) Trophies.count(state, ball.thrower, 'airballs');
     }
   }
   ball.events.length = 0;
@@ -439,7 +447,7 @@ function render(alpha) {
   ctx.globalAlpha = 1;
 
   const jersey = state.look.jersey;
-  const layers = [...benchLayers(jersey), tableLayer(jersey), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
+  const layers = [...benchLayers(jersey), tableLayer(jersey, state.ui.trophies ? Trophies.shelf() : []), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
   for (const p of state.players) {
@@ -467,6 +475,8 @@ function render(alpha) {
   // The demo behind the main menu: just the clock (and halftime), dimmed.
   const demo = state.mode === 'demo';
   if (!demo) drawHud(ctx, state);
+  const toast = Trophies.toast();
+  if (toast && !demo) drawTrophyToast(ctx, toast);
   if (state.clock) {
     drawClock(ctx, state);
     if (state.clock.banner) drawBanner(ctx, state.clock.banner);

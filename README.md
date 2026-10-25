@@ -64,6 +64,12 @@ whistle, the period horn, airballs, the crowd's roar and menu clicks, panned tow
 behind the main menu plays quieter. Sound on/off and volume are in the pause menu's UI tab. Browsers only allow
 sound after a click or key press, so it starts with the first one.
 
+**Trophies** count the things you do over and over, in every mode (both players in 2 Player add to the same
+shelf): shots, points, threes, passes, dunks, steals, blocks, dashes, free throws and games finished. Each goes
+Bronze, Silver, Gold, then Platinum, and a few secret ones stay hidden as ??? until you stumble into them. A new
+trophy flashes a banner and the crowd cheers; earned ones stand on a shelf on top of the scorer's table. The pause
+menu's UI tab lists them all with your counts, and turns the shelf off.
+
 The home crowd mostly sits on its hands, but jumps up for big plays: steals, blocks, baskets, threes and dunks, a
 rim-hanging or rim-shattering dunk loudest of all (the other team's plays get half the cheer). After a basket some
 fans may wave signs with the scorer's number.

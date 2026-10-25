@@ -214,6 +214,11 @@
           <button type="button" class="key-btn" id="show-stats" aria-pressed="false" aria-label="Show stats"></button>
           <span class="upgrade-effect">Score and shooting, top left</span>
         </div>
+        <div class="row">
+          <span class="label">Shelf</span>
+          <button type="button" class="key-btn" id="show-trophies" aria-pressed="false" aria-label="Show the trophy shelf"></button>
+          <span class="upgrade-effect">Your trophies on top of the scorer's table</span>
+        </div>
         <p class="test-note">Audio</p>
         <div class="row">
           <span class="label">Sound</span>
@@ -224,6 +229,9 @@
           <input type="range" id="sound-volume" min="0" max="100" step="5">
           <span class="value pct" id="sound-volume-value"></span>
         </div>
+        <!-- Every trophy family's metal and next goal, and the secrets (??? until earned); built by menu.js. -->
+        <p class="test-note">Trophies</p>
+        <div class="trophy-list" id="trophy-list"></div>
       </div>
 
       <div class="menu-foot">
@@ -414,6 +422,7 @@
   <script src="src/tuning.js"></script>
   <script src="src/menu.js"></script>
   <script src="src/sfx.js"></script>
+  <script src="src/trophies.js"></script>
   <script src="src/career.js"></script>
   <script src="src/duo.js"></script>
   <script src="src/net.js"></script>

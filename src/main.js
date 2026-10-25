@@ -544,12 +544,15 @@ function startMode(mode) {
   canvas.focus();
 }
 
-// Online: a guest joined the hosted game, so a 2 Player game starts (player 2 plays from the other browser). The
-// host plays on the solo keys and keeps running the game even without focus, so the guest isn't left frozen.
+// Online: the host pressed Start in the lobby, so a 2 Player game starts here (player 2 plays from the other
+// browser). The host plays on the solo keys and keeps running the game even without focus, so the guest isn't left
+// frozen.
 Net.startMatch = () => {
   Title.hide();
   startMode('duo');
 };
+// The guest left mid-match: back to the Online screen, where the lobby is open for someone else.
+Net.endMatch = () => toTitle('online');
 
 // The pause menu's Testing tab (?dev=1): jump a game to the moment worth checking. can(name) says whether a tool
 // applies right now; the clock ones need a game in progress (Quick game, career, 2 Player), not the demo.

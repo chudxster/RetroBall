@@ -745,6 +745,21 @@ input[type="color"]::-moz-color-swatch {
   white-space: nowrap;
 }
 
+/* Online: the lobby both players are in before the host starts */
+.online-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--px) * 2);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  background: #29366f;
+  border: var(--px) solid #ffcd75;
+}
+
+.online-lobby p {
+  margin: 0;
+}
+
 /* Online: the lobby finder's open games, one button each */
 .lobby-list {
   display: flex;

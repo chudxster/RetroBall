@@ -353,6 +353,12 @@
             <button type="button" class="key-btn" data-online-format="vs1" aria-pressed="false">1v1</button>
             <button type="button" class="key-btn" data-online-format="vs3" aria-pressed="false">3v3</button>
           </div>
+          <!-- The lobby, once both are in: who's playing, then the host starts the game (it runs on the host's computer). -->
+          <div class="online-lobby" id="online-lobby" hidden>
+            <p class="mode-name" id="online-lobby-title"></p>
+            <p class="mode-desc" id="online-lobby-text"></p>
+            <button type="button" class="btn" id="online-start">Start game</button>
+          </div>
           <div class="row">
             <button type="button" class="btn" id="online-host">Host a game</button>
             <span class="upgrade-effect" id="online-code"></span>

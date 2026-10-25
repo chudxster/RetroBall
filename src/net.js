@@ -27,6 +27,10 @@ const Net = (() => {
   let code = null;     // the game's code
   let joined = false;  // host: a guest is in; guest: the host welcomed us
   let peer = null;     // the other side's id once joined
+  let peerName = '';   // the other side's name
+  let myName = '';     // guest: the name the host's lobby shows for us
+  let lobbyFormat = 'vs3'; // guest: the host's format
+  let playing = false; // the match has started (before that the two are in the lobby)
   let lastHeard = 0;
   let announceT = 0;
   let snapT = 0;
@@ -167,10 +171,11 @@ const Net = (() => {
   }
 
   // Guest: ask the game with this code to let us in (again every JOIN_RETRY until it answers or JOIN_GIVE_UP).
-  function join(c) {
+  function join(c, name) {
     if (!connect()) return false;
     leave();
     role = 'guest';
+    myName = name;
     code = String(c).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
     transport.room(code);
     joinStarted = now();
@@ -194,9 +199,33 @@ const Net = (() => {
     role = null;
     code = null;
     joined = false;
+    playing = false;
     peer = null;
+    peerName = '';
     latest = null;
     Input.setRemote(null);
+    onChange();
+  }
+
+  // Host: everyone's in the lobby, so the match starts (on this computer; the guest plays it from theirs).
+  function start() {
+    if (role !== 'host' || !joined || playing) return;
+    playing = true;
+    send({ type: 'start', code });
+    Input.setRemote(remotePad);
+    startMatch();
+    onChange();
+  }
+
+  // The guest left (or went quiet): the host's lobby opens up again and any match in progress ends.
+  function guestGone() {
+    const was = playing;
+    joined = false;
+    playing = false;
+    peer = null;
+    peerName = '';
+    Input.setRemote(null);
+    if (was) endMatch();
     onChange();
   }
 
@@ -214,30 +243,35 @@ const Net = (() => {
     if (role === 'host') {
       if (m.type === 'join') {
         // (Again if our welcome got lost and they asked again.)
-        send({ type: 'welcome', code, to: m.from });
+        send({ type: 'welcome', code, to: m.from, name: hostName, format: Duo.format(), playing });
         if (joined) return;
         joined = true;
         peer = m.from;
-        Input.setRemote(remotePad);
-        startMatch();
+        peerName = m.name || 'Guest';
         onChange();
       } else if (m.type === 'keys' && joined) {
-        Object.assign(remote, m.keys, { dash: m.keys.dash || remote.dash });
+        if (playing) Object.assign(remote, m.keys, { dash: m.keys.dash || remote.dash });
       } else if (m.type === 'bye') {
-        joined = false;
-        peer = null;
-        Input.setRemote(null);
-        onChange();
+        guestGone();
       }
     } else if (role === 'guest') {
       if (m.type === 'welcome' && m.to === id) {
         peer = m.from;
+        peerName = m.name || 'Host';
+        lobbyFormat = m.format;
         joined = true;
+        if (m.playing) playing = true;
+        onChange();
+      } else if (m.type === 'start') {
+        playing = true;
         onChange();
       } else if (m.type === 'snap') {
+        playing = true;
         latest = m.s;
       } else if (m.type === 'bye') {
         leave();
+        status = 'The host closed the game';
+        onChange();
       }
     }
   }
@@ -261,14 +295,22 @@ const Net = (() => {
       return;
     }
     if (joined && t - lastHeard > PEER_TIMEOUT) {
-      if (role === 'guest') leave();
-      else {
-        joined = false;
-        peer = null;
-        Input.setRemote(null);
+      if (role === 'guest') {
+        leave();
+        status = 'Lost the host';
         onChange();
+      } else {
+        guestGone();
       }
       return;
+    }
+    // In the lobby the host says "still here" now and then (in a match its snapshots do that).
+    if (role === 'host' && !playing) {
+      announceT -= dt;
+      if (announceT <= 0) {
+        announceT = ANNOUNCE_EVERY;
+        send({ type: 'lobby', code });
+      }
     }
     if (role === 'guest' && !joined) {
       if (t - joinStarted > JOIN_GIVE_UP) {
@@ -280,7 +322,7 @@ const Net = (() => {
       joinT -= dt;
       if (joinT <= 0) {
         joinT = JOIN_RETRY;
-        send({ type: 'join', code });
+        send({ type: 'join', code, name: myName });
       }
       return;
     }
@@ -296,7 +338,7 @@ const Net = (() => {
         keysT = KEYS_EVERY;
       }
     }
-    if (role === 'host' && joined) {
+    if (role === 'host' && playing) {
       snapT -= dt;
       if (snapT <= 0) {
         snapT = 1 / SNAP_HZ;
@@ -317,13 +359,15 @@ const Net = (() => {
     return [...lobbies.entries()].map(([c, l]) => ({ code: c, name: l.name, format: l.format }));
   }
 
-  // The host's match: 2 Player versus with player 2 online (Main menu ends it).
+  // The host's match: 2 Player versus with player 2 online (Main menu ends it). endMatch: the guest left mid-game.
   let startMatch = () => {};
+  let endMatch = () => {};
 
   return {
     host,
     join,
     leave,
+    start,
     tick,
     applyLatest,
     lobbyList,
@@ -335,10 +379,16 @@ const Net = (() => {
     role: () => role,
     code: () => code,
     joined: () => joined,
-    isGuest: () => role === 'guest' && joined,
-    online: () => !!role && joined,
+    playing: () => playing,
+    // The lobby as this side sees it: { code, host, guest, format, isHost } (null when not in one).
+    lobby: () => (role && joined ? { code, host: role === 'host' ? hostName : peerName, guest: role === 'host' ? peerName : myName, format: role === 'host' ? Duo.format() : lobbyFormat, isHost: role === 'host' } : null),
+    isGuest: () => role === 'guest' && playing,
+    online: () => !!role && playing,
     set onChange(fn) {
       onChange = fn;
+    },
+    set endMatch(fn) {
+      endMatch = fn;
     },
     set startMatch(fn) {
       startMatch = fn;

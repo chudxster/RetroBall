@@ -35,9 +35,10 @@ on a split screen at the same time (up/down to pick, right to add, left to take 
 they upgrade their whole team, in co-op their own player. At halftime they get more. After the final buzzer player
 1's shoot key **runs it back** with the same pre-game upgrades, player 2's starts a new draft.
 
-**Online** (prototype) is 2 Player versus (1v1 or 3v3) across two browsers: one person hosts and gets a 4-letter
-code, the other types the code or picks the game from the list of open games. The host's game is the real one: the
-guest's keys play player 2 and the guest's screen shows the host's game. **Internet** games go through a free public
+**Online** (prototype) is 2 Player versus (1v1 or 3v3) across two browsers: one person hosts a lobby and gets a
+4-letter code, the other types the code or picks the lobby from the list of open games. Both then see the lobby (who's
+in, the format) and the host presses **Start game**. The game runs on the host's computer: the guest's keys play
+player 2 and the guest's screen shows the host's game. If the guest leaves, the host's lobby opens up again. **Internet** games go through a free public
 relay (EMQX's public MQTT broker, `src/net.js` RELAY; the small mqtt.js library loads from a CDN only when you go
 online), so they need an internet connection, and the traffic isn't private. A relay of our own can replace it in
 one place. **This computer** connects two tabs of the same browser instead, with no internet (for testing). Leaving

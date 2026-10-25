@@ -117,8 +117,8 @@ const Title = (() => {
   }
 
   function show(next = 'home', { focus = true } = {}) {
-    // Leaving the Online screen before anyone joined closes the hosted game (or the pending join).
-    if (view === 'online' && next !== 'online' && Net.role() && !Net.joined()) Net.leave();
+    // Leaving the Online screen before the match starts closes the lobby (or the pending join).
+    if (view === 'online' && next !== 'online' && Net.role() && !Net.playing()) Net.leave();
     view = next;
     open = true;
     box.hidden = false;
@@ -189,10 +189,11 @@ const Title = (() => {
       render();
     });
     const join = (c) => {
-      if (c.length === 4) Net.join(c);
+      if (c.length === 4) Net.join(c, Career.get().teamName);
       render();
     };
     document.getElementById('online-join').addEventListener('click', () => join(codeBox.value.trim().toUpperCase()));
+    document.getElementById('online-start').addEventListener('click', () => Net.start());
     codeBox.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') join(codeBox.value.trim().toUpperCase());
     });
@@ -212,15 +213,27 @@ const Title = (() => {
     for (const b of box.querySelectorAll('[data-online-format]')) b.setAttribute('aria-pressed', String(b.dataset.onlineFormat === format));
     for (const b of box.querySelectorAll('[data-network]')) b.setAttribute('aria-pressed', String(b.dataset.network === Net.network()));
     const role = Net.role();
-    document.getElementById('online-code').textContent = role === 'host' ? `Your code: ${Net.code()} (waiting for a player)` : '';
-    document.getElementById('online-status').textContent = [role === 'guest' ? `Joining ${Net.code()}...` : '', Net.status()].filter(Boolean).join(' ');
+    // In a lobby: who's in, and Start for the host (the game runs on the host's computer).
+    const lobby = Net.lobby();
+    document.getElementById('online-lobby').hidden = !lobby;
+    if (lobby) {
+      const fmt = lobby.format === 'vs1' ? '1v1' : '3v3';
+      document.getElementById('online-lobby-title').textContent = `Lobby ${lobby.code} - ${fmt}`;
+      document.getElementById('online-lobby-text').textContent = `${lobby.host} (host) vs ${lobby.guest}. `
+        + (lobby.isHost ? 'Start when you\'re ready: the game runs on this computer.' : `Waiting for ${lobby.host} to start...`);
+      document.getElementById('online-start').hidden = !lobby.isHost;
+    }
+    document.getElementById('online-host').disabled = !!lobby;
+    document.getElementById('online-join').disabled = !!lobby;
+    document.getElementById('online-code').textContent = role === 'host' && !lobby ? `Your code: ${Net.code()} (waiting for a player)` : '';
+    document.getElementById('online-status').textContent = [role === 'guest' && !lobby ? `Joining ${Net.code()}...` : '', Net.status()].filter(Boolean).join(' ');
     const list = document.getElementById('online-lobbies');
     const games = Net.lobbyList().filter((l) => l.code !== Net.code());
     list.replaceChildren(...(games.length ? games.map((l) => {
       const b = el('button', 'key-btn lobby', `${l.code}  ${l.name}  ${l.format === 'vs1' ? '1v1' : '3v3'}`);
       b.type = 'button';
       b.addEventListener('click', () => {
-        Net.join(l.code);
+        Net.join(l.code, Career.get().teamName);
         render();
       });
       return b;

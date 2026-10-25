@@ -1,8 +1,9 @@
 // Main menu: the game always opens here, with the AI playing itself behind it (main.js runs a 'demo' game while
-// it's up). One view shows at a time: home (the modes in a dock, plus Customize and Settings, which open the pause
-// menu's tabs, and the career season as a road with this week's challenges), Career (the season, the next game's challenges, buying upgrades, the standings), Quick game (the game
-// options, then tip off), 2 Player (the formats) and Practice. Esc goes back to home; the arrow keys (or WASD) move
-// between buttons, Enter or Space presses one.
+// it's up). One view shows at a time: home (the modes in a dock: Career, Locker room, Casual, 2 Player, plus Customize
+// and Settings, which open the pause menu's tabs; and the career season as a road with this week's challenges),
+// Career (the season, the next game's challenges, buying upgrades, the standings), Casual (Quick game: the game
+// options, then tip off; Practice), 2 Player (Local: the formats; Online). Esc goes back a view; the arrow keys (or
+// WASD) move between buttons, Enter or Space presses one.
 const Title = (() => {
   const box = document.getElementById('title');
   const views = [...box.querySelectorAll('.title-view')];
@@ -44,7 +45,7 @@ const Title = (() => {
         }
       });
     }
-    for (const b of box.querySelectorAll('.title-back')) b.addEventListener('click', () => show('home'));
+    for (const b of box.querySelectorAll('.title-back')) b.addEventListener('click', back);
     for (const s of box.querySelectorAll('span.ico[data-icon]')) s.replaceWith(pixelIcon(s.dataset.icon));
     for (const b of box.querySelectorAll('.title-start')) b.addEventListener('click', () => start(b.dataset.mode));
     for (const b of box.querySelectorAll('.duo-format')) {
@@ -88,7 +89,7 @@ const Title = (() => {
     const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
     if (e.code === 'Escape') {
       e.preventDefault();
-      if (view !== 'home') show('home');
+      if (view !== 'home') back();
       else if (readyPick !== null) document.querySelector('[data-focus="home-not-yet"]').click();
       return;
     }
@@ -129,6 +130,12 @@ const Title = (() => {
       best.focus();
       Sfx.play('tick');
     }
+  }
+
+  // Back (and Esc) from a view: to the one it sits under (data-back: Casual for Quick game and Practice, 2 Player for
+  // Local and Online), or home.
+  function back() {
+    show(current().dataset.back || 'home');
   }
 
   function show(next = 'home', { focus = true } = {}) {

@@ -299,25 +299,15 @@
             <span class="mode-name">Locker room</span>
             <span class="mode-desc">Quests, trophy case</span>
           </button>
-          <button type="button" class="dock-row" data-go="quick">
+          <button type="button" class="dock-row" data-go="casual">
             <span class="ico" data-icon="ball"></span>
-            <span class="mode-name">Quick game</span>
-            <span class="mode-desc">3v3, plus the daily game</span>
+            <span class="mode-name">Casual</span>
+            <span class="mode-desc">Quick game and practice</span>
           </button>
-          <button type="button" class="dock-row" data-go="duo">
+          <button type="button" class="dock-row" data-go="versus">
             <span class="ico" data-icon="duo"></span>
             <span class="mode-name">2 Player</span>
-            <span class="mode-desc">Two players, one keyboard</span>
-          </button>
-          <button type="button" class="dock-row" data-go="practice">
-            <span class="ico" data-icon="cone"></span>
-            <span class="mode-name">Practice</span>
-            <span class="mode-desc">Free shot, Around the World</span>
-          </button>
-          <button type="button" class="dock-row" data-go="online">
-            <span class="ico" data-icon="globe"></span>
-            <span class="mode-name">Online</span>
-            <span class="mode-desc">Host or join with a code</span>
+            <span class="mode-desc">Local or online</span>
           </button>
           <span class="dock-sep"></span>
           <button type="button" class="dock-row" data-go="customize">
@@ -344,8 +334,34 @@
           <div class="career-panel" id="career-panel"></div>
         </div>
 
+        <!-- Casual: a quick 3v3 game (with the daily game) or practice. -->
+        <div class="title-view stack-view" id="title-casual" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Casual</span></div>
+          <button type="button" class="mode-option" data-go="quick">
+            <span class="mode-name">Quick game</span>
+            <span class="mode-desc">3v3 with AI teammates and opponents, plus the daily game</span>
+          </button>
+          <button type="button" class="mode-option" data-go="practice">
+            <span class="mode-name">Practice</span>
+            <span class="mode-desc">Free shot and Around the World</span>
+          </button>
+        </div>
+
+        <!-- 2 Player: two people on one keyboard (Local), or in two browsers (Online). -->
+        <div class="title-view stack-view" id="title-versus" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">2 Player</span></div>
+          <button type="button" class="mode-option" data-go="duo">
+            <span class="mode-name">Local</span>
+            <span class="mode-desc">Two players, one keyboard</span>
+          </button>
+          <button type="button" class="mode-option" data-go="online">
+            <span class="mode-name">Online</span>
+            <span class="mode-desc">Prototype: host or join with a code</span>
+          </button>
+        </div>
+
         <!-- Quick game: the game options (Career and 2 Player games use them too), then tip off. -->
-        <div class="title-view stack-view" id="title-quick" hidden>
+        <div class="title-view stack-view" id="title-quick" data-back="casual" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Quick game</span></div>
           <!-- The daily game (daily.js): today's opponent and goal, your streak; title.js fills it in. -->
           <div class="daily-card">
@@ -381,7 +397,7 @@
         </div>
 
         <!-- 2 Player: two people on one keyboard. Picking a format starts it (with the upgrade draft). -->
-        <div class="title-view stack-view" id="title-duo" hidden>
+        <div class="title-view stack-view" id="title-duo" data-back="versus" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">2 Player</span></div>
           <button type="button" class="mode-option duo-format" data-format="vs3" aria-pressed="false">
             <span class="mode-name">Versus 3v3</span>
@@ -400,7 +416,7 @@
 
         <!-- Online (prototype, see net.js): host a 2 Player versus game with a code, join one by code or from the
              lobby finder, over the internet (a public relay) or between tabs of this browser. -->
-        <div class="title-view stack-view" id="title-online" hidden>
+        <div class="title-view stack-view" id="title-online" data-back="versus" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Online</span></div>
           <p class="mode-desc">Prototype: 2 Player versus with someone in another browser. Internet games go through a public relay.</p>
           <div class="row">
@@ -434,7 +450,7 @@
         </div>
 
         <!-- Practice: just the user's player. -->
-        <div class="title-view stack-view" id="title-practice" hidden>
+        <div class="title-view stack-view" id="title-practice" data-back="casual" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Practice</span></div>
           <button type="button" class="mode-option title-start" data-mode="free">
             <span class="mode-name">Free shot</span>

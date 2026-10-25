@@ -68,6 +68,7 @@ function newGame(mode, runBack = false) {
   state.challenge = career ? career.challenge : null;
   state.careerResult = null;
   state.roster = makePlayers(state.look, state.team);
+  for (const p of state.roster) p.stats = newStats(); // each player's own line on the final screen's box score
   const star = state.roster[0];
   if (career) rollAIUpgrades(state.roster, Career.team(), career.upgrades);
   else rollAIUpgrades(state.roster, state.team);
@@ -374,13 +375,13 @@ function handleBallEvents() {
     if (e.type === 'score') {
       Practice.scored(state);
       const team = e.team || 0;
-      const stats = state.stats[team];
+      // The shooter's line gets it too (only the team's when there's no shooter of that team to credit).
+      const by = e.shooter && e.shooter.team === team ? e.shooter : { team };
       state.score[team] += e.points;
-      stats.pts += e.points;
-      if (e.ft) stats.ftm++;
-      else stats.fgm++;
-      if (e.dunk) stats.dnk++;
-      if (e.points === 3) stats.tpm++;
+      countStat(state, by, 'pts', e.points);
+      countStat(state, by, e.ft ? 'ftm' : 'fgm');
+      if (e.dunk) countStat(state, by, 'dnk');
+      if (e.points === 3) countStat(state, by, 'tpm');
       const { hype } = CROWD;
       const cheer = e.dunk ? (e.rare ? hype.rareDunk : hype.dunk) : e.ft ? hype.freeThrow : e.points === 3 ? hype.three : hype.score;
       cheerCrowd(cheer, e.shooter, { sign: !e.ft, rare: e.rare });
@@ -526,6 +527,57 @@ function startMode(mode) {
   canvas.focus();
 }
 
+// The pause menu's Testing tab (?dev=1): jump a game to the moment worth checking. can(name) says whether a tool
+// applies right now; the clock ones need a game in progress (Quick game, career, 2 Player), not the demo.
+const testing = {
+  can(tool) {
+    const c = state.clock;
+    const playing = !!c && !c.over && state.mode !== 'demo';
+    const u = state.user;
+    switch (tool) {
+      case 'tokens': return true;
+      case 'shotClock': return playing && state.rules.shotClock;
+      case 'ballToMe': return !!u && state.mode !== 'demo' && state.mode !== 'world' && !(c && c.over) && !u.shot;
+      case 'freeThrow': return playing && !!state.ref && !!u && !u.shot;
+      default: return playing; // endGame, endPeriod, tenSeconds, homePoints, awayPoints
+    }
+  },
+  endGame: () => Clock.finish(state),
+  endPeriod: () => Clock.endPeriodNow(state),
+  tenSeconds() {
+    state.clock.t = Math.min(state.clock.t, 10);
+  },
+  shotClock() {
+    state.clock.shot = Math.min(state.clock.shot, 3);
+  },
+  homePoints: () => testPoints(0),
+  awayPoints: () => testPoints(1),
+  // The user's player gets the ball where they stand (out of any free throw or dead ball), with a fresh shot clock.
+  ballToMe() {
+    const u = state.user;
+    state.freeThrow = null;
+    if (state.ref) state.ref.hasBall = false;
+    Play.give(state, u);
+    if (state.clock) Clock.resetShot(state, u.team);
+  },
+  // The user's player is fouled: everyone lines up for their free throw.
+  freeThrow() {
+    const u = state.user;
+    if (state.ball.holder) state.ball.holder.hasBall = false;
+    startFreeThrow(u);
+  },
+  tokens() {
+    Career.get().tokens += 100;
+    Career.save();
+  },
+};
+
+// Three points for `team` out of nowhere (the team's line only: no player made them).
+function testPoints(team) {
+  state.score[team] += 3;
+  state.stats[team].pts += 3;
+}
+
 newGame(state.mode);
 Menu.init({
   look: state.look,
@@ -548,6 +600,7 @@ Menu.init({
   closed: () => {
     if (state.mode === 'demo') Title.show();
   },
+  testing,
 });
 Title.init({
   rules: state.rules,

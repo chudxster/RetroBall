@@ -40,7 +40,8 @@ with your best time saved.
 
 A 3v3 game is two 2.5-minute halves (teams switch ends at halftime), with 1-minute overtimes while tied and a
 14-second shot clock; the clock stops for dead balls (free throws, resets, halftime). At the final buzzer you get the
-result and both teams' stats; press shoot to play again.
+result and a box score (points, FG, 3PT, FT, steals, blocks, dunks) for each team and each player; press shoot to
+play again.
 
 Reaching for a steal can be called a foul, more likely the closer you are to the ball handler. With **free throws** on
 (Quick game options) the fouled player shoots one from the line for a point: the ref hands them the ball after two
@@ -75,7 +76,8 @@ opponent gets as many levels as your player in the same spot, spread at random (
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 
-Add `?dev=1` to the address (e.g. `index.html?dev=1`) for the pause menu's **Dev** tab: testing sliders (dunk odds,
+Add `?dev=1` to the address (e.g. `index.html?dev=1`) for the pause menu's **Testing** tab: playtesting tools (End game, End period, 10 s left, shot clock to 3 s,
+Home/Away +3, Ball to me, Free throw, +100 career tokens), testing sliders (dunk odds,
 AI level, crowd) and **Player tuning**: every number that shapes how players move, shoot, dunk, dash, pass and defend,
 most important first, each with a tip and its default. Changes are saved; reset one or all to go back to the defaults.
 

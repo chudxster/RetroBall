@@ -154,14 +154,12 @@ const Shooting = (() => {
     const meter = p.meter;
     shot.released = true;
     meter.hideIn = SHOT.meterLinger;
-    const stats = game.stats[p.team];
     const hoop = shot.hoop;
     // A free throw counts on its own, not as a field goal.
     const ft = !!game.freeThrow && game.freeThrow.shooter === p;
     const points = ft ? FOUL.ftPoints : isThreePoint(p.x, p.y, hoop) ? 3 : 2;
-    if (ft) stats.fta++;
-    else stats.fga++;
-    if (points === 3) stats.tpa++;
+    countStat(game, p, ft ? 'fta' : 'fga');
+    if (points === 3) countStat(game, p, 'tpa');
     p.hasBall = false;
     const from = p.shootingBallPosition();
 
@@ -358,7 +356,7 @@ const Shooting = (() => {
     if (shot.outcome === 'hang') game.ball.lockT = DUNK.hangLock;
     if (shot.outcome === 'shatter') game.ball.lockT = Infinity;
     p.hasBall = false;
-    game.stats[p.team].fga++;
+    countStat(game, p, 'fga');
     hoop.bendV += DUNK.slamKick;
     Sfx.play('dunk', { x: hoop.x });
     game.hitStop = DUNK.hitStop;

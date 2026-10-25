@@ -143,5 +143,22 @@ const Clock = (() => {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  return { start, update, stopped, resetShot, startPeriod, periodLabel, format };
+  // Testing tab: the final buzzer right now, with the score as it stands (even tied).
+  function finish(game) {
+    const c = game.clock;
+    if (!c || c.over) return;
+    Sfx.play('buzzer');
+    Object.assign(c, { t: 0, buzzer: false, breakT: 0, banner: null, over: true, overT: 0 });
+    game.freeThrow = null;
+    game.draft = null;
+  }
+
+  // Testing tab: this period's buzzer right now (halftime, overtime or the final, as the score has it).
+  function endPeriodNow(game) {
+    const c = game.clock;
+    if (!c || c.over || c.breakT > 0 || game.draft) return;
+    endPeriod(game);
+  }
+
+  return { start, update, stopped, resetShot, startPeriod, periodLabel, format, finish, endPeriodNow };
 })();

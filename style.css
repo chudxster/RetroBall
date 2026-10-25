@@ -136,6 +136,23 @@ input {
 }
 
 /* Player tuning in the Dev tab, set off from the testing sliders above. */
+/* Testing tab: the playtesting tools, three to a row */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(var(--px) * 2);
+  margin-bottom: calc(var(--px) * 3);
+}
+
+.tool-grid .btn {
+  font-size: 0.8em;
+}
+
+.tool-grid .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .test-section {
   min-height: 0;
   margin-top: calc(var(--px) * 3);

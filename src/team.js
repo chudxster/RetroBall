@@ -34,6 +34,12 @@ function isHuman(game, p) {
   return game.humans.some((h) => h.player === p);
 }
 
+// One more of stat `key` (see newStats in main.js) for player `p`'s line and their team's.
+function countStat(game, p, key, n = 1) {
+  game.stats[p.team][key] += n;
+  if (p.stats) p.stats[key] += n;
+}
+
 // The away team's jersey color, given the home team's (benches and the scorer's table wear it too).
 function awayJersey(homeJersey) {
   return awayKit ? awayKit.jersey : invertColor(homeJersey);

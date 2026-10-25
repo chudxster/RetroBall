@@ -92,7 +92,7 @@ const Play = (() => {
       poke(game, h, p);
       addPopup(game, 'STEAL!', playColor(game, p.team), p.x, p.y, 56);
       Sfx.play('steal', { x: p.x });
-      game.stats[p.team].stl++;
+      countStat(game, p, 'stl');
       cheerCrowd(CROWD.hype.steal, p);
     } else {
       p.stunT = DEFENSE.stealStun;
@@ -193,7 +193,7 @@ const Play = (() => {
       game.ball.lastTeam = d.team;
       addPopup(game, 'BLOCKED!', playColor(game, d.team), d.x, d.y, 60);
       Sfx.play('block', { x: d.x });
-      game.stats[d.team].blk++;
+      countStat(game, d, 'blk');
       cheerCrowd(CROWD.hype.block, d);
       return true;
     }
@@ -217,7 +217,7 @@ const Play = (() => {
     p.jump = { t: 0 };
     p.vx = 0;
     p.vy = 0;
-    game.stats[p.team].fga++;
+    countStat(game, p, 'fga');
     // Swatted back out toward the court.
     const to = { x: p.x + hoop.dir * rand(20, 45), y: p.y + rand(-25, 25), z: 0 };
     game.ball.launch(p.x, p.y, 40, to, 0.55, null);
@@ -226,7 +226,7 @@ const Play = (() => {
     if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
     startJump(d);
     addPopup(game, 'STUFFED!', playColor(game, d.team), d.x, d.y, 60);
-    game.stats[d.team].blk++;
+    countStat(game, d, 'blk');
     Sfx.play('block', { x: d.x });
     cheerCrowd(CROWD.hype.stuff, d);
     return true;
@@ -321,7 +321,7 @@ const Play = (() => {
     give(game, best);
     if (picked) {
       addPopup(game, 'PICKED OFF!', playColor(game, best.team), best.x, best.y, 56);
-      game.stats[best.team].stl++;
+      countStat(game, best, 'stl');
       cheerCrowd(CROWD.hype.steal, best);
       Sfx.play('steal', { x: best.x });
     }

@@ -23,8 +23,8 @@
         <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false">Upgrades</button>
         <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false">Controls</button>
         <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false">UI</button>
-        <!-- Only with ?dev=1 in the address (see menu.js): testing sliders and player tuning. -->
-        <button type="button" class="tab" role="tab" data-panel="dev-view" aria-selected="false" hidden>Dev</button>
+        <!-- Only with ?dev=1 in the address (see menu.js): playtesting tools, testing sliders and player tuning. -->
+        <button type="button" class="tab" role="tab" data-panel="dev-view" aria-selected="false" hidden>Testing</button>
       </div>
 
       <div class="menu-body tab-panel" id="player-view" role="tabpanel">
@@ -126,11 +126,31 @@
         </div>
       </div>
 
-      <!-- Dev (only with ?dev=1 in the address): testing sliders and player tuning. -->
+      <!-- Testing (only with ?dev=1 in the address): playtesting tools, testing sliders and player tuning. -->
       <div class="tab-panel stack-view" id="dev-view" role="tabpanel" hidden>
-        <!-- Testing: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
-        <div class="stack-view" id="test-view">
-          <p class="test-note">Testing (not saved)</p>
+        <!-- Tools that jump the game to the moment you want to check (menu.js; main.js does the work). The game ones
+             close the menu; each is disabled where it doesn't apply. -->
+        <div id="testing-tools">
+          <p class="test-note">Game (closes the menu)</p>
+          <div class="tool-grid">
+            <button type="button" class="btn btn-quiet" data-tool="endGame">End game</button>
+            <button type="button" class="btn btn-quiet" data-tool="endPeriod">End period</button>
+            <button type="button" class="btn btn-quiet" data-tool="tenSeconds">10 s left</button>
+            <button type="button" class="btn btn-quiet" data-tool="shotClock">Shot clock 3 s</button>
+            <button type="button" class="btn btn-quiet" data-tool="homePoints">Home +3</button>
+            <button type="button" class="btn btn-quiet" data-tool="awayPoints">Away +3</button>
+            <button type="button" class="btn btn-quiet" data-tool="ballToMe">Ball to me</button>
+            <button type="button" class="btn btn-quiet" data-tool="freeThrow" title="Your player is fouled and goes to the line">Free throw</button>
+          </div>
+          <p class="test-note">Career</p>
+          <div class="tool-grid">
+            <button type="button" class="btn btn-quiet" data-tool="tokens">+100 tokens</button>
+          </div>
+        </div>
+
+        <!-- Odds: dunk outcome odds, AI level and crowd density. Not saved; a reload restores the defaults. -->
+        <div class="stack-view test-section" id="test-view">
+          <p class="test-note">Odds and AI (not saved)</p>
           <p class="test-note">Dunk odds</p>
           <div class="row">
             <label for="hang-chance">Rim hang</label>

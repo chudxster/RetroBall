@@ -103,30 +103,16 @@ function drawGameOver(ctx, game) {
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   const mid = VIEW_W / 2;
   const versus = game.mode === 'duo' && Duo.versus();
-  const title = versus ? `P${won ? 1 : 2} WINS!` : won ? 'YOU WIN!' : 'YOU LOSE';
-  const titleColor = versus ? DUO.markers[won ? 0 : 1] : won ? COLORS.good : COLORS.bad;
+  // (A tie only happens when the Testing tab ends a game early.)
+  const tied = home === away;
+  const title = tied ? 'TIE GAME' : versus ? `P${won ? 1 : 2} WINS!` : won ? 'YOU WIN!' : 'YOU LOSE';
+  const titleColor = tied ? COLORS.line : versus ? DUO.markers[won ? 0 : 1] : won ? COLORS.good : COLORS.bad;
   drawText(ctx, title, mid, 40, titleColor, { align: 'center', scale: TEXT_SCALE * 3, shadow: COLORS.outline });
   drawText(ctx, `FINAL${ot}`, mid, 82, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
   const [homeName, awayName] = game.abbrs;
   drawText(ctx, `${homeName} ${home} - ${away} ${awayName}`, mid, 100, COLORS.line, { align: 'center', scale: TEXT_SCALE * 2 });
 
-  // Stat table: label, home, away.
-  const rows = [
-    ['FG', (s) => `${s.fgm}/${s.fga}`],
-    ['3PT', (s) => `${s.tpm}/${s.tpa}`],
-    ['FT', (s) => `${s.ftm}/${s.fta}`],
-    ['STL', (s) => String(s.stl)],
-    ['BLK', (s) => String(s.blk)],
-  ];
-  const top = 136;
-  drawText(ctx, homeName, mid - 10, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
-  drawText(ctx, awayName, mid + 90, top, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
-  rows.forEach(([label, value], i) => {
-    const y = top + 20 + i * 18;
-    drawText(ctx, label, mid - 110, y, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
-    drawText(ctx, value(game.stats[0]), mid - 10, y, COLORS.line, { align: 'center', scale: TEXT_SCALE });
-    drawText(ctx, value(game.stats[1]), mid + 90, y, COLORS.line, { align: 'center', scale: TEXT_SCALE });
-  });
+  drawBoxScore(ctx, game, 128);
   const r = game.careerResult;
   if (r) drawCareerResult(ctx, r, mid, 254);
   if (game.clock.overT <= 1) return;
@@ -139,6 +125,48 @@ function drawGameOver(ctx, game) {
   }
   // The way out (the pause menu's Main menu button), steady under the blinking prompt.
   drawText(ctx, 'ESC: MENU', mid, VIEW_H - 34, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+}
+
+// The final screen's box score: a column per stat, and for each team its totals (in its name) over a line per
+// player on the court. Home players go by their names, away players by their numbers.
+const BOX_COLUMNS = [
+  ['PTS', (s) => String(s.pts)],
+  ['FG', (s) => `${s.fgm}/${s.fga}`],
+  ['3PT', (s) => `${s.tpm}/${s.tpa}`],
+  ['FT', (s) => `${s.ftm}/${s.fta}`],
+  ['STL', (s) => String(s.stl)],
+  ['BLK', (s) => String(s.blk)],
+  ['DNK', (s) => String(s.dnk)],
+];
+const BOX_NAME_X = 96;   // names start here...
+const BOX_FIRST_X = 236; // ...and the stat columns are centered from here,
+const BOX_STEP = 50;     // this far apart
+const BOX_ROW = 12;
+
+function boxName(game, p) {
+  if (p.team !== 0) return `NO.${p.look.number}`;
+  const team = game.mode === 'career' ? Career.team() : game.team;
+  return team[p.role].name;
+}
+
+function drawBoxScore(ctx, game, top) {
+  const text = (s, x, y, color, align = 'center') => drawText(ctx, s, x, y, color, { align, scale: TEXT_SCALE });
+  const row = (label, stats, y, labelColor, color) => {
+    text(label, BOX_NAME_X, y, labelColor, 'left');
+    BOX_COLUMNS.forEach(([, value], i) => text(value(stats), BOX_FIRST_X + i * BOX_STEP, y, color));
+  };
+  BOX_COLUMNS.forEach(([head], i) => text(head, BOX_FIRST_X + i * BOX_STEP, top, COLORS.hint));
+  let y = top + BOX_ROW + 2;
+  for (const team of [0, 1]) {
+    row(game.abbrs[team], game.stats[team], y, COLORS.okay, COLORS.line);
+    y += BOX_ROW;
+    const players = game.players.filter((p) => p.team === team).sort((a, b) => a.role - b.role);
+    for (const p of players) {
+      row(boxName(game, p), p.stats, y, COLORS.hint, COLORS.hint);
+      y += BOX_ROW;
+    }
+    y += 4;
+  }
 }
 
 // 2 Player upgrade draft: each player's half of the screen, with their points left, the five stats as pips (a

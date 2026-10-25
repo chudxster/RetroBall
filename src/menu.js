@@ -163,11 +163,13 @@ const Menu = (() => {
   const POSE_SECONDS = 0.8;
 
   // What the menu edits, supplied by main.js: { look, setLook(look), team, upgradesChanged(), ui, mode(),
-  // inTitle(), restart(), toTitle(), closed() }, where team is the user's team as loadTeam() returns it and ui is
-  // { stats }. inTitle() says the main menu is up (the menu was opened from it, and closing goes back to it).
+  // inTitle(), restart(), toTitle(), closed(), testing }, where team is the user's team as loadTeam() returns it and
+  // ui is { stats }. inTitle() says the main menu is up (the menu was opened from it, and closing goes back to it).
+  // testing has the Testing tab's tools by name, plus can(name): whether one applies right now.
   let game = null;
   let syncUpgradeView = () => {};
   let syncFoot = () => {};
+  let syncTools = () => {};
   let showTab = () => {};
   let preview = null;
   let look = null;  // player 1's look, which also carries the team kit
@@ -236,6 +238,7 @@ const Menu = (() => {
     initSoundView();
     initTuningView();
     initTestView();
+    initTestingTools();
     initFoot();
     panel.querySelector('.tab[data-panel="dev-view"]').hidden = !DEV;
 
@@ -661,6 +664,25 @@ const Menu = (() => {
 
   // Footer: in a game, Main menu (in a career game that isn't over, after an "are you sure": it won't count) and
   // Restart (not in career: no do-overs); opened from the main menu, just Back.
+  // Testing tab tools: each button runs main.js's tool of the same name; the game ones close the menu so the result
+  // plays out. Buttons that don't apply right now (no game clock, the main menu...) are disabled.
+  const STAYS_OPEN = ['tokens'];
+  function initTestingTools() {
+    const buttons = [...document.querySelectorAll('#testing-tools [data-tool]')];
+    syncTools = () => {
+      for (const b of buttons) b.disabled = !game.testing.can(b.dataset.tool);
+    };
+    for (const b of buttons) {
+      b.addEventListener('click', () => {
+        const tool = b.dataset.tool;
+        if (!game.testing.can(tool)) return;
+        game.testing[tool]();
+        if (STAYS_OPEN.includes(tool)) syncTools();
+        else setOpen(false);
+      });
+    }
+  }
+
   function initFoot() {
     const toTitle = document.getElementById('to-title');
     const restart = document.getElementById('restart-game');
@@ -699,6 +721,7 @@ const Menu = (() => {
     if (open) {
       lastFrame = 0;
       syncFoot(true);
+      syncTools();
       syncUpgradeView(); // the mode (free or career levels) may have changed
       requestAnimationFrame(drawPreview);
     } else {

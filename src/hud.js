@@ -193,46 +193,127 @@ function drawBoxScore(ctx, game, top) {
   }
 }
 
-// 2 Player upgrade draft: each player's half of the screen, with their points left, the five stats as pips (a
-// cursor on the picked one) and whether they're ready.
+// 2 Player upgrade draft (the "Shared Keyboard" design): the format across the top, each player's half below it in
+// their color (the five stats as pips with a cursor on the picked one, points left, a Ready lamp), and the shared
+// keyboard drawn at the bottom with each player's keys in their color and labeled, lighting up while held, so both
+// find their hands before tip-off.
+const DRAFT_KEYS = [
+  [['Escape', 'ESC'], ...[...'QWERTYUIOP'].map((c) => [`Key${c}`, c])],
+  [...'ASDFGHJKL'].map((c) => [`Key${c}`, c]),
+];
+const DRAFT_KEY_LABELS = { shoot: 'SHOOT', action: 'DUNK', pass: 'PASS' };
+const DUO_FORMAT_CARDS = [
+  ['vs3', 'VERSUS 3V3', 'EACH RUNS A TEAM WITH TWO AI'],
+  ['vs1', 'VERSUS 1V1', 'JUST THE TWO OF YOU'],
+  ['coop', 'CO-OP', 'YOU TWO + AI VS THREE AI'],
+];
+
 function drawDraft(ctx, game) {
   const d = game.draft;
-  ctx.fillStyle = 'rgba(26, 28, 44, 0.9)';
+  const box = (x, y, w, h, fill, edge) => {
+    ctx.fillStyle = edge;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = fill;
+    ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+  };
+  ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  const title = d.phase === 'pre' ? `PRE-GAME UPGRADES: ${d.points} POINTS EACH` : `HALFTIME: +${d.points} POINTS EACH`;
-  drawText(ctx, title, VIEW_W / 2, 26, COLORS.okay, { align: 'center', scale: TEXT_SCALE, shadow: COLORS.outline });
+
+  // The format cards: the one being played lit.
+  const title = d.phase === 'pre' ? `UPGRADE DRAFT: ${d.points} EACH` : `HALFTIME: +${d.points} EACH`;
+  drawText(ctx, '2 PLAYER', 8, 8, COLORS.okay, { scale: TEXT_SCALE });
+  drawText(ctx, title, 8, 22, COLORS.hint);
+  DUO_FORMAT_CARDS.forEach(([format, name, desc], i) => {
+    const x = 156 + i * 150; // clear of the pause button
+    const on = Duo.format() === format;
+    box(x, 4, 144, 28, on ? '#29366f' : COLORS.wall, on ? COLORS.okay : '#566c86');
+    drawText(ctx, name, x + 6, 9, on ? COLORS.okay : COLORS.hint, { scale: TEXT_SCALE });
+    drawText(ctx, desc, x + 6, 23, COLORS.hint);
+  });
+
   const coop = !Duo.versus();
   const levels = Duo.levels();
   d.sides.forEach((s, i) => {
     const set = i ? 'p2' : 'p1';
     const color = DUO.markers[i];
-    const x0 = i ? VIEW_W / 2 + 16 : 16;
+    const x0 = i ? VIEW_W / 2 + 4 : 4;
+    const w = VIEW_W / 2 - 8;
     const k = (name) => Input.keyLabel(name, set);
-    drawText(ctx, `PLAYER ${i + 1}${coop ? '' : i ? ' (AWAY)' : ' (HOME)'}`, x0, 56, color, { scale: TEXT_SCALE });
-    drawText(ctx, `POINTS LEFT ${s.left}`, x0, 76, s.left ? COLORS.line : COLORS.hint, { scale: TEXT_SCALE });
+    // The half: a strip of the player's color across the top, fading down.
+    ctx.fillStyle = color;
+    ctx.fillRect(x0, 38, w, 2);
+    ctx.globalAlpha = 0.12;
+    ctx.fillRect(x0, 40, w, 60);
+    ctx.globalAlpha = 1;
+    drawText(ctx, `P${i + 1}`, x0 + 8, 46, color, { scale: 3, shadow: COLORS.outline });
+    drawText(ctx, coop ? 'CO-OP' : i ? 'AWAY' : 'HOME', x0 + 44, 52, COLORS.hint, { scale: TEXT_SCALE });
+    // The Ready lamp.
+    const lamp = s.ready ? 'READY' : `PRESS ${k('shoot')}`;
+    const lw = textWidth(lamp, TEXT_SCALE) + 10;
+    if (s.ready) box(x0 + w - lw - 6, 46, lw, 18, '#a7f070', '#a7f070');
+    else box(x0 + w - lw - 6, 46, lw, 18, COLORS.bg, '#566c86');
+    drawText(ctx, lamp, x0 + w - lw - 1, 50, s.ready ? COLORS.bg : COLORS.hint, { scale: TEXT_SCALE });
+    drawText(ctx, `${s.left} OF ${d.points} POINTS LEFT`, x0 + 8, 72, s.left ? COLORS.line : COLORS.hint);
+
     UPGRADE_KEYS.forEach((key, row) => {
-      const y = 104 + row * 26;
-      const on = row === s.cursor && !s.ready;
-      if (on) {
-        ctx.fillStyle = COLORS.wall;
-        ctx.fillRect(x0 - 6, y - 5, VIEW_W / 2 - 20, 20);
+      const y = 82 + row * 22;
+      if (row === s.cursor && !s.ready) {
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = color;
+        ctx.fillRect(x0 + 4, y, w - 8, 20);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = color;
+        ctx.strokeRect(x0 + 4.5, y + 0.5, w - 9, 19);
       }
-      drawText(ctx, key, x0, y, on ? color : COLORS.hint, { scale: TEXT_SCALE });
+      drawText(ctx, key, x0 + 12, y + 5, row === s.cursor && !s.ready ? color : COLORS.line, { scale: TEXT_SCALE });
       for (let n = 0; n < UPGRADES.max; n++) {
-        const px = x0 + 110 + n * 14;
-        ctx.fillStyle = COLORS.outline;
-        ctx.fillRect(px - 1, y - 1, 12, 12);
-        ctx.fillStyle = n < levels[i][key] ? (n >= levels[i][key] - s.bought[key] ? color : COLORS.good) : COLORS.meterBg;
-        ctx.fillRect(px, y, 10, 10);
+        const px = x0 + 130 + n * 16;
+        box(px, y + 4, 12, 12, n < levels[i][key] ? (n >= levels[i][key] - s.bought[key] ? color : COLORS.good) : COLORS.meterBg, COLORS.outline);
       }
+      drawText(ctx, String(levels[i][key]), x0 + w - 20, y + 5, levels[i][key] ? COLORS.okay : COLORS.hint, { scale: TEXT_SCALE });
     });
-    const help = `${k('up')}/${k('down')} PICK  ${k('right')} ADD  ${k('left')} TAKE BACK`;
-    drawText(ctx, help, x0, 246, COLORS.hint, { scale: TEXT_SCALE });
-    const ready = s.ready ? 'READY!' : `PRESS ${k('shoot')} WHEN READY`;
-    drawText(ctx, ready, x0, 270, s.ready ? COLORS.good : color, { scale: TEXT_SCALE, shadow: COLORS.outline });
+    drawText(ctx, `${k('up')}/${k('down')} PICK  ${k('right')} ADD  ${k('left')} UNDO`, x0 + 12, 198, COLORS.hint);
+    drawText(ctx, coop ? 'YOUR OWN PLAYER GETS THESE' : 'YOUR WHOLE TEAM GETS THESE', x0 + 12, 210, COLORS.hint);
   });
-  const who = coop ? 'EACH UPGRADES THEIR OWN PLAYER' : 'UPGRADES GO TO YOUR WHOLE TEAM';
-  drawText(ctx, who, VIEW_W / 2, 300, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+  ctx.fillStyle = '#333c57';
+  ctx.fillRect(VIEW_W / 2 - 1, 38, 2, 182);
+
+  // The shared keyboard: each player's keys in their color with what they do, lit while held.
+  const KW = 26;
+  const KH = 22;
+  const kbW = DRAFT_KEYS[0].length * (KW + 3) + 12;
+  const kx = Math.round(VIEW_W / 2 - kbW / 2);
+  const ky = 228;
+  box(kx, ky, kbW, 3 * (KH + 3) + 12, COLORS.wall, '#566c86');
+  DRAFT_KEYS.forEach((row, r) => {
+    row.forEach(([code, label], c) => {
+      const x = kx + 6 + r * 14 + c * (KW + 3);
+      const y = ky + 6 + r * (KH + 3);
+      const owner = ['p1', 'p2'].findIndex((set) => Input.actionFor(set, code));
+      const action = owner >= 0 ? Input.actionFor(owner ? 'p2' : 'p1', code) : null;
+      const held = Input.isDown(code);
+      const fill = code === 'Escape' ? '#333c57' : owner < 0 ? '#333c57' : held ? COLORS.line : DUO.markers[owner];
+      box(x, y, KW, KH, fill, COLORS.outline);
+      ctx.fillStyle = COLORS.outline;
+      ctx.fillRect(x, y + KH - 3, KW, 3); // the key's front edge
+      const ink = owner < 0 && code !== 'Escape' ? '#566c86' : owner < 0 ? COLORS.line : COLORS.bg;
+      drawText(ctx, label, x + KW / 2, y + 4, ink, { align: 'center' });
+      const tag = code === 'Escape' ? 'PAUSE' : DRAFT_KEY_LABELS[action];
+      if (tag) drawText(ctx, tag.slice(0, 5), x + KW / 2, y + 11, ink, { align: 'center' });
+    });
+  });
+  const bar = { x: kx + 70, y: ky + 6 + 2 * (KH + 3), w: kbW - 140 };
+  box(bar.x, bar.y, bar.w, KH - 6, '#333c57', COLORS.outline);
+  drawText(ctx, 'BOTH PLAYERS SHARE ONE KEYBOARD', bar.x + bar.w / 2, bar.y + 5, '#566c86', { align: 'center' });
+
+  // Each player's keys spelled out beside the keyboard.
+  ['p1', 'p2'].forEach((set, i) => {
+    const k = (name) => Input.keyLabel(name, set);
+    const lines = [`P${i + 1} ${Input.moveLabel(set)} MOVE`, `${k('shoot')} SHOOT / READY`, `${k('action')} DUNK  ${k('pass')} PASS`];
+    lines.forEach((line, n) => {
+      drawText(ctx, line, i ? VIEW_W - 8 : 8, 250 + n * 14, n ? COLORS.hint : DUO.markers[i], { align: i ? 'right' : 'left' });
+    });
+  });
 }
 
 // The daily game's result: the goal (made or missed), then the streak (or that a replay doesn't change today's).

@@ -58,7 +58,8 @@ leaving a daily game early counts as a miss.
 **2 Player** is two people on one keyboard: **Versus 3v3** (each runs a team with two AI teammates), **Versus 1v1**,
 or **Co-op** (together, plus an AI teammate, against three AI players). Player 1 plays with WASD, R (shoot), E
 (dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets can be changed in Settings (the Controls tab), and only Esc pauses. Before tip-off both players get the same random number of upgrade points and spend them
-on a split screen at the same time (up/down to pick, right to add, left to take back, shoot when ready): in versus
+on a split screen at the same time (up/down to pick, right to add, left to take back, shoot when ready), with both
+players' keys drawn on a shared keyboard below (each player's in their color, lighting up while held): in versus
 they upgrade their whole team, in co-op their own player. At halftime they get more. After the final buzzer player
 1's shoot key **runs it back** with the same pre-game upgrades, player 2's starts a new draft.
 

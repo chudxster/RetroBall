@@ -152,6 +152,8 @@ const Input = (() => {
     reset,
     save,
     keyLabel: (name, set = 'solo') => label(binds[set][name]),
+    // Whether a key is held right now (the 2 Player draft's keyboard lights it up).
+    isDown: (code) => down.has(code),
     // The action `code` does in `set` (in solo play the arrows always move too), or null.
     actionFor: (set, code) => Object.keys(binds[set]).find((n) => isBound(set, n, code)) || null,
     moveLabel,

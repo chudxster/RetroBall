@@ -167,6 +167,12 @@ const CAREER = {
   aiPerStrength: 0.45,
   aiPerSeason: 0.05,
   aiMax: 0.95,
+  teammatePerSeason: 0.05, // the career team's AI teammates improve this much a season (from AI.teammateLevel, to aiMax)
+  // Other teams' games: the winner scores simWinner points (a 5-minute game; scaled by length), the loser 1-5 fewer
+  // plus up to simMarginPerGap more for each 1.0 of strength between them. Fitted to headless AI-vs-AI games
+  // (winner 21-38, avg 29; margin avg 4).
+  simWinner: [22, 38],
+  simMarginPerGap: 10,
   upgradesPerStrength: 6,
   upgradesPerSeason: 2,
   strengthDrift: 0.1, // between seasons each AI team's strength moves up to this much either way

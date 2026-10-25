@@ -67,6 +67,7 @@ function newGame(mode, runBack = false) {
   // AI.level. (In 2 Player versus every AI player plays at the teammate level: see evenTeams.)
   const picked = mode === '3v3' || (duo && !Duo.versus()) ? DIFFICULTY[difficultyOf(state.rules)].ai : null;
   opponentAILevel = career ? career.aiLevel : picked;
+  teammateAILevel = career ? career.teammateLevel : null;
   evenTeams = duo && Duo.versus();
   state.abbrs = career ? career.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
   state.challenge = career ? career.challenge : null;

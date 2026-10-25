@@ -25,6 +25,8 @@ let opponentAILevel = null;
 // 2 Player versus: neither side is the "home" side. Both teams' AI players play at the teammate level and the crowd
 // cheers both the same (see newGame).
 let evenTeams = false;
+// A career team's AI teammates, who improve season by season (see Career.setup); null elsewhere: AI.teammateLevel.
+let teammateAILevel = null;
 
 // A full game (3v3 Casual, a career game, 2 Player or the AI demo behind the main menu): both teams, the ref and
 // the clocks.
@@ -126,7 +128,7 @@ function formationSpot(team, role) {
 // An AI tuning value blended between its [easy, hard] ends: the opponents use the AI level (a testing slider
 // in the Dev tab), the user's teammates a fixed one.
 function aiValue(p, [easy, hard]) {
-  return lerp(easy, hard, p.team === 0 || evenTeams ? AI.teammateLevel : opponentAILevel ?? AI.level);
+  return lerp(easy, hard, p.team === 0 || evenTeams ? teammateAILevel ?? AI.teammateLevel : opponentAILevel ?? AI.level);
 }
 
 function teammates(game, p) {

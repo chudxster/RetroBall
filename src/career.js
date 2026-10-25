@@ -238,7 +238,7 @@ const Career = (() => {
   }
 
   // For newGame: who's playing (abbreviations for the scoreboard), the opponent's kit, AI level and upgrade levels
-  // per player, and the picked challenge.
+  // per player, the career team's AI teammates' level, and the picked challenge.
   function setup() {
     const { opp } = next();
     const t = c.league[opp];
@@ -248,6 +248,7 @@ const Career = (() => {
       kit: { jersey: t.jersey, shorts: t.shorts, shoe: t.shorts, laces: t.jersey },
       aiLevel: Math.min(CAREER.aiBase + CAREER.aiPerStrength * t.strength + CAREER.aiPerSeason * seasons, CAREER.aiMax),
       upgrades: Math.round(CAREER.upgradesPerStrength * t.strength + CAREER.upgradesPerSeason * seasons),
+      teammateLevel: Math.min(AI.teammateLevel + CAREER.teammatePerSeason * seasons, CAREER.aiMax),
       challenge: c.current ? c.current.challenge : null,
     };
   }
@@ -256,8 +257,9 @@ const Career = (() => {
   function simulate(a, b, k) {
     const L = c.league;
     const aWins = Math.random() < clamp(0.5 + (L[a].strength - L[b].strength) * 0.8, 0.1, 0.9);
-    const high = Math.max(2, Math.round((18 + Math.random() * 14) * k));
-    const low = Math.max(0, high - 1 - Math.floor(Math.random() * 10 * k));
+    const high = Math.max(2, Math.round(rand(...CAREER.simWinner) * k));
+    const gap = Math.abs(L[a].strength - L[b].strength);
+    const low = Math.max(0, high - Math.max(1, Math.round((rand(1, 5) + Math.random() * CAREER.simMarginPerGap * gap) * k)));
     if (c.phase === 'season') {
       tally(a, aWins ? high : low, aWins ? low : high);
       tally(b, aWins ? low : high, aWins ? high : low);

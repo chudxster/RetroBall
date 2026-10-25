@@ -16,6 +16,7 @@ const Title = (() => {
   let open = false;
   let upgradePick = 0;       // which career player the Career screen's upgrades show
   let confirmRestart = false;
+  let readyPick = null;      // the home screen's picked challenge, waiting for "ready to play now?"
 
   const current = () => views.find((v) => v.id === `title-${view}`);
 
@@ -121,6 +122,7 @@ const Title = (() => {
     if (e.code === 'Escape') {
       e.preventDefault();
       if (view !== 'home') show('home');
+      else if (readyPick !== null) document.querySelector('[data-focus="home-not-yet"]').click();
       return;
     }
     const dir = MOVES[e.code];
@@ -170,6 +172,7 @@ const Title = (() => {
     box.hidden = false;
     pauseButton.hidden = true;
     confirmRestart = false;
+    readyPick = null;
     for (const v of views) v.hidden = v !== current();
     box.classList.toggle('at-home', view === 'home');
     render();
@@ -266,16 +269,44 @@ const Title = (() => {
       vs.append(side(c.teamName, Career.record(0), loadLook().jersey, false), el('span', 'pop-record', 'vs'),
         side(opp.name, Career.record(next.opp), opp.jersey, true));
       items.push(vs);
-      Career.offer(game.rules).forEach((ch, i) => {
+      const offer = Career.offer(game.rules);
+      const describe = (b, ch) => {
         const tier = CAREER.tiers[ch.tier];
-        const b = button(`challenge tier-${ch.tier}`, '', `home-challenge-${i}`, () => {
-          hide();
-          game.startCareer(i);
-        });
         b.append(el('span', 'mode-name', tier.name), el('span', '', Career.challengeText(ch)), el('span', 'mult', `x${tier.mult}`));
-        b.setAttribute('aria-label', `Tip off: ${tier.name} challenge, ${Career.challengeText(ch)}, tokens x${tier.mult}`);
-        items.push(b);
-      });
+      };
+      if (readyPick === null) {
+        // Picking a challenge asks first (below), so a stray click doesn't throw you into a game.
+        offer.forEach((ch, i) => {
+          const tier = CAREER.tiers[ch.tier];
+          const b = button(`challenge tier-${ch.tier}`, '', `home-challenge-${i}`, () => {
+            readyPick = i;
+            renderHome();
+            document.querySelector('[data-focus="home-tip-off"]').focus();
+          });
+          describe(b, ch);
+          b.setAttribute('aria-label', `${tier.name} challenge: ${Career.challengeText(ch)}, tokens x${tier.mult}`);
+          items.push(b);
+        });
+      } else {
+        const picked = el('div', `challenge picked tier-${offer[readyPick].tier}`);
+        describe(picked, offer[readyPick]);
+        const choice = el('div', 'pop-ready');
+        choice.append(
+          button('btn', 'Tip off', 'home-tip-off', () => {
+            const i = readyPick;
+            readyPick = null;
+            hide();
+            game.startCareer(i);
+          }),
+          button('btn btn-quiet', 'Not yet', 'home-not-yet', () => {
+            const i = readyPick;
+            readyPick = null;
+            renderHome();
+            document.querySelector(`[data-focus="home-challenge-${i}"]`).focus();
+          }),
+        );
+        items.push(picked, el('p', 'pop-question', 'Ready to play now?'), choice);
+      }
     } else {
       items.push(el('p', 'mode-name', `Season ${c.season}: ${SEASON_RESULTS[c.result]}`));
       items.push(button('btn', `Start season ${c.season + 1}`, 'home-next-season', () => {

@@ -10,7 +10,12 @@ test(() => {
   ok(challenges.length === 3, 'this week\'s three challenges');
   ok(document.activeElement === challenges[0], 'focus starts on the first challenge');
   challenges[1].click();
-  ok(state.mode === 'career' && !Title.isOpen() && state.challenge === c.offer[1], 'picking one tips off with it');
+  ok(Title.isOpen() && state.mode === 'demo' && document.querySelector('#home-pop .pop-question'), 'picking one asks: ready to play now?');
+  document.querySelector('[data-focus="home-not-yet"]').click();
+  ok(document.querySelectorAll('#home-pop .challenge').length === 3 && state.mode === 'demo', 'Not yet goes back to the three');
+  document.querySelectorAll('#home-pop .challenge')[1].click();
+  document.querySelector('[data-focus="home-tip-off"]').click();
+  ok(state.mode === 'career' && !Title.isOpen() && state.challenge === c.offer[1], 'Tip off starts it with that challenge');
   state.score = [21, 14];
   testing.endGame();
   sim(0.1); // the buzzer settles the career game on the next update

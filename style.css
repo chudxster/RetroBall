@@ -1193,3 +1193,25 @@ input[type="color"]::-moz-color-swatch {
   font-size: calc(var(--u) * 6);
   line-height: 1.2;
 }
+
+/* "Ready to play now?" after picking a challenge on the home screen */
+.home-pop .challenge.picked {
+  border-color: #ffcd75;
+  cursor: default;
+}
+
+.pop-question {
+  margin: var(--u) 0 0;
+  color: #ffcd75;
+}
+
+.pop-ready {
+  display: flex;
+  gap: calc(var(--u) * 4);
+}
+
+.pop-ready .btn {
+  font-size: calc(var(--u) * 7);
+  padding: calc(var(--u) * 3) calc(var(--u) * 8);
+  border-width: var(--u);
+}

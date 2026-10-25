@@ -28,3 +28,5 @@ function test(body) {
 }
 const sim = (seconds) => { for (let i = 0; i < seconds * 60; i++) update(STEP); };
 const key = (code, down) => window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code, bubbles: true }));
+// Tests start games and play them right away: no 3-2-1 (countdown.test.js turns it back on).
+window.addEventListener('load', () => { COUNTDOWN.seconds = 0; });

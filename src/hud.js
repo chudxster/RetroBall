@@ -468,3 +468,15 @@ function drawDunkTrail(ctx, p, style, time) {
     }
   }
 }
+
+// The 3-2-1 before a game starts, then GO! for a moment: a big number in the middle that pops in and settles.
+function drawCountdown(ctx, game) {
+  const counting = game.countdown > 0;
+  if (!counting && !(game.goT > 0)) return;
+  const text = counting ? String(Math.ceil(game.countdown)) : 'GO!';
+  const fresh = counting ? game.countdown % 1 || 1 : game.goT / COUNTDOWN.goTime; // 1 -> 0 over each beat
+  const scale = 8 + Math.round(Math.max(0, fresh - 0.7) * 10);
+  ctx.fillStyle = 'rgba(26, 28, 44, 0.75)';
+  ctx.fillRect(0, VIEW_H / 2 - 32, VIEW_W, 64);
+  drawText(ctx, text, VIEW_W / 2, Math.round(VIEW_H / 2 - 2.5 * scale), counting ? COLORS.okay : COLORS.good, { align: 'center', scale, shadow: COLORS.outline });
+}

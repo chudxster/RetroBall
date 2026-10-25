@@ -113,6 +113,10 @@ function newGame(mode, runBack = false) {
   state.drill = null;
   if (mode === 'world') Practice.start(state);
   if (duo) Duo.start(state, runBack);
+  // The countdown (2 Player's starts when both players are done with the upgrade draft, see Duo).
+  state.countdown = mode !== 'demo' && mode !== 'free' && !state.draft ? COUNTDOWN.seconds : 0;
+  state.goT = 0;
+  if (state.countdown) Sfx.play('count'); // the 3
   dressUp();
 }
 
@@ -158,6 +162,15 @@ function update(dt) {
   if (state.hitStop > 0) {
     state.hitStop -= dt;
     return;
+  }
+  // The 3-2-1 before a game: everything holds still, a beep on each number and a higher one on GO.
+  state.goT = Math.max(0, state.goT - dt);
+  if (state.countdown > 0) {
+    const was = Math.ceil(state.countdown);
+    state.countdown -= dt;
+    if (Math.ceil(state.countdown) !== was) Sfx.play(state.countdown > 0 ? 'count' : 'go');
+    if (state.countdown > 0) return;
+    state.goT = COUNTDOWN.goTime;
   }
   state.time += dt;
   const { ball } = state;
@@ -549,6 +562,7 @@ function render(alpha) {
     if (state.clock.over && !demo) drawGameOver(ctx, state);
   }
   if (state.draft) drawDraft(ctx, state);
+  drawCountdown(ctx, state);
   if (state.fade) {
     ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha()})`;
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);

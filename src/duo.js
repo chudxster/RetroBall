@@ -103,6 +103,7 @@ const Duo = (() => {
     apply(game);
     for (const h of game.humans) h.player.prevShoot = true;
     if (d.phase === 'pre') preLevels = levels.map((l) => ({ ...l }));
+    if (d.phase === 'pre') game.countdown = COUNTDOWN.seconds; // then the 3-2-1 before tip-off
     else Clock.startPeriod(game);
   }
 

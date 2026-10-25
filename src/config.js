@@ -206,6 +206,9 @@ const SOUND = {
 // demoRestart seconds after the final buzzer, with the court dimmed by `dim`.
 const TITLE = { demoHalfMinutes: 1, demoRestart: 4, dim: 0.55 };
 
+// The 3-2-1 before every game (not the demo or free shot): everyone holds still, then GO! shows this long.
+const COUNTDOWN = { seconds: 3, goTime: 0.7 };
+
 // Fouls: reaching for a steal can be called a foul, more likely the closer the reacher is to the ball handler: no
 // chance from `far` out (the steal reach without upgrades), rising to `maxChance` with bodies touching (`near`, the
 // separation distance). With free throws on (Quick game options) the fouled player shoots one from the line; otherwise

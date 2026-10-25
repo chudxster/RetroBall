@@ -83,6 +83,9 @@ const Sfx = (() => {
 
   // Every sound: how to make it, and the shortest gap before it can play again.
   const SOUNDS = {
+    // The countdown before a game: a beep on 3, 2 and 1, a higher, longer one on GO.
+    count: { gap: 0.3, make: (d, t, v) => tone(d, t, { type: 'square', f0: 660, len: 0.12, vol: 0.12 * v }) },
+    go: { gap: 0.3, make: (d, t, v) => tone(d, t, { type: 'square', f0: 1320, len: 0.35, vol: 0.12 * v }) },
     // A career challenge met: a quick rising arpeggio with a sparkle on top.
     goal: { gap: 1, make: (d, t, v) => {
       [523, 659, 784, 1047].forEach((f, i) => tone(d, t + i * 0.07, { type: 'square', f0: f, len: 0.12, vol: 0.1 * v }));

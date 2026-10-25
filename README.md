@@ -66,6 +66,9 @@ with Main menu ends the game for both.
 under the hoop, two from each elbow, three free throws, five threes around the arc), make each to move on, timed,
 with your best time saved.
 
+Every game but free shot starts with a 3-2-1 countdown (a beep on each number, GO! in green) while everyone holds
+still; in 2 Player it runs once both players are done with the upgrade draft.
+
 A 3v3 game is two 2.5-minute halves (teams switch ends at halftime), with 1-minute overtimes while tied and a
 14-second shot clock; the clock stops for dead balls (free throws, resets, halftime). At the final buzzer you get the
 result and a box score (points, FG, 3PT, FT, steals, blocks, dunks) for each team and each player; press shoot to

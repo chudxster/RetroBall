@@ -39,11 +39,15 @@ foreach ($t in $tests) {
       if (Test-Path $dataDir) { Remove-Item -Recurse -Force $dataDir }
       (Run $page '?step=a' $dataDir) + (Run $page '?keep&step=b' $dataDir)
     }
+    # A host and a guest side by side, on this computer's channel and then through the internet relay (that one
+    # needs a connection; its results are marked "(internet)").
     'online.test.js' {
-      $outer = Join-Path $out 'online.html'
       $inner = & $url $page
-      [IO.File]::WriteAllText($outer, "<!doctype html><title>WAIT</title><script>const r=[];addEventListener('message',(e)=>{if(e.data==='DONE'){if(++window.d===2)document.title='RES|'+r.join('|');}else r.push(e.data);});window.d=0;</script><iframe src=""$inner#host""></iframe><iframe src=""$inner#guest""></iframe>")
-      Run $outer '' $null 12000
+      foreach ($net in 'local', 'internet') {
+        $outer = Join-Path $out "online-$net.html"
+        [IO.File]::WriteAllText($outer, "<!doctype html><title>WAIT</title><script>const r=[];addEventListener('message',(e)=>{if(e.data==='DONE'){if(++window.d===2)document.title='RES|'+r.join('|');}else r.push(e.data);});window.d=0;</script><iframe src=""${inner}?net=${net}#host""></iframe><iframe src=""${inner}?net=${net}#guest""></iframe>")
+        Run $outer '' $null 12000 | ForEach-Object { if ($net -eq 'internet') { "$_ (internet)" } else { $_ } }
+      }
     }
     'testing-tab.test.js' { Run $page '?dev=1' $null }
     default { Run $page '' $null }

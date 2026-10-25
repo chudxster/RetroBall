@@ -7,6 +7,7 @@
     document.hasFocus = () => true;
     setInterval(() => frame(performance.now()), 16);
     Title.show('online');
+    document.querySelector(`[data-network="${params.get('net') || 'local'}"]`).click();
     if (who === 'host') {
       document.querySelector('[data-online-format="vs1"]').click();
       document.getElementById('online-host').click();

@@ -339,10 +339,15 @@
         </div>
 
         <!-- Online (prototype, see net.js): host a 2 Player versus game with a code, join one by code or from the
-             lobby finder. For now it connects tabs of this browser; internet play needs a relay server. -->
+             lobby finder, over the internet (a public relay) or between tabs of this browser. -->
         <div class="title-view stack-view" id="title-online" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Online</span></div>
-          <p class="mode-desc">Prototype: connects two tabs of this browser for now (playing over the internet needs a server).</p>
+          <p class="mode-desc">Prototype: 2 Player versus with someone in another browser. Internet games go through a public relay.</p>
+          <div class="row">
+            <span class="label">Network</span>
+            <button type="button" class="key-btn" data-network="internet" aria-pressed="false">Internet</button>
+            <button type="button" class="key-btn" data-network="local" aria-pressed="false">This computer</button>
+          </div>
           <div class="row">
             <span class="label">Format</span>
             <button type="button" class="key-btn" data-online-format="vs1" aria-pressed="false">1v1</button>

@@ -171,6 +171,12 @@ const Title = (() => {
   // finders until someone joins) or join by code or from the list. A guest's screen switches to the host's game
   // as soon as the host lets them in.
   function initOnline() {
+    for (const b of box.querySelectorAll('[data-network]')) {
+      b.addEventListener('click', () => {
+        Net.setNetwork(b.dataset.network);
+        render();
+      });
+    }
     for (const b of box.querySelectorAll('[data-online-format]')) {
       b.addEventListener('click', () => {
         Duo.setFormat(b.dataset.onlineFormat);
@@ -204,9 +210,10 @@ const Title = (() => {
     const format = Duo.format() === 'vs1' ? 'vs1' : 'vs3';
     if (Duo.format() !== format) Duo.setFormat(format);
     for (const b of box.querySelectorAll('[data-online-format]')) b.setAttribute('aria-pressed', String(b.dataset.onlineFormat === format));
+    for (const b of box.querySelectorAll('[data-network]')) b.setAttribute('aria-pressed', String(b.dataset.network === Net.network()));
     const role = Net.role();
     document.getElementById('online-code').textContent = role === 'host' ? `Your code: ${Net.code()} (waiting for a player)` : '';
-    document.getElementById('online-status').textContent = role === 'guest' ? `Joining ${Net.code()}...` : '';
+    document.getElementById('online-status').textContent = [role === 'guest' ? `Joining ${Net.code()}...` : '', Net.status()].filter(Boolean).join(' ');
     const list = document.getElementById('online-lobbies');
     const games = Net.lobbyList().filter((l) => l.code !== Net.code());
     list.replaceChildren(...(games.length ? games.map((l) => {

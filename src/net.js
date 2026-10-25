@@ -2,15 +2,23 @@
 // The host's game is the real one, a 2 Player versus game (see Duo) where player 2's keys come over the network;
 // the guest's screen just draws the host's snapshots (SNAP_HZ a second) and sends its keys back every tick.
 //
-// The transport is swappable. Today it's a BroadcastChannel, which connects tabs of the same browser on one computer
-// (good for testing everything but the internet). Real online play needs a relay the two browsers can both reach,
-// e.g. a small WebSocket server or WebRTC with a signaling service: anything with the same send / onmessage shape
-// drops in at `connect`.
+// Two networks (the Online screen picks one; see `transports`):
+//   'internet' - a public MQTT relay over secure WebSockets (RELAY). Lobby announcements go to one shared topic,
+//                each game's traffic to a topic named after its code. The mqtt.js library loads from a CDN the
+//                first time it's needed, so the game itself still has no dependencies and runs offline. The public
+//                relay is open (anyone could read the traffic), which is fine for playtests; a relay of our own
+//                drops in by changing RELAY.
+//   'local'    - a BroadcastChannel: tabs of the same browser on one computer, no internet needed (for testing).
 const Net = (() => {
   const CHANNEL = 'retroball.net';
+  const RELAY = {
+    url: 'wss://broker.emqx.io:8084/mqtt',
+    lib: 'https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js',
+    topic: 'retroball/v1',
+  };
   const ANNOUNCE_EVERY = 1;  // seconds between a host's lobby-finder announcements
   const LOBBY_TIMEOUT = 3.5; // a lobby not heard from this long drops off the finder
-  const SNAP_HZ = 30;
+  const SNAP_HZ = 20;
   const PEER_TIMEOUT = 5;    // nothing from the other side this long: the connection is gone
   const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
@@ -18,6 +26,7 @@ const Net = (() => {
   let role = null;     // null, 'host' or 'guest'
   let code = null;     // the game's code
   let joined = false;  // host: a guest is in; guest: the host welcomed us
+  let peer = null;     // the other side's id once joined
   let lastHeard = 0;
   let announceT = 0;
   let snapT = 0;
@@ -43,16 +52,99 @@ const Net = (() => {
     },
   };
 
+  let network = 'internet'; // which of `transports`
+  let status = '';          // how the connection is doing, for the Online screen
+
+  // Each transport: { send(msg), room(code or null): which game's traffic to hear, close() }.
+  const transports = {
+    local() {
+      const bc = new BroadcastChannel(CHANNEL);
+      bc.onmessage = (e) => receive(e.data);
+      return { send: (m) => bc.postMessage(m), room() {}, close: () => bc.close() };
+    },
+    internet() {
+      const lobbyTopic = `${RELAY.topic}/lobby`;
+      let client = null;
+      let roomTopic = null;
+      const waiting = []; // messages sent before the relay connected (only the ones worth keeping)
+      const publish = (m) => client.publish(m.type === 'announce' ? lobbyTopic : roomTopic, JSON.stringify(m));
+      const start = () => {
+        client = mqtt.connect(RELAY.url, { clean: true, connectTimeout: 8000, reconnectPeriod: 2000 });
+        client.on('connect', () => {
+          status = '';
+          client.subscribe(roomTopic ? [lobbyTopic, roomTopic] : lobbyTopic);
+          while (waiting.length) publish(waiting.shift());
+          onChange();
+        });
+        client.on('message', (topic, payload) => {
+          try {
+            receive(JSON.parse(payload.toString()));
+          } catch (e) {
+            // Not one of ours.
+          }
+        });
+        client.on('offline', () => {
+          status = 'Lost the online relay, reconnecting...';
+          onChange();
+        });
+        client.on('error', () => {
+          status = 'Can\'t reach the online relay';
+          onChange();
+        });
+      };
+      status = 'Connecting...';
+      if (window.mqtt) {
+        start();
+      } else {
+        const s = document.createElement('script');
+        s.src = RELAY.lib;
+        s.onload = start;
+        s.onerror = () => {
+          status = 'Couldn\'t load the online library (no internet?)';
+          onChange();
+        };
+        document.head.append(s);
+      }
+      return {
+        send(m) {
+          if (m.type !== 'announce' && !roomTopic) return;
+          if (client && client.connected) publish(m);
+          else if (m.type !== 'snap' && m.type !== 'keys') waiting.push(m);
+        },
+        room(c) {
+          if (client && roomTopic) client.unsubscribe(roomTopic);
+          roomTopic = c ? `${RELAY.topic}/game/${c}` : null;
+          if (client && client.connected && roomTopic) client.subscribe(roomTopic);
+        },
+        close() {
+          if (client) client.end(true);
+        },
+      };
+    },
+  };
+
   function connect() {
     if (transport) return true;
-    if (typeof BroadcastChannel === 'undefined') return false;
-    transport = new BroadcastChannel(CHANNEL);
-    transport.onmessage = (e) => receive(e.data);
+    if (network === 'local' && typeof BroadcastChannel === 'undefined') return false;
+    transport = transports[network]();
     return true;
   }
 
+  // Switching networks drops whatever was going on (and the lobby list, which belongs to the old network).
+  function setNetwork(next) {
+    if (next === network || !transports[next]) return;
+    leave();
+    if (transport) transport.close();
+    transport = null;
+    status = '';
+    lobbies.clear();
+    network = next;
+    connect();
+    onChange();
+  }
+
   function send(msg) {
-    if (transport) transport.postMessage({ ...msg, from: id });
+    if (transport) transport.send({ ...msg, from: id });
   }
 
   function newCode() {
@@ -67,29 +159,42 @@ const Net = (() => {
     leave();
     role = 'host';
     code = newCode();
+    transport.room(code);
     hostName = name;
     announceT = 0;
     onChange();
     return code;
   }
 
-  // Guest: ask the game with this code to let us in.
+  // Guest: ask the game with this code to let us in (again every JOIN_RETRY until it answers or JOIN_GIVE_UP).
   function join(c) {
     if (!connect()) return false;
     leave();
     role = 'guest';
     code = String(c).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
-    lastHeard = now();
-    send({ type: 'join', code });
+    transport.room(code);
+    joinStarted = now();
+    joinT = 0;
     onChange();
     return true;
   }
+  const NO_GAME = 'No open game with that code';
+  const KEYS_EVERY = 0.25;
+  let lastKeys = '';
+  let keysT = 0;
+  const JOIN_RETRY = 1;
+  const JOIN_GIVE_UP = 8;
+  let joinStarted = 0;
+  let joinT = 0;
 
   function leave() {
+    if (status === NO_GAME) status = '';
     if (role && code) send({ type: 'bye', code });
+    if (transport) transport.room(null);
     role = null;
     code = null;
     joined = false;
+    peer = null;
     latest = null;
     Input.setRemote(null);
     onChange();
@@ -103,11 +208,16 @@ const Net = (() => {
       return;
     }
     if (!code || m.code !== code) return;
+    // Once a guest is in, only they (and, for the guest, only the host) count.
+    if (joined && m.from !== peer) return;
     lastHeard = now();
     if (role === 'host') {
-      if (m.type === 'join' && !joined) {
+      if (m.type === 'join') {
+        // (Again if our welcome got lost and they asked again.)
+        send({ type: 'welcome', code, to: m.from });
+        if (joined) return;
         joined = true;
-        send({ type: 'welcome', code });
+        peer = m.from;
         Input.setRemote(remotePad);
         startMatch();
         onChange();
@@ -115,11 +225,13 @@ const Net = (() => {
         Object.assign(remote, m.keys, { dash: m.keys.dash || remote.dash });
       } else if (m.type === 'bye') {
         joined = false;
+        peer = null;
         Input.setRemote(null);
         onChange();
       }
     } else if (role === 'guest') {
-      if (m.type === 'welcome') {
+      if (m.type === 'welcome' && m.to === id) {
+        peer = m.from;
         joined = true;
         onChange();
       } else if (m.type === 'snap') {
@@ -152,14 +264,37 @@ const Net = (() => {
       if (role === 'guest') leave();
       else {
         joined = false;
+        peer = null;
         Input.setRemote(null);
         onChange();
       }
       return;
     }
+    if (role === 'guest' && !joined) {
+      if (t - joinStarted > JOIN_GIVE_UP) {
+        leave();
+        status = NO_GAME;
+        onChange();
+        return;
+      }
+      joinT -= dt;
+      if (joinT <= 0) {
+        joinT = JOIN_RETRY;
+        send({ type: 'join', code });
+      }
+      return;
+    }
+    // The guest's keys: whenever they change, and a few times a second anyway (they double as "still here").
     if (role === 'guest' && joined) {
       const pad = Input.pad('solo');
-      send({ type: 'keys', code, keys: { move: pad.move(), shoot: pad.shoot(), action: pad.action(), pass: pad.pass(), dash: pad.takeDash() } });
+      const keys = { move: pad.move(), shoot: pad.shoot(), action: pad.action(), pass: pad.pass(), dash: pad.takeDash() };
+      const text = JSON.stringify(keys);
+      keysT -= dt;
+      if (text !== lastKeys || keysT <= 0) {
+        send({ type: 'keys', code, keys });
+        lastKeys = text;
+        keysT = KEYS_EVERY;
+      }
     }
     if (role === 'host' && joined) {
       snapT -= dt;
@@ -194,6 +329,9 @@ const Net = (() => {
     lobbyList,
     // The lobby finder starts hearing hosts once this is called (the Online screen does).
     listen: connect,
+    setNetwork,
+    network: () => network,
+    status: () => status,
     role: () => role,
     code: () => code,
     joined: () => joined,
@@ -214,7 +352,11 @@ const Snapshot = (() => {
   const SKIP_PLAYER = new Set(['mind', 'look', 'upgrades', 'stats', 'prevShoot', 'prevDunk']);
   const STATE_KEYS = ['time', 'mode', 'score', 'stats', 'popups', 'possession', 'abbrs', 'draft', 'freeThrow', 'fade', 'hitStop', 'outFor', 'clock', 'debris', 'replayReady', 'challenge'];
 
+  // Numbers go as 2 decimals (plenty for drawing, and much smaller); Infinity (an endless rim hang, a dead ball) as
+  // BIG, since JSON has no Infinity.
+  const BIG = 1e9;
   function replacer(key, v) {
+    if (typeof v === 'number') return v === Infinity ? BIG : Number.isInteger(v) ? v : Math.round(v * 100) / 100;
     if (v instanceof Player) {
       const i = state.roster.indexOf(v);
       return i >= 0 ? { $p: i } : v === state.ref ? { $p: 'ref' } : null;
@@ -224,6 +366,7 @@ const Snapshot = (() => {
   }
 
   function reviver(key, v) {
+    if (v === BIG) return Infinity;
     if (v && typeof v === 'object' && '$p' in v) return v.$p === 'ref' ? state.ref : state.roster[v.$p] || null;
     if (v && typeof v === 'object' && '$h' in v) return HOOPS[v.$h];
     return v;

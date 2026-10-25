@@ -274,20 +274,24 @@ const DEFENSE = {
   stunSpeed: 0.4,     // ...to this fraction of their speed
   stolenStun: 0.9,    // losing the ball to a steal slows the ball handler this long (and they can't grab it back)
   pokeDist: [18, 34], // a steal knocks the ball loose this far, roughly toward the stealer
-  userStealChance: [0.5, 0.25], // the user's odds at the easiest..hardest AI level
+  userStealChance: [0.7, 0.45], // the user's odds at the easiest..hardest AI level
+  userStealRange: 28, // the user's reach for a steal (before upgrades; the AI's is stealRange)
+  userStealStun: 0.25, // how long a missed reach leaves the user off balance
+  userFoulShare: 0.6, // the user's reach-in foul odds are this share of FOUL.maxChance's
   jumpHeight: 18,
   jumpTime: 0.5,
   contestRange: 40,   // defenders inside this shrink the shooter's green zone...
   contestMax: 0.55,   // ...by up to this share when right on top of them and in the air...
   contestGround: 0.6, // ...or this fraction of that with their feet on the floor
   blockRange: 16,     // an airborne defender this close at the release can block it
+  userBlockRange: 22, // (the user's, a little longer)
   blockMinZ: 6,
-  userBlockChance: 0.5,
+  userBlockChance: 0.75,
   userIntercept: 0.6, // odds the user's player picks off a pass they get a hand on
   rimGuard: 22,       // the defender nearest the dunker, if this close to the rim or to the dunker at takeoff, can
                       // stuff the dunk...
   stuffChance: 0.15,  // ...with these odds (AI defenders add a quarter of their block chance)
-  userStuffChance: 0.2,
+  userStuffChance: 0.3,
   // Everyone's steal, block, interception and dunk-stuff odds (the user's and the AI's alike) are multiplied by
   // these; 1 = as above (set in the Dev tab's player tuning).
   stealOdds: 1,

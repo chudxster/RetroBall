@@ -95,14 +95,15 @@ const Play = (() => {
     const h = game.ball.holder;
     if (!h || h.team === p.team || h.shot) return;
     if (Math.abs(h.x - p.x) > 1) p.facing = Math.sign(h.x - p.x);
-    if (Math.random() < foulChance(p, h)) {
+    const human = isHuman(game, p);
+    if (Math.random() < foulChance(p, h) * (human ? DEFENSE.userFoulShare : 1)) {
       foul(game, p, h);
       return;
     }
     const ballX = h.x + h.facing * 8;
-    const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p);
+    const inRange = Math.hypot(ballX - p.x, h.y - p.y) <= stealReach(p, human);
     const backcourt = (h.x - COURT.length / 2) * attackHoop(h.team).dir > 0;
-    const chance = (isHuman(game, p) ? lerp(...DEFENSE.userStealChance, opponentAILevel ?? AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
+    const chance = (human ? lerp(...DEFENSE.userStealChance, opponentAILevel ?? AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
       addPopup(game, 'STEAL!', playColor(game, p.team), p.x, p.y, 56);
@@ -110,7 +111,7 @@ const Play = (() => {
       countStat(game, p, 'stl');
       cheerCrowd(CROWD.hype.steal, p);
     } else {
-      p.stunT = DEFENSE.stealStun;
+      p.stunT = human ? DEFENSE.userStealStun : DEFENSE.stealStun;
     }
   }
 
@@ -139,9 +140,10 @@ const Play = (() => {
     for (const q of game.players) Object.assign(q, { vx: 0, vy: 0, dashT: 0 });
   }
 
-  // How far a player can reach for a steal, and how well they block, with their defense upgrade.
-  function stealReach(p) {
-    return DEFENSE.stealRange * (1 + UPGRADES.stealRange * p.upgrades.defense);
+  // How far a player can reach for a steal (people reach a little further), and how well they block, with their
+  // defense upgrade.
+  function stealReach(p, human = false) {
+    return (human ? DEFENSE.userStealRange : DEFENSE.stealRange) * (1 + UPGRADES.stealRange * p.upgrades.defense);
   }
 
   function blockBonus(p) {
@@ -194,7 +196,7 @@ const Play = (() => {
   // At the release: an opponent up in the air right on the shooter may swat it away.
   function tryBlock(game, shooter, from) {
     for (const d of opponents(game, shooter)) {
-      const range = DEFENSE.blockRange * (1 + UPGRADES.blockRange * d.upgrades.defense);
+      const range = (isHuman(game, d) ? DEFENSE.userBlockRange : DEFENSE.blockRange) * (1 + UPGRADES.blockRange * d.upgrades.defense);
       if (!d.jump || d.z < DEFENSE.blockMinZ || courtDist(d, shooter) > range) continue;
       const base = isHuman(game, d) ? DEFENSE.userBlockChance : aiValue(d, AI.blockChance);
       const chance = (base + blockBonus(d)) * shooter.shot.contest * DEFENSE.blockOdds;

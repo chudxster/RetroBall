@@ -52,14 +52,16 @@ const TUNING = [
   { path: 'PICKUP.radius', label: 'Pickup reach', tip: 'How close a player must be to grab a loose ball', min: 4, max: 40, step: 1 },
 
   // Defense
-  { path: 'DEFENSE.stealRange', label: 'Steal reach', tip: 'How far a steal can reach', min: 5, max: 60, step: 1 },
+  { path: 'DEFENSE.stealRange', label: 'AI steal reach', tip: 'How far AI steals can reach', min: 5, max: 60, step: 1 },
+  { path: 'DEFENSE.userStealRange', label: 'Your steal reach', tip: 'How far your steals can reach', min: 5, max: 60, step: 1 },
   { path: 'DEFENSE.stealOdds', label: 'Steal odds', tip: 'Scales everyone\'s steal success', min: 0, max: 4, step: 0.05 },
   { path: 'FOUL.maxChance', label: 'Foul odds', tip: 'Foul odds reaching in pressed up close', min: 0, max: 1, step: 0.05 },
   { path: 'DEFENSE.stealCooldown', label: 'Steal cooldown', tip: 'Seconds between steal attempts', min: 0, max: 3, step: 0.05 },
   { path: 'DEFENSE.stealStun', label: 'Whiff slowdown', tip: 'Seconds slowed after a missed steal', min: 0, max: 3, step: 0.05 },
   { path: 'DEFENSE.stolenStun', label: 'Stripped stun', tip: 'Seconds dazed after the ball is stolen', min: 0, max: 3, step: 0.05 },
   { path: 'DEFENSE.blockOdds', label: 'Block odds', tip: 'Scales everyone\'s odds to block a shot', min: 0, max: 4, step: 0.05 },
-  { path: 'DEFENSE.blockRange', label: 'Block reach', tip: 'How close a defender must be to block', min: 2, max: 50, step: 1 },
+  { path: 'DEFENSE.blockRange', label: 'AI block reach', tip: 'How close an AI defender must be to block', min: 2, max: 50, step: 1 },
+  { path: 'DEFENSE.userBlockRange', label: 'Your block reach', tip: 'How close you must be to block', min: 2, max: 50, step: 1 },
   { path: 'DEFENSE.jumpHeight', label: 'Block jump', tip: 'How high a defensive jump goes', min: 0, max: 50, step: 1 },
   { path: 'DEFENSE.interceptOdds', label: 'Intercept odds', tip: 'Scales everyone\'s odds to pick off a pass', min: 0, max: 4, step: 0.05 },
   { path: 'DEFENSE.contestMax', label: 'Contest power', tip: 'Most a close-out shrinks the green', min: 0, max: 1, step: 0.05 },

@@ -2,7 +2,8 @@
 // AI demo, and in 2 Player both people feed the same shelf. Each family goes Bronze -> Silver -> Gold -> Platinum
 // as its count passes the tier thresholds; SECRETS are silly hidden ones, shown as ??? until earned. A new metal
 // pops up a banner and the crowd cheers. Earned trophies stand on a shelf on top of the scorer's table (UI tab
-// toggle). Saved in localStorage 'retroball.trophies' { counts: { key: n }, metals: { family: tier }, secrets: { id: true } }.
+// toggle; the locker room's trophy case picks which). Saved in localStorage 'retroball.trophies' { counts: { key: n },
+// metals: { family: tier }, secrets: { id: true }, shelf: [id] or null (all) }.
 const TROPHY_TIERS = [
   { name: 'BRONZE', color: '#b86f50' },
   { name: 'SILVER', color: '#c0cbdc' },
@@ -20,6 +21,7 @@ const TROPHY_FAMILIES = [
   { id: 'dashes', name: 'Burst', what: 'dashes', tiers: [50, 250, 1000, 5000] },
   { id: 'freeThrows', name: 'Charity Stripe', what: 'free throws taken', tiers: [10, 50, 200, 1000] },
   { id: 'games', name: 'Iron Man', what: 'games finished', tiers: [5, 25, 100, 500] },
+  { id: 'quests', name: 'Locker Room', what: 'quests done', tiers: [1, 5, 15, 40] },
 ];
 // Hidden until earned: a counter reaching `at`.
 const TROPHY_SECRETS = [
@@ -32,6 +34,7 @@ const TROPHY_SECRETS = [
 const TROPHY_STATS = { fga: 'shots', tpa: 'threes', fta: 'freeThrows', pts: 'points', dnk: 'dunks', stl: 'steals', blk: 'blocks' };
 const TROPHY_STORAGE_KEY = 'retroball.trophies';
 const TROPHY_TOAST_TIME = 3;
+const TROPHY_SHELF_MAX = 13; // cups that fit on the scoreboard's shelf (see shelfParts)
 
 const Trophies = (() => {
   const saved = loadStored(TROPHY_STORAGE_KEY) || {};
@@ -45,10 +48,14 @@ const Trophies = (() => {
     if (Number.isInteger(m) && m >= 0 && m < TROPHY_TIERS.length) metals[f.id] = m;
   }
   for (const s of TROPHY_SECRETS) if (saved.secrets && saved.secrets[s.id] === true) secrets[s.id] = true;
+  // Which earned trophies stand on the scoreboard's shelf, in order (picked in the locker room's trophy case), or
+  // null: all of them.
+  const ids = [...TROPHY_FAMILIES, ...TROPHY_SECRETS].map((t) => t.id);
+  let picked = Array.isArray(saved.shelf) ? saved.shelf.filter((id, i, list) => ids.includes(id) && list.indexOf(id) === i) : null;
   const toasts = []; // [{ text, color, t }]
   let unsaved = 0;   // counts since the last save
 
-  const save = () => saveStored(TROPHY_STORAGE_KEY, { counts, metals, secrets });
+  const save = () => saveStored(TROPHY_STORAGE_KEY, { counts, metals, secrets, shelf: picked });
 
   // Whether what `p` did counts: a person's player, not the AI and not the demo. (p null: something the person did
   // outside a game, like pressing Randomize.)
@@ -98,12 +105,33 @@ const Trophies = (() => {
     if (toasts[0].t >= TROPHY_TOAST_TIME) toasts.shift();
   }
 
-  // What stands on the shelf: each family's metal, then the secrets earned. [{ color, secret }]
-  function shelf() {
+  // Every trophy earned so far, families first: [{ id, name, color, secret }].
+  function earned() {
     const out = [];
-    for (const f of TROPHY_FAMILIES) if (metals[f.id] !== undefined) out.push({ color: TROPHY_TIERS[metals[f.id]].color, secret: false });
-    for (const s of TROPHY_SECRETS) if (secrets[s.id]) out.push({ color: s.color, secret: true });
+    for (const f of TROPHY_FAMILIES) {
+      if (metals[f.id] !== undefined) out.push({ id: f.id, name: `${f.name} ${TROPHY_TIERS[metals[f.id]].name}`, color: TROPHY_TIERS[metals[f.id]].color, secret: false });
+    }
+    for (const s of TROPHY_SECRETS) if (secrets[s.id]) out.push({ id: s.id, name: s.name, color: s.color, secret: true });
     return out;
+  }
+
+  // What stands on the shelf (at most TROPHY_SHELF_MAX): the picked trophies in their order, or all earned ones.
+  function shelf() {
+    const all = earned();
+    const list = picked ? picked.map((id) => all.find((t) => t.id === id)).filter(Boolean) : all;
+    return list.slice(0, TROPHY_SHELF_MAX);
+  }
+
+  const onShelf = (id) => shelf().some((t) => t.id === id);
+
+  // The trophy case: put a trophy on the shelf or take it off (the first pick starts from everything earned).
+  function toggleShelf(id) {
+    const now = shelf().map((t) => t.id);
+    if (now.includes(id)) picked = now.filter((x) => x !== id);
+    else if (now.length < TROPHY_SHELF_MAX && earned().some((t) => t.id === id)) picked = [...now, id];
+    else return false;
+    save();
+    return true;
   }
 
   // For the trophy list: every family's count, metal and next goal, and the secrets (??? until earned).
@@ -117,5 +145,10 @@ const Trophies = (() => {
     };
   }
 
-  return { count, update, shelf, list, toast: () => toasts[0] || null };
+  // A banner from elsewhere (a finished quest), queued with the trophies'.
+  function notify(text, color) {
+    toasts.push({ text, color, t: 0 });
+  }
+
+  return { count, update, shelf, earned, onShelf, toggleShelf, list, notify, toast: () => toasts[0] || null };
 })();

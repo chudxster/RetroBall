@@ -10,7 +10,7 @@ const Title = (() => {
   const pauseButton = document.getElementById('pause-btn');
   const stage = document.getElementById('stage');
 
-  // Supplied by main.js: { rules, start(mode), startCareer(choice), openTab(panelId) }.
+  // Supplied by main.js: { rules, start(mode), startCareer(choice), openTab(panelId), openLocker() }.
   let game = null;
   let view = 'home';
   let open = false;
@@ -36,6 +36,9 @@ const Title = (() => {
         if (go === 'customize' || go === 'settings') {
           hide();
           game.openTab(go === 'customize' ? 'player-view' : 'controls-view');
+        } else if (go === 'locker') {
+          hide();
+          game.openLocker();
         } else {
           show(go);
         }

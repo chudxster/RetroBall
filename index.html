@@ -274,6 +274,11 @@
             <span class="mode-name">Career</span>
             <span class="mode-desc" id="title-career-desc">Seasons, playoffs and upgrades</span>
           </button>
+          <button type="button" class="dock-row" data-go="locker">
+            <span class="ico" data-icon="locker"></span>
+            <span class="mode-name">Locker room</span>
+            <span class="mode-desc">Quests, trophy case</span>
+          </button>
           <button type="button" class="dock-row" data-go="quick">
             <span class="ico" data-icon="ball"></span>
             <span class="mode-name">Quick game</span>
@@ -423,6 +428,12 @@
         </div>
       </div>
     </div>
+    <!-- The locker room's talk panel (locker.js): who's talking, what they say, and the answers; or the trophy case. -->
+    <div id="locker-talk" class="locker-talk" role="dialog" aria-labelledby="locker-talk-name" hidden>
+      <p class="mode-name" id="locker-talk-name"></p>
+      <p class="talk-text" id="locker-talk-text"></p>
+      <div class="talk-actions" id="locker-talk-actions"></div>
+    </div>
   </div>
 
   <!-- Plain scripts (not modules) so the game runs straight from file:// as well as any web host. Order matters. -->
@@ -454,6 +465,8 @@
   <script src="src/daily.js"></script>
   <script src="src/duo.js"></script>
   <script src="src/net.js"></script>
+  <script src="src/quests.js"></script>
+  <script src="src/locker.js"></script>
   <script src="src/title.js"></script>
   <script src="src/main.js"></script>
 </body>

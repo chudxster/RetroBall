@@ -28,6 +28,13 @@ upgrades. After a career game, shoot takes you back to the Career screen for the
 automatically in the browser after every game and upgrade (the Career screen warns if the browser can't save, as in
 some private windows).
 
+The **Locker room** (main menu) is a room you walk around in as your player: the coach at the whiteboard, your two
+teammates at their lockers and a reporter by the TV camera each hand out quests (walk up and press your dunk key,
+Enter or Space to talk). A quest is a goal for your games, in one game or added up over several (Quick game, career,
+the daily game and 2 Player co-op count); a yellow ! means a quest to pick up, a bouncing green one tokens to claim.
+Claiming pays career tokens and counts toward the Locker Room trophy. The trophy case on the right wall holds
+every trophy you've earned: pick which ones (up to 13) stand on the scoreboard's shelf in games. Esc leaves.
+
 **Quick game** is 3v3 Casual (full court, AI teammates and opponents, half-court defense), with a difficulty
 (Rookie, Pro or All-Star: how good the AI opponents are; 2 Player co-op uses it too) and the game options (free
 throws, half length, shot clock: Career and 2 Player games use them too) before you tip off.
@@ -144,6 +151,8 @@ give it keyboard focus.
 | `src/menu.js` | Pause menu tabs: customization, per-player upgrades and names, controls, UI, the Testing tab (tools, test sliders, tuning) |
 | `src/hud.js` | Score, meter, pop-up text, the final screen's box score |
 | `src/net.js` | Online play prototype: hosting, joining, the lobby finder, state snapshots |
+| `src/quests.js` | Locker room quests: who gives which, progress from finished games, rewards |
+| `src/locker.js` | The locker room: walking around, the people and their talk panel, the trophy case |
 
 ## Tests
 
@@ -157,5 +166,5 @@ powershell -ExecutionPolicy Bypass -File tests\run.ps1 career   # just tests/car
 Each `*.test.js` runs inside a page built from the current `index.html` (`tests/lib.js` loads first: it seeds
 `Math.random`, clears storage and stops the frame loop so tests drive `update()` themselves). Covered: every mode
 running with the AI playing everyone, the box score, popups, the Testing tab's tools, difficulty, 2 Player fairness,
-calling for the ball, save versions, the career forfeit across a reload, the main menu's season road and an online match
-between two tabs.
+calling for the ball, save versions, the career forfeit across a reload, the main menu's season road, the career goal jingle, the locker room's quests and trophy case
+and an online match between two tabs.

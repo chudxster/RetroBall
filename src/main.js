@@ -204,6 +204,7 @@ function update(dt) {
   if (state.clock && state.clock.over && !state.gameCounted) {
     state.gameCounted = true;
     Trophies.count(state, null, 'games');
+    Quests.gameOver(state);
   }
   Practice.update(dt, state);
   // The out-of-bounds count waits while anyone is dunking (or hanging on the rim). The drill hands the ball back
@@ -535,6 +536,16 @@ function frame(now) {
     requestAnimationFrame(frame);
     return;
   }
+  // The locker room (main menu) is drawn instead of the demo game while it's open.
+  if (Locker.isOpen()) {
+    Locker.update(elapsed);
+    Trophies.update(elapsed);
+    Locker.draw(ctx);
+    const toast = Trophies.toast();
+    if (toast) drawTrophyToast(ctx, toast);
+    requestAnimationFrame(frame);
+    return;
+  }
   if (state.mode === 'demo' || Net.online() || (!Menu.isOpen() && document.hasFocus())) {
     acc += elapsed;
     while (acc >= STEP) {
@@ -677,6 +688,13 @@ Title.init({
     startMode('career');
   },
   openTab: Menu.openTab,
+  openLocker: Locker.enter,
+});
+// The locker room: your player and teammates as they look now; leaving goes back to the main menu.
+Locker.init({
+  look: (i) => (i ? { ...state.look, ...state.team[i].look } : state.look),
+  name: (i) => state.team[i].name,
+  leave: () => Title.show('home'),
 });
 // (The page may not have the keyboard yet, e.g. in an iframe, so nothing takes focus until it's clicked.)
 Title.show('home', { focus: false });

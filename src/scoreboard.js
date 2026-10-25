@@ -69,7 +69,7 @@ const SHELF_STEP = 9;
 function shelfParts(shelf) {
   if (!shelf.length) return [];
   const parts = [[-62, -64, 124, 2, COLORS.boardFrame]];
-  shelf.slice(0, 13).forEach((t, i) => {
+  shelf.slice(0, TROPHY_SHELF_MAX).forEach((t, i) => {
     const x = -58 + i * SHELF_STEP;
     parts.push(
       [x + 1, -65, 3, 1, shade(t.color, 0.7)], // base

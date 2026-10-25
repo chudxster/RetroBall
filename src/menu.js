@@ -155,6 +155,7 @@ const ICONS = {
   pad: ['.........', '.vvvvvvv.', 'vvwvvvrvv', 'vwwwvrvrv', 'vvwvvvrvv', 'vvvvvvvvv', 'vv.....vv'],
   check: ['.....', '....k', '...kk', 'k.kk.', 'kkk..', '.k...'],
   cross: ['h...h', '.h.h.', '..h..', '.h.h.', 'h...h'],
+  locker: ['uuuuuuuuu', 'ubbbubbbu', 'ukkkukkku', 'ubbbubbbu', 'ubbbubbbu', 'ubbyubbyu', 'ubbbubbbu', 'ubbbubbbu', 'uuuuuuuuu'],
 };
 
 // An icon as a little canvas, sized in game pixels (--u, see style.css).

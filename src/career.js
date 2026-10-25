@@ -429,6 +429,12 @@ const Career = (() => {
     return true;
   }
 
+  // Tokens from somewhere else (a locker room quest).
+  function addTokens(n) {
+    c.tokens += n;
+    save();
+  }
+
   function setTeamName(name) {
     c.teamName = String(name).replace(/\s+/g, ' ').trimStart().slice(0, TEAM_NAME_MAX);
     save();
@@ -459,6 +465,7 @@ const Career = (() => {
     restart,
     cost,
     buy,
+    addTokens,
     setTeamName,
     TEAM_NAME_MAX,
   };

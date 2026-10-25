@@ -1367,3 +1367,91 @@ input[type="color"]::-moz-color-swatch {
   font-size: calc(var(--px) * 6);
   line-height: 1.3;
 }
+
+/* Locker room: the talk panel along the bottom (who, what they say, the answers), or the trophy case, taller, with
+   a button per trophy earned to put on the scoreboard's shelf or take off. In game pixels, like the menus. */
+.locker-talk {
+  position: absolute;
+  left: calc(var(--u) * 24);
+  right: calc(var(--u) * 24);
+  bottom: calc(var(--u) * 26);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 5);
+  max-height: calc(var(--u) * 300);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: calc(var(--u) * 8) calc(var(--u) * 10);
+  background: #1a1c2c;
+  border: var(--u) solid #f4f4f4;
+  box-shadow: calc(var(--u) * 3) calc(var(--u) * 3) 0 rgba(0, 0, 0, 0.5);
+  color: #f4f4f4;
+  font-family: 'Silkscreen', monospace;
+  font-size: calc(var(--u) * 8);
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.locker-talk[hidden] {
+  display: none;
+}
+
+.locker-talk p {
+  margin: 0;
+}
+
+.locker-talk .btn {
+  font-size: calc(var(--u) * 8);
+  padding: calc(var(--u) * 3) calc(var(--u) * 8);
+  border-width: var(--u);
+}
+
+.talk-actions {
+  display: flex;
+  gap: calc(var(--u) * 6);
+}
+
+.locker-talk.trophy-case {
+  top: calc(var(--u) * 20);
+}
+
+.case-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--u) * 3) calc(var(--u) * 6);
+}
+
+.case-item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 5);
+  padding: calc(var(--u) * 3) calc(var(--u) * 5);
+  background: none;
+  border: var(--u) solid #333c57;
+  color: #94b0c2;
+  font-size: calc(var(--u) * 7);
+  text-align: left;
+  cursor: pointer;
+}
+
+.case-item[aria-pressed="true"] {
+  border-color: #ffcd75;
+  background: #29366f;
+  color: #f4f4f4;
+}
+
+.case-item:focus-visible {
+  outline: var(--u) solid #ffcd75;
+}
+
+.case-item.locked {
+  color: #566c86;
+  cursor: default;
+}
+
+.case-cup {
+  flex: none;
+  width: calc(var(--u) * 8);
+  height: calc(var(--u) * 8);
+  border: var(--u) solid #f4f4f4;
+}

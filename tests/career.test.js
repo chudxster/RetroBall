@@ -5,7 +5,7 @@ test(() => {
   if (step === 'a') {
     Title.show('career');
     const week = Career.get().week;
-    document.querySelector('.challenge').click();
+    document.querySelector('#career-panel .challenge').click();
     sim(5);
     Menu.openTab('ui-view');
     const quit = document.getElementById('to-title');
@@ -15,7 +15,7 @@ test(() => {
     const l = Career.get().last;
     ok(state.mode === 'demo' && l.forfeit && l.tokens === 0 && Career.get().week === week + 1, 'quitting is a forfeit loss, no tokens');
     Title.show('career');
-    document.querySelector('.challenge').click();
+    document.querySelector('#career-panel .challenge').click();
     sim(2);
     ok(loadStored(CAREER_STORAGE_KEY).current !== null, 'a game in progress is saved');
   } else {

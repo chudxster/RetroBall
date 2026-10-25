@@ -738,18 +738,6 @@ input[type="color"]::-moz-color-swatch {
   box-shadow: calc(var(--px) * 3) calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Home: the modes two to a row */
-.title-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: calc(var(--px) * 3);
-}
-
-.title-grid .mode-option {
-  padding: calc(var(--px) * 3) calc(var(--px) * 4);
-}
-
-
 /* A mode's screen: Back and its name across the top */
 .title-bar {
   display: flex;
@@ -833,4 +821,367 @@ input[type="color"]::-moz-color-swatch {
 .career-buy {
   min-width: calc(var(--px) * 30);
   padding: var(--px) calc(var(--px) * 2);
+}
+
+/* Home, the Season Road design: laid out in --u, one game pixel of the 640x360 stage (--px is two), over the demo
+   game. The dock (modes) on the left, the road (this season's games) along the bottom, this week's challenges in a
+   popover above its stop. The logo and panel the other views use are hidden here. */
+#title.at-home > .title-logo,
+#title.at-home > .title-panel {
+  display: none;
+}
+
+.season-home {
+  --u: calc(var(--px) / 2);
+  position: absolute;
+  inset: 0;
+  font-size: calc(var(--u) * 8);
+}
+
+/* Shade behind the dock and the road so the demo game doesn't fight the text */
+.season-home::before,
+.season-home::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.season-home::before {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--u) * 210);
+  background: linear-gradient(90deg, rgba(26, 28, 44, 0.8) 0 calc(var(--u) * 160), rgba(26, 28, 44, 0));
+}
+
+.season-home::after {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--u) * 130);
+  background: linear-gradient(0deg, rgba(26, 28, 44, 0.9) 0 calc(var(--u) * 80), rgba(26, 28, 44, 0));
+}
+
+.home-dock,
+.home-road,
+.home-pop {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  padding: calc(var(--u) * 5);
+  background: #1a1c2c;
+  border: var(--u) solid #f4f4f4;
+  box-shadow: calc(var(--u) * 3) calc(var(--u) * 3) 0 rgba(0, 0, 0, 0.5);
+}
+
+.home-dock {
+  left: calc(var(--u) * 6);
+  top: calc(var(--u) * 6);
+  bottom: calc(var(--u) * 82);
+  width: calc(var(--u) * 150);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+}
+
+.dock-logo {
+  margin: 0 0 calc(var(--u) * 3);
+  font-size: calc(var(--u) * 16);
+  line-height: 0.9;
+  color: #ffcd75;
+  text-shadow: calc(var(--u) * 2) calc(var(--u) * 2) 0 #000;
+}
+
+.dock-logo span {
+  display: block;
+  padding-left: calc(var(--u) * 12);
+  color: #ef7d57;
+}
+
+.dock-row {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 11) 1fr;
+  align-items: center;
+  gap: var(--u) calc(var(--u) * 4);
+  padding: calc(var(--u) * 2) calc(var(--u) * 4);
+  background: none;
+  border: var(--u) solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.dock-row .mode-desc {
+  grid-column: 2;
+  font-size: calc(var(--u) * 6);
+}
+
+.dock-row:hover,
+.dock-row:focus-visible {
+  background: #29366f;
+  border-color: #ffcd75;
+  outline: none;
+}
+
+.dock-sep {
+  height: var(--u);
+  margin: var(--u) 0;
+  background: #333c57;
+}
+
+.dock-quick,
+.road-link {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2) calc(var(--u) * 4);
+  background: #333c57;
+  border: var(--u) solid #f4f4f4;
+  color: #f4f4f4;
+  font: inherit;
+  font-size: calc(var(--u) * 6);
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.dock-quick {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.dock-quick:hover,
+.dock-quick:focus-visible,
+.road-link:hover,
+.road-link:focus-visible {
+  border-color: #ffcd75;
+  color: #ffcd75;
+  outline: none;
+}
+
+/* The pixel icons (title.js draws them) */
+.ico {
+  display: inline-block;
+  image-rendering: pixelated;
+}
+
+/* The road: header, then a stop for every game of the season */
+.home-road {
+  left: calc(var(--u) * 6);
+  right: calc(var(--u) * 6);
+  bottom: calc(var(--u) * 6);
+  height: calc(var(--u) * 70);
+  padding: calc(var(--u) * 5) calc(var(--u) * 6);
+}
+
+.road-head {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 6);
+  margin-bottom: calc(var(--u) * 5);
+}
+
+.road-head .mode-desc {
+  font-size: calc(var(--u) * 6);
+}
+
+.road-tokens {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  margin-left: auto;
+  color: #38b764;
+  font-size: calc(var(--u) * 6);
+}
+
+.road-stops {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--stops, 9), 1fr);
+  gap: calc(var(--u) * 4);
+}
+
+/* The line the stops sit on */
+.road-stops::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--u) * 10);
+  right: calc(var(--u) * 10);
+  top: calc(var(--u) * 15);
+  height: calc(var(--u) * 2);
+  background: #333c57;
+}
+
+.stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  font-size: calc(var(--u) * 6);
+}
+
+.stop-week {
+  color: #566c86;
+}
+
+.stop-dot {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 14);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+  color: #1a1c2c;
+}
+
+.stop-result {
+  color: #94b0c2;
+  white-space: nowrap;
+}
+
+.stop.won .stop-dot {
+  background: #38b764;
+  border-color: #a7f070;
+}
+
+.stop.lost .stop-dot {
+  background: #b13e53;
+  border-color: #e43b44;
+  color: #f4f4f4;
+}
+
+.stop.played .stop-dot {
+  background: #566c86;
+}
+
+.stop.now .stop-week,
+.stop.now .stop-result {
+  color: #ffcd75;
+}
+
+.stop.now .stop-dot {
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 18);
+  margin: calc(var(--u) * -2) 0;
+  background: #ffcd75;
+  border-color: #f4f4f4;
+}
+
+.stop.playoff:not(.won):not(.lost):not(.now) .stop-dot {
+  background: #1a1c2c;
+  border-style: dashed;
+  border-color: #5d275d;
+}
+
+.stop.out .stop-week,
+.stop.out .stop-result {
+  color: #333c57;
+}
+
+/* This week's game: the matchup and its three challenges, pointing down at its stop */
+.home-pop {
+  bottom: calc(var(--u) * 82);
+  width: calc(var(--u) * 190);
+  padding: calc(var(--u) * 5);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+  border-color: #ffcd75;
+}
+
+.home-pop::after {
+  content: '';
+  position: absolute;
+  left: var(--arrow, calc(var(--u) * 30));
+  bottom: calc(var(--u) * -6);
+  border: calc(var(--u) * 5) solid transparent;
+  border-top-color: #ffcd75;
+  border-bottom: 0;
+}
+
+.home-pop.no-arrow::after {
+  display: none;
+}
+
+.pop-vs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--u) * 3) calc(var(--u) * 4);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+}
+
+.pop-team {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+}
+
+.pop-record {
+  color: #94b0c2;
+  font-size: calc(var(--u) * 6);
+}
+
+.swatch {
+  display: inline-block;
+  width: calc(var(--u) * 10);
+  height: calc(var(--u) * 8);
+  border: var(--u) solid #f4f4f4;
+}
+
+/* A challenge: tier, goal, multiplier on one line (the tier colors come from .challenge.tier-N above) */
+.home-pop .challenge {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 44) 1fr auto;
+  align-items: center;
+  padding: calc(var(--u) * 3) calc(var(--u) * 4);
+  background: #262b44;
+  border: var(--u) solid #566c86;
+  color: #f4f4f4;
+  font: inherit;
+  font-size: calc(var(--u) * 6.5);
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.home-pop .challenge:hover,
+.home-pop .challenge:focus-visible {
+  background: #29366f;
+  border-color: #ffcd75;
+  outline: none;
+}
+
+.home-pop .challenge .mode-name,
+.home-pop .challenge .mult {
+  font-size: inherit;
+}
+
+.challenge.tier-0 .mult {
+  color: #38b764;
+}
+
+.challenge.tier-1 .mult {
+  color: #ffcd75;
+}
+
+.challenge.tier-2 .mult {
+  color: #ef7d57;
+}
+
+.challenge.tier-3 .mult {
+  color: #e43b44;
+}
+
+
+.pop-note {
+  margin: 0;
+  color: #94b0c2;
+  font-size: calc(var(--u) * 6);
+  line-height: 1.2;
 }

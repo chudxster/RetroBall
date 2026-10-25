@@ -1,6 +1,6 @@
 // Main menu: the game always opens here, with the AI playing itself behind it (main.js runs a 'demo' game while
-// it's up). One view shows at a time: home (the modes, plus Customize and Settings, which open the pause menu's
-// tabs), Career (the season, the next game's challenges, buying upgrades, the standings), Quick game (the game
+// it's up). One view shows at a time: home (the modes in a dock, plus Customize and Settings, which open the pause
+// menu's tabs, and the career season as a road with this week's challenges), Career (the season, the next game's challenges, buying upgrades, the standings), Quick game (the game
 // options, then tip off), 2 Player (the formats) and Practice. Esc goes back to home; the arrow keys (or WASD) move
 // between buttons, Enter or Space presses one.
 const Title = (() => {
@@ -19,6 +19,48 @@ const Title = (() => {
 
   const current = () => views.find((v) => v.id === `title-${view}`);
 
+  // How each season ended, for the Career screen and the home screen's road.
+  const SEASON_RESULTS = {
+    champion: 'Champions!',
+    final: 'Lost in the final',
+    semis: 'Lost in the semifinal',
+    missed: 'Missed the playoffs',
+  };
+
+  // The home screen's 9x9 pixel icons, one letter per pixel in the game's palette ('.' is see-through).
+  const ICON_COLORS = { k: '#1a1c2c', o: '#ef7d57', y: '#ffcd75', w: '#f4f4f4', v: '#94b0c2', s: '#41a6f6', b: '#3b5dc9', g: '#38b764', l: '#a7f070', t: '#257179', u: '#333c57' };
+  const ICONS = {
+    trophy: ['y.yyyyy.y', 'y.yyyyy.y', '.yyyyyyy.', '..yyyyy..', '...yyy...', '....y....', '....y....', '..ooooo..', '..ooooo..'],
+    ball: ['..ookoo..', '.oookooo.', 'ooookoooo', 'ooookoooo', 'kkkkkkkkk', 'ooookoooo', 'ooookoooo', '.oookooo.', '..ookoo..'],
+    duo: ['.........', '.ooo.sss.', '.ooo.sss.', '.........', 'oooo.ssss', 'oooo.ssss', 'oooo.ssss', 'oo.o.s.ss', 'oo.o.s.ss'],
+    cone: ['....o....', '...ooo...', '...www...', '..ooooo..', '..ooooo..', '.wwwwwww.', '.ooooooo.', 'ooooooooo', 'uuuuuuuuu'],
+    globe: ['...sss...', '.ssbsbss.', '.sbbsbbs.', 'sssssssss', 'sbbsbsbbs', 'sssssssss', '.sbbsbbs.', '.ssbsbss.', '...sss...'],
+    jersey: ['.bb...bb.', '.bbb.bbb.', '.bbbbbbb.', '.bbwwwbb.', '.bbbwbbb.', '.bbbwbbb.', '.bbwwwbb.', '.bbbbbbb.', '.bbbbbbb.'],
+    gear: ['...vvv...', '.v.vvv.v.', '..vvvvv..', 'vvv...vvv', 'vvv...vvv', 'vvv...vvv', '..vvvvv..', '.v.vvv.v.', '...vvv...'],
+    full: ['www...www', 'w.......w', 'w.......w', '.........', '.........', '.........', 'w.......w', 'w.......w', 'www...www'],
+    coin: ['..ggg..', '.gllgg.', 'glgggtg', 'glgggtg', 'glgggtg', '.gggtt.', '..ttt..'],
+    go: ['k....', 'kkk..', 'kkkkk', 'kkk..', 'k....'],
+  };
+
+  // An icon as a little canvas, sized in game pixels (--u, see style.css).
+  function icon(name) {
+    const rows = ICONS[name];
+    const c = document.createElement('canvas');
+    c.width = rows[0].length;
+    c.height = rows.length;
+    c.className = 'ico';
+    c.style.width = `calc(var(--u) * ${c.width})`;
+    c.style.height = `calc(var(--u) * ${c.height})`;
+    c.setAttribute('aria-hidden', 'true');
+    const ctx = c.getContext('2d');
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = ICON_COLORS[ch];
+      ctx.fillRect(x, y, 1, 1);
+    }));
+    return c;
+  }
+
   function init(target) {
     game = target;
     for (const b of box.querySelectorAll('[data-go]')) {
@@ -33,6 +75,7 @@ const Title = (() => {
       });
     }
     for (const b of box.querySelectorAll('.title-back')) b.addEventListener('click', () => show('home'));
+    for (const s of box.querySelectorAll('span.ico[data-icon]')) s.replaceWith(icon(s.dataset.icon));
     for (const b of box.querySelectorAll('.title-start')) b.addEventListener('click', () => start(b.dataset.mode));
     for (const b of box.querySelectorAll('.duo-format')) {
       b.addEventListener('click', () => {
@@ -126,6 +169,7 @@ const Title = (() => {
     pauseButton.hidden = true;
     confirmRestart = false;
     for (const v of views) v.hidden = v !== current();
+    box.classList.toggle('at-home', view === 'home');
     render();
     if (focus) {
       // The view's main button (Tip off, the first challenge), else its first one past Back.
@@ -147,9 +191,7 @@ const Title = (() => {
 
   function render() {
     if (view === 'home') {
-      const c = Career.get();
-      const next = Career.next();
-      document.getElementById('title-career-desc').textContent = `Season ${c.season} - ${next ? next.label : 'season over'} - ${c.tokens} tokens`;
+      renderHome();
     } else if (view === 'quick') {
       const d = Daily.status();
       const played = d.played ? (d.played.done ? 'Goal met today.' : 'Played today, goal missed.') : 'Not played yet today.';
@@ -170,6 +212,87 @@ const Title = (() => {
       const best = Practice.best();
       document.getElementById('world-best').textContent = best === null ? 'Best: none yet' : `Best: ${Practice.format(best)}`;
     }
+  }
+
+  // Home (the Season Road): the dock's Career line, the road along the bottom (a stop for every game this season:
+  // played ones with their scores, this week's big and yellow, the playoffs dashed), and this week's matchup and
+  // challenges in a popover above its stop. Picking a challenge tips off, as on the Career screen.
+  function renderHome() {
+    const c = Career.get();
+    const next = Career.next();
+    const stops = Career.road();
+    document.getElementById('title-career-desc').textContent = !next ? 'Season over'
+      : c.phase === 'season' ? `Play week ${c.week + 1}, below` : `Play the ${next.label.toLowerCase()}, below`;
+
+    const road = document.getElementById('home-road');
+    const head = el('div', 'road-head');
+    const status = !next ? SEASON_RESULTS[c.result]
+      : c.phase === 'season' ? `Week ${c.week + 1} of ${c.schedule.length}, then the semis and final`
+        : c.phase === 'semis' ? 'Semifinal: win to reach the final' : 'The final: win it all';
+    const tokens = el('span', 'road-tokens');
+    tokens.append(icon('coin'), `${c.tokens} tokens`);
+    head.append(el('span', 'mode-name', `Season ${c.season}`), el('span', 'mode-desc', status), tokens,
+      button('road-link', 'Upgrades >', 'road-upgrades', () => show('career')));
+    const row = el('div', 'road-stops');
+    row.style.setProperty('--stops', stops.length);
+    for (const s of stops) {
+      const r = s.result;
+      const opp = s.opp === null ? null : Career.teamOf(s.opp);
+      const stop = el('div', `stop ${r ? (r.won ? 'won' : 'lost') : s.state}${s.playoff ? ' playoff' : ''}`);
+      const dot = el('span', 'stop-dot', r ? (r.won ? 'W' : 'L') : '');
+      if (s.state === 'now') dot.append(icon('go'));
+      else if (s.label === 'FINAL' && !r && s.state !== 'out') dot.append(icon('trophy'));
+      const text = r ? `${r.us}-${r.them} ${opp.abbr}` : opp ? opp.abbr : s.state === 'out' ? '--' : s.label === 'SEMI' ? 'Top 4' : '?';
+      stop.append(el('span', 'stop-week', s.label), dot, el('span', 'stop-result', text));
+      row.append(stop);
+    }
+    road.replaceChildren(head, row);
+
+    const pop = document.getElementById('home-pop');
+    const items = [];
+    if (next) {
+      const opp = Career.teamOf(next.opp);
+      const side = (name, record, color, flip) => {
+        const s = el('span', 'pop-team');
+        const sw = el('span', 'swatch');
+        sw.style.background = color;
+        s.append(...(flip ? [el('span', 'pop-record', record), name, sw] : [sw, name, el('span', 'pop-record', record)]));
+        return s;
+      };
+      const vs = el('div', 'pop-vs');
+      vs.append(side(c.teamName, Career.record(0), loadLook().jersey, false), el('span', 'pop-record', 'vs'),
+        side(opp.name, Career.record(next.opp), opp.jersey, true));
+      items.push(vs);
+      Career.offer(game.rules).forEach((ch, i) => {
+        const tier = CAREER.tiers[ch.tier];
+        const b = button(`challenge tier-${ch.tier}`, '', `home-challenge-${i}`, () => {
+          hide();
+          game.startCareer(i);
+        });
+        b.append(el('span', 'mode-name', tier.name), el('span', '', Career.challengeText(ch)), el('span', 'mult', `x${tier.mult}`));
+        b.setAttribute('aria-label', `Tip off: ${tier.name} challenge, ${Career.challengeText(ch)}, tokens x${tier.mult}`);
+        items.push(b);
+      });
+    } else {
+      items.push(el('p', 'mode-name', `Season ${c.season}: ${SEASON_RESULTS[c.result]}`));
+      items.push(button('btn', `Start season ${c.season + 1}`, 'home-next-season', () => {
+        Career.nextSeason();
+        render();
+      }));
+    }
+    pop.replaceChildren(...items);
+
+    // Point the popover at this week's stop (or the final, once the season's over), in game pixels, keeping it
+    // clear of the dock.
+    const u = parseFloat(getComputedStyle(stage).getPropertyValue('--px')) / 2 || 1;
+    const now = stops.findIndex((s) => s.state === 'now');
+    const target = row.children[now >= 0 ? now : stops.length - 1].querySelector('.stop-dot').getBoundingClientRect();
+    const x = (target.left + target.width / 2 - current().getBoundingClientRect().left) / u;
+    const left = clamp(Math.round(x - 35), 162, 640 - 6 - 190);
+    const arrow = Math.round(x - left - 5);
+    pop.style.left = `calc(var(--u) * ${left})`;
+    pop.style.setProperty('--arrow', `calc(var(--u) * ${arrow})`);
+    pop.classList.toggle('no-arrow', arrow < 4 || arrow > 180);
   }
 
   // Online (see Net): pick the format, then host (your code shows, and the game is listed in other players' lobby
@@ -293,14 +416,8 @@ const Title = (() => {
         items.push(b);
       });
     } else {
-      const results = {
-        champion: 'Champions!',
-        final: 'Lost in the final',
-        semis: 'Lost in the semifinal',
-        missed: 'Missed the playoffs',
-      };
       const champ = c.playoff && c.playoff.champion !== null ? Career.teamOf(c.playoff.champion).name : '';
-      items.push(el('p', 'test-note', `Season ${c.season}: ${results[c.result]}${c.result !== 'champion' && champ ? ` (${champ} won it all)` : ''}`));
+      items.push(el('p', 'test-note', `Season ${c.season}: ${SEASON_RESULTS[c.result]}${c.result !== 'champion' && champ ? ` (${champ} won it all)` : ''}`));
       items.push(button('btn', `Start season ${c.season + 1}`, 'next-season', () => {
         Career.nextSeason();
         renderCareer();

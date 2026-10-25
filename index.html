@@ -253,45 +253,56 @@
     <!-- Main menu: the game always opens here, with the AI playing itself behind it. Each mode's screen is a view
          (title.js shows one at a time); Customize and Settings open the pause menu's tabs. -->
     <div id="title" role="dialog" aria-label="Main menu" hidden>
+      <!-- Home (the Season Road design): the modes in a dock on the left, the career season as a road along the
+           bottom with a stop for every game, and the next game's challenges above this week's stop (title.js builds
+           the road and the challenges; picking a challenge tips off). The demo game shows through on the right. -->
+      <div class="title-view season-home" id="title-home">
+        <nav class="home-dock" aria-label="Modes">
+          <p class="dock-logo" aria-hidden="true">Retro<span>Ball</span></p>
+          <button type="button" class="dock-row" data-go="career">
+            <span class="ico" data-icon="trophy"></span>
+            <span class="mode-name">Career</span>
+            <span class="mode-desc" id="title-career-desc">Seasons, playoffs and upgrades</span>
+          </button>
+          <button type="button" class="dock-row" data-go="quick">
+            <span class="ico" data-icon="ball"></span>
+            <span class="mode-name">Quick game</span>
+            <span class="mode-desc">3v3, plus the daily game</span>
+          </button>
+          <button type="button" class="dock-row" data-go="duo">
+            <span class="ico" data-icon="duo"></span>
+            <span class="mode-name">2 Player</span>
+            <span class="mode-desc">Two players, one keyboard</span>
+          </button>
+          <button type="button" class="dock-row" data-go="practice">
+            <span class="ico" data-icon="cone"></span>
+            <span class="mode-name">Practice</span>
+            <span class="mode-desc">Free shot, Around the World</span>
+          </button>
+          <button type="button" class="dock-row" data-go="online">
+            <span class="ico" data-icon="globe"></span>
+            <span class="mode-name">Online</span>
+            <span class="mode-desc">Host or join with a code</span>
+          </button>
+          <span class="dock-sep"></span>
+          <button type="button" class="dock-row" data-go="customize">
+            <span class="ico" data-icon="jersey"></span>
+            <span class="mode-name">Customize</span>
+            <span class="mode-desc">Your team's look and names</span>
+          </button>
+          <button type="button" class="dock-row" data-go="settings">
+            <span class="ico" data-icon="gear"></span>
+            <span class="mode-name">Settings</span>
+            <span class="mode-desc">Controls and display</span>
+          </button>
+          <button type="button" class="dock-quick" id="fullscreen"><span class="ico" data-icon="full"></span>Fullscreen</button>
+        </nav>
+        <div class="home-pop" id="home-pop"></div>
+        <div class="home-road" id="home-road"></div>
+      </div>
+
       <h1 class="title-logo">Retro<span>Ball</span></h1>
       <div class="title-panel">
-        <div class="title-view" id="title-home">
-          <div class="title-grid">
-            <button type="button" class="mode-option" data-go="career">
-              <span class="mode-name">Career</span>
-              <span class="mode-desc" id="title-career-desc">Seasons, playoffs and upgrades bought with tokens</span>
-            </button>
-            <button type="button" class="mode-option" data-go="quick">
-              <span class="mode-name">Quick game</span>
-              <span class="mode-desc">3v3 with AI teammates and opponents</span>
-            </button>
-            <button type="button" class="mode-option" data-go="duo">
-              <span class="mode-name">2 Player</span>
-              <span class="mode-desc">Two players, one keyboard</span>
-            </button>
-            <button type="button" class="mode-option" data-go="practice">
-              <span class="mode-name">Practice</span>
-              <span class="mode-desc">Free shot and Around the World</span>
-            </button>
-            <button type="button" class="mode-option" data-go="online">
-              <span class="mode-name">Online</span>
-              <span class="mode-desc">Prototype: host or join with a code</span>
-            </button>
-            <button type="button" class="mode-option" data-go="customize">
-              <span class="mode-name">Customize</span>
-              <span class="mode-desc">Your team's look and names</span>
-            </button>
-            <button type="button" class="mode-option" data-go="settings">
-              <span class="mode-name">Settings</span>
-              <span class="mode-desc">Controls and display</span>
-            </button>
-            <button type="button" class="mode-option" id="fullscreen">
-              <span class="mode-name">Fullscreen</span>
-              <span class="mode-desc">Fill the screen (Esc leaves)</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Career: built by title.js (season, challenges, upgrades, standings). Picking a challenge tips off. -->
         <div class="title-view" id="title-career" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Career</span></div>

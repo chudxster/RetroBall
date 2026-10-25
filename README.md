@@ -6,10 +6,13 @@ A Retro Bowl-style 2.5D pixel-art basketball game. Plain HTML5 canvas and JavaSc
 
 Open `index.html` in a browser (double-clicking works), or serve the folder from any static host.
 
-The game opens on the **main menu**, with the computer playing a game against itself behind it: **Career**,
-**Quick game**, **2 Player**, **Practice**, **Customize** (your team's look and names) and **Settings** (controls and
-display), plus a Fullscreen button. Click, or use the arrow keys / WASD and Enter or Space; Esc goes back. In a game,
-Esc (or P) opens the pause menu, whose **Main menu** button leaves the game (in a career game it asks first: a game
+The game opens on the **main menu**, with the computer playing a game against itself behind it. A dock on the left
+holds the modes: **Career**, **Quick game**, **2 Player**, **Practice**, **Online**, **Customize** (your team's look
+and names) and **Settings** (controls and display), plus a Fullscreen button. Along the bottom runs your career
+season as a road, a stop for every game: played weeks show their score (green for a win, red for a loss), this
+week's stop is yellow, and the semifinal and final come last. Above this week's stop are its matchup and three
+challenges: pick one to tip off straight from the menu (Upgrades opens the Career screen).
+Click, or use the arrow keys / WASD and Enter or Space; Esc goes back. In a game, Esc (or P) opens the pause menu, whose **Main menu** button leaves the game (in a career game it asks first: a game
 left early is a forfeit loss, also if the page is closed mid-game) and **Restart** starts it over (not in career).
 
 **Career** is a season in an 8-team league: every team plays every other once, then the top 4 play semifinals and a
@@ -153,4 +156,5 @@ powershell -ExecutionPolicy Bypass -File tests\run.ps1 career   # just tests/car
 Each `*.test.js` runs inside a page built from the current `index.html` (`tests/lib.js` loads first: it seeds
 `Math.random`, clears storage and stops the frame loop so tests drive `update()` themselves). Covered: every mode
 running with the AI playing everyone, the box score, popups, the Testing tab's tools, difficulty, 2 Player fairness,
-calling for the ball, save versions, the career forfeit across a reload and an online match between two tabs.
+calling for the ball, save versions, the career forfeit across a reload, the main menu's season road and an online match
+between two tabs.

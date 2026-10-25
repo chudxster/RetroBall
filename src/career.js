@@ -103,6 +103,7 @@ const Career = (() => {
       playoff: null,   // { seeds, semis: [[a, b], [c, d]], final: [a, b], champion }
       result: null,    // when the season is over: 'champion', 'final', 'semis' or 'missed'
       offer: null,     // the three challenges for the next game
+      results: [],     // the user's games this season, in order: { opp, us, them, won, stage } (the main menu's road)
     });
   }
 
@@ -145,6 +146,11 @@ const Career = (() => {
       ? { challenge: cur.challenge ?? null, k: Number.isFinite(cur.k) && cur.k > 0 ? cur.k : 1 }
       : null;
     saved.titles = Number.isInteger(saved.titles) && saved.titles >= 0 ? saved.titles : 0;
+    // Saves from before the road kept no results: those weeks show as played, without a score.
+    saved.results = Array.isArray(saved.results)
+      ? saved.results.filter((r) => r && isTeam(r.opp) && Number.isFinite(r.us) && Number.isFinite(r.them) && ['season', 'semis', 'final'].includes(r.stage))
+        .map((r) => ({ opp: r.opp, us: r.us, them: r.them, won: r.us > r.them, stage: r.stage }))
+      : [];
     for (let i = 1; i < n; i++) Object.assign(saved.league[i], LEAGUE[i - 1], { strength: clamp(saved.league[i].strength, 0.05, 0.95) });
     saved.team = ROSTER[0].map((_, i) => {
       const s = (saved.team && saved.team[i]) || {};
@@ -189,6 +195,38 @@ const Career = (() => {
       label = 'FINAL';
     }
     return pair && { opp: pair[0] === 0 ? pair[1] : pair[0], label };
+  }
+
+  // The season as a road for the main menu: every week, then the semifinal and the final. Each stop is
+  // { label, opp (league index, or null while unknown), result ({ us, them, won }, or null), state, playoff }, where
+  // state is 'played', 'now' (the next game), 'ahead' or 'out' (playoffs the user didn't reach).
+  function road() {
+    const games = (stage) => c.results.filter((r) => r.stage === stage);
+    const weekly = games('season');
+    const stops = c.schedule.map((week, w) => {
+      const pair = week.find((p) => p.includes(0));
+      const played = c.phase !== 'season' || w < c.week;
+      return {
+        label: `WK ${w + 1}`,
+        opp: pair[0] === 0 ? pair[1] : pair[0],
+        result: played ? weekly[w] || null : null,
+        state: played ? 'played' : w === c.week ? 'now' : 'ahead',
+        playoff: false,
+      };
+    });
+    const p = c.playoff;
+    const inPlayoffs = p && p.seeds.includes(0);
+    const playoffStop = (label, stage, pair, reached) => {
+      const result = games(stage)[0] || null;
+      let state = 'ahead';
+      if (result) state = 'played';
+      else if (c.phase === stage) state = 'now';
+      else if (p && !reached) state = 'out';
+      return { label, opp: pair && reached ? (pair[0] === 0 ? pair[1] : pair[0]) : null, result, state, playoff: true };
+    };
+    stops.push(playoffStop('SEMI', 'semis', inPlayoffs && p.semis.find((s) => s.includes(0)), inPlayoffs));
+    stops.push(playoffStop('FINAL', 'final', p && p.final, !!(p && p.final && p.final.includes(0))));
+    return stops;
   }
 
   // Three challenges for the next game, from three different tiers (easiest first). Kept until that game is played.
@@ -317,6 +355,7 @@ const Career = (() => {
   // simulated, scaled by game length k), and the next game or the playoffs.
   function settle(opp, us, them, k) {
     const won = us > them;
+    c.results.push({ opp, us, them, won, stage: c.phase });
     if (c.phase === 'season') {
       tally(0, us, them);
       tally(opp, them, us);
@@ -402,6 +441,7 @@ const Career = (() => {
     team: () => c.team,
     save,
     next,
+    road,
     offer,
     challengeText,
     challengeFor,

@@ -1,4 +1,7 @@
 const POPUP_LIFE = 1.1;
+const POPUP_NEAR = 30;   // popups closer than this (world units, across and in depth) count as the same spot
+const POPUP_LINE = 10;   // how far apart (in height) they have to be not to overlap
+const POPUP_MERGE = 0.3; // the same text again this soon just restarts the first one
 const METER_H = 48;
 const METER_W = 8;
 const TEXT_SCALE = 2; // the 3x5 font is drawn with 2px pixels at 640x360
@@ -313,9 +316,25 @@ function drawHangPrompt(ctx, player, time, key = Input.keyLabel('action')) {
   drawText(ctx, `${key} TO LET GO`, player.sx, y, COLORS.okay, { align: 'center', shadow: COLORS.outline, scale: TEXT_SCALE });
 }
 
-// Floating text anchored to a spot in the world, rising and blinking out.
+// Floating text anchored to a spot in the world, rising and blinking out. The same text at the same spot just
+// restarts; a popup that would land on another one nearby goes up a line instead.
 function addPopup(game, text, color, x, y, z, life = POPUP_LIFE) {
+  const near = game.popups.filter((p) => Math.abs(p.x - x) < POPUP_NEAR && Math.abs(p.y - y) < POPUP_NEAR);
+  const same = near.find((p) => p.text === text && p.t < POPUP_MERGE);
+  if (same) {
+    same.t = 0;
+    return;
+  }
+  while (near.some((p) => Math.abs(p.z - z) < POPUP_LINE)) z += POPUP_LINE;
   game.popups.push({ text, color, x, y, z, t: 0, life });
+}
+
+// A play's popup color as seen by the people playing: yellow when it went their side's way, red when it went
+// against them. In 2 Player versus each side's plays are in that player's marker color. (In the demo, home's way.)
+function playColor(game, team) {
+  if (game.mode === 'duo' && Duo.versus()) return DUO.markers[team];
+  const ours = game.humans.length ? game.humans.some((h) => h.team === team) : team === 0;
+  return ours ? COLORS.okay : COLORS.bad;
 }
 
 function updatePopups(game, dt) {

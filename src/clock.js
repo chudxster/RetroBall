@@ -100,7 +100,7 @@ const Clock = (() => {
     Sfx.play('whistle');
     restartPlay(1 - offense);
     const h = game.ball.holder;
-    addPopup(game, 'SHOT CLOCK', COLORS.bad, h.x, h.y, RESET.outTextZ, RESET.outTextTime);
+    addPopup(game, 'SHOT CLOCK', playColor(game, 1 - offense), h.x, h.y, RESET.outTextZ, RESET.outTextTime);
   }
 
   function endPeriod(game) {

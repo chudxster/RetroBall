@@ -240,7 +240,7 @@ function checkBallBehindHoop(dt) {
       const names = state.mode === 'duo' && Duo.versus() ? ['P1', 'P2'] : ['PLAYER', 'AI'];
       const text = `OUT ON ${names[outOn]}`;
       const at = ball.holder || ball;
-      addPopup(state, text, outOn === 0 ? COLORS.bad : COLORS.okay, at.x, at.y, RESET.outTextZ, RESET.outTextTime);
+      addPopup(state, text, playColor(state, 1 - outOn), at.x, at.y, RESET.outTextZ, RESET.outTextTime);
     }
   }
 }

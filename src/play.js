@@ -90,7 +90,7 @@ const Play = (() => {
     const chance = (isHuman(game, p) ? lerp(...DEFENSE.userStealChance, opponentAILevel ?? AI.level) : aiValue(p, AI.stealChance)) * DEFENSE.stealOdds;
     if (inRange && !backcourt && Math.random() < chance) {
       poke(game, h, p);
-      addPopup(game, 'STEAL!', COLORS.okay, p.x, p.y, 56);
+      addPopup(game, 'STEAL!', playColor(game, p.team), p.x, p.y, 56);
       Sfx.play('steal', { x: p.x });
       game.stats[p.team].stl++;
       cheerCrowd(CROWD.hype.steal, p);
@@ -110,7 +110,7 @@ const Play = (() => {
   // counts down `waitT` and calls startFreeThrow).
   function foul(game, p, h) {
     p.stunT = FOUL.stun;
-    addPopup(game, 'FOUL!', COLORS.bad, p.x, p.y, 56);
+    addPopup(game, 'FOUL!', playColor(game, h.team), p.x, p.y, 56);
     Sfx.play('whistle', { x: p.x });
     if (!game.rules.freeThrows) return;
     game.freeThrow = { shooter: h, pending: true, waitT: FOUL.callTime };
@@ -191,7 +191,7 @@ const Play = (() => {
       game.ball.launch(from.x, from.y, from.z, to, 0.6, null);
       game.ball.thrower = shooter;
       game.ball.lastTeam = d.team;
-      addPopup(game, 'BLOCKED!', COLORS.bad, d.x, d.y, 60);
+      addPopup(game, 'BLOCKED!', playColor(game, d.team), d.x, d.y, 60);
       Sfx.play('block', { x: d.x });
       game.stats[d.team].blk++;
       cheerCrowd(CROWD.hype.block, d);
@@ -225,7 +225,8 @@ const Play = (() => {
     game.ball.lastTeam = d.team;
     if (Math.abs(d.x - p.x) > 1) d.facing = Math.sign(p.x - d.x);
     startJump(d);
-    addPopup(game, 'STUFFED!', COLORS.bad, d.x, d.y, 60);
+    addPopup(game, 'STUFFED!', playColor(game, d.team), d.x, d.y, 60);
+    game.stats[d.team].blk++;
     Sfx.play('block', { x: d.x });
     cheerCrowd(CROWD.hype.stuff, d);
     return true;
@@ -319,7 +320,9 @@ const Play = (() => {
     const picked = ball.pass && best.team !== ball.pass.team;
     give(game, best);
     if (picked) {
-      addPopup(game, 'PICKED OFF!', COLORS.okay, best.x, best.y, 56);
+      addPopup(game, 'PICKED OFF!', playColor(game, best.team), best.x, best.y, 56);
+      game.stats[best.team].stl++;
+      cheerCrowd(CROWD.hype.steal, best);
       Sfx.play('steal', { x: best.x });
     }
   }

@@ -1,5 +1,5 @@
 // Computer players. Each tick every AI player fills in a control object, the same shape as the user's:
-// { move, dash, shoot, dunk, pass, steal, jump, switch, face } (see blank). Their memory lives on `p.mind`.
+// { move, dash, shoot, dunk, pass, steal, jump, switch, call, face } (see blank). Their memory lives on `p.mind`.
 //
 // With the ball: drive at the rim when the lane is open, dunk in range, shoot when open (or when held too long),
 // pass out of pressure. Off the ball on offense: spread to spots around the arc, sometimes cutting to the rim.
@@ -18,7 +18,7 @@ const AIBrain = (() => {
   ];
 
   function blank() {
-    return { move: { x: 0, y: 0 }, dash: null, shoot: false, dunk: false, pass: null, steal: false, jump: false, switch: false, face: 0 };
+    return { move: { x: 0, y: 0 }, dash: null, shoot: false, dunk: false, pass: null, steal: false, jump: false, switch: false, call: false, face: 0 };
   }
 
   function think(dt, game, ctls, frozen) {
@@ -77,6 +77,19 @@ const AIBrain = (() => {
   function withBall(dt, game, p, ctl) {
     const m = p.mind;
     m.holdT = (m.holdT || 0) + dt;
+    // A teammate person called for the ball: after a moment to react, pass it unless they're blanketed.
+    const call = m.called;
+    if (call) {
+      call.t -= dt;
+      call.wait -= dt;
+      if (call.t <= 0 || call.by.team !== p.team || call.by.sitting) {
+        m.called = null;
+      } else if (call.wait <= 0 && openness(game, call.by) > CALL_FOR.guardedGap) {
+        m.called = null;
+        ctl.pass = call.by;
+        return;
+      }
+    }
     const hoop = attackHoop(p.team);
     const d = courtDist(p, hoop);
     const gap = openness(game, p);

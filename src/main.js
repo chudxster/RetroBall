@@ -165,7 +165,10 @@ function update(dt) {
     called.waitT -= dt;
     if (called.waitT <= 0) startFreeThrow(called.shooter);
   }
-  for (const h of state.humans) if (h.ctl.switch) Play.switchPlayer(state, h);
+  for (const h of state.humans) {
+    if (h.ctl.switch) Play.switchPlayer(state, h);
+    if (h.ctl.call) Play.callFor(state, h.player);
+  }
   Play.separate(state);
 
   ball.update(dt);
@@ -198,7 +201,7 @@ function update(dt) {
 
 // A person's keys (their pad), read as a control object (the same shape the AI fills in). Shoot shoots with the
 // ball and jumps to block (or at least contest) without it; action dunks with the ball and steals on defense; pass
-// passes with the ball and switches player otherwise.
+// passes with the ball, calls for it while a teammate has it, and switches player otherwise.
 function humanControls(h, frozen) {
   const pad = Input.pad(h.pad);
   const keys = frozen ? {} : { shoot: pad.shoot(), action: pad.action(), pass: pad.pass() };
@@ -223,6 +226,7 @@ function humanControls(h, frozen) {
     if (pressed('shoot')) ctl.jump = true;
     if (pressed('action') && holder && holder.team !== u.team) ctl.steal = true;
     if (pressed('pass') && !(holder && holder.team === u.team)) ctl.switch = true;
+    else if (pressed('pass') && holder && holder !== u) ctl.call = true; // a teammate has it: call for it
   }
   return ctl;
 }

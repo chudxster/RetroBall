@@ -46,6 +46,16 @@ const Play = (() => {
     ball.thrower = null; // the player usually shot it, which would otherwise keep them off it for a moment
   }
 
+  // A person without the ball calls for it while a teammate has it: "BALL!" over them, and an AI handler passes it
+  // over once they've reacted, if the caller isn't blanketed (see AIBrain withBall). A person holding it just sees
+  // the call.
+  function callFor(game, p) {
+    const h = game.ball.holder;
+    if (!h || h.team !== p.team || h === p) return;
+    addPopup(game, 'BALL!', playColor(game, p.team), p.x, p.y, 56);
+    if (!isHuman(game, h)) h.mind.called = { by: p, t: CALL_FOR.window, wait: aiValue(h, AI.reaction) };
+  }
+
   // Who the user's pass goes to: the teammate closest to the held direction, or with no direction held, the most
   // open one (nearer is a little better).
   function passTarget(game, from, move) {
@@ -358,5 +368,5 @@ const Play = (() => {
     }
   }
 
-  return { act, passTarget, callBall, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, switchPlayer, pickups, separate };
+  return { act, passTarget, callBall, callFor, contest, tryBlock, rimGuards, tryStuff, retreatBoost, stealReach, give, switchPlayer, pickups, separate };
 })();

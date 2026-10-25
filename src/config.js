@@ -249,6 +249,10 @@ const DASH = {
 // seconds, kept within callTime.
 const CALL = { speed: 300, time: [0.3, 1] };
 
+// In a team game, the pass key without the ball while an AI teammate has it calls for it ("BALL!"): the handler
+// passes after their reaction time unless a defender is within guardedGap of the caller. A call lasts `window`.
+const CALL_FOR = { window: 1.5, guardedGap: 10 };
+
 // Passing (Q with the ball): a fast, flat throw led toward where the receiver is heading.
 const PASS = {
   speed: 380,         // world units per second

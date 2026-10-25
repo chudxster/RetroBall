@@ -28,7 +28,7 @@ const Title = (() => {
   };
 
   // The home screen's 9x9 pixel icons, one letter per pixel in the game's palette ('.' is see-through).
-  const ICON_COLORS = { k: '#1a1c2c', o: '#ef7d57', y: '#ffcd75', w: '#f4f4f4', v: '#94b0c2', s: '#41a6f6', b: '#3b5dc9', g: '#38b764', l: '#a7f070', t: '#257179', u: '#333c57' };
+  const ICON_COLORS = { k: '#1a1c2c', h: '#e43b44', o: '#ef7d57', y: '#ffcd75', w: '#f4f4f4', v: '#94b0c2', s: '#41a6f6', b: '#3b5dc9', g: '#38b764', l: '#a7f070', t: '#257179', u: '#333c57' };
   const ICONS = {
     trophy: ['y.yyyyy.y', 'y.yyyyy.y', '.yyyyyyy.', '..yyyyy..', '...yyy...', '....y....', '....y....', '..ooooo..', '..ooooo..'],
     ball: ['..ookoo..', '.oookooo.', 'ooookoooo', 'ooookoooo', 'kkkkkkkkk', 'ooookoooo', 'ooookoooo', '.oookooo.', '..ookoo..'],
@@ -40,6 +40,8 @@ const Title = (() => {
     full: ['www...www', 'w.......w', 'w.......w', '.........', '.........', '.........', 'w.......w', 'w.......w', 'www...www'],
     coin: ['..ggg..', '.gllgg.', 'glgggtg', 'glgggtg', 'glgggtg', '.gggtt.', '..ttt..'],
     go: ['k....', 'kkk..', 'kkkkk', 'kkk..', 'k....'],
+    check: ['.....', '....k', '...kk', 'k.kk.', 'kkk..', '.k...'],
+    cross: ['h...h', '.h.h.', '..h..', '.h.h.', 'h...h'],
   };
 
   // An icon as a little canvas, sized in game pixels (--u, see style.css).
@@ -239,8 +241,9 @@ const Title = (() => {
       const r = s.result;
       const opp = s.opp === null ? null : Career.teamOf(s.opp);
       const stop = el('div', `stop ${r ? (r.won ? 'won' : 'lost') : s.state}${s.playoff ? ' playoff' : ''}`);
-      const dot = el('span', 'stop-dot', r ? (r.won ? 'W' : 'L') : '');
-      if (s.state === 'now') dot.append(icon('go'));
+      const dot = el('span', 'stop-dot');
+      if (r) dot.append(icon(r.won ? 'check' : 'cross'));
+      else if (s.state === 'now') dot.append(icon('go'));
       else if (s.label === 'FINAL' && !r && s.state !== 'out') dot.append(icon('trophy'));
       const text = r ? `${r.us}-${r.them} ${opp.abbr}` : opp ? opp.abbr : s.state === 'out' ? '--' : s.label === 'SEMI' ? 'Top 4' : '?';
       stop.append(el('span', 'stop-week', s.label), dot, el('span', 'stop-result', text));

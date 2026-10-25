@@ -1043,15 +1043,23 @@ input[type="color"]::-moz-color-swatch {
   white-space: nowrap;
 }
 
+/* A win: a solid green stop with a check, its score in green. A loss: a hollow stop with a red X, its score in red. */
 .stop.won .stop-dot {
   background: #38b764;
   border-color: #a7f070;
 }
 
+.stop.won .stop-result {
+  color: #a7f070;
+}
+
 .stop.lost .stop-dot {
-  background: #b13e53;
+  background: #1a1c2c;
   border-color: #e43b44;
-  color: #f4f4f4;
+}
+
+.stop.lost .stop-result {
+  color: #e43b44;
 }
 
 .stop.played .stop-dot {

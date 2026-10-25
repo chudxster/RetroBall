@@ -170,6 +170,7 @@ const CAREER = {
   upgradesPerStrength: 6,
   upgradesPerSeason: 2,
   strengthDrift: 0.1, // between seasons each AI team's strength moves up to this much either way
+  forfeitPoints: 20,  // a game left early is lost 0 to this (for a 5-minute game; scaled by length), for no tokens
   // Challenge tiers, easiest first: the token multiplier for completing one.
   tiers: [
     { name: 'EASY', mult: 1.1 },

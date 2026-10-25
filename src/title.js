@@ -217,7 +217,7 @@ const Title = (() => {
     if (c.last) {
       const l = c.last;
       const vs = Career.teamOf(l.opp).abbr;
-      items.push(el('p', 'mode-desc', `Last game: ${l.won ? 'W' : 'L'} ${l.us}-${l.them} vs ${vs}, +${l.tokens} tokens${l.challenge ? ` (challenge ${l.done ? 'done' : 'missed'})` : ''}`));
+      items.push(el('p', 'mode-desc', `Last game: ${l.won ? 'W' : 'L'} ${l.us}-${l.them} vs ${vs}, +${l.tokens} tokens${l.forfeit ? ' (forfeit)' : l.challenge ? ` (challenge ${l.done ? 'done' : 'missed'})` : ''}`));
     }
 
     items.push(...upgradeSection(c));

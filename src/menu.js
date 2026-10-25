@@ -662,7 +662,7 @@ const Menu = (() => {
     sync();
   }
 
-  // Footer: in a game, Main menu (in a career game that isn't over, after an "are you sure": it won't count) and
+  // Footer: in a game, Main menu (in a career game that isn't over, after an "are you sure": it's a forfeit loss) and
   // Restart (not in career: no do-overs); opened from the main menu, just Back.
   // Testing tab tools: each button runs main.js's tool of the same name; the game ones close the menu so the result
   // plays out. Buttons that don't apply right now (no game clock, the main menu...) are disabled.
@@ -694,7 +694,7 @@ const Menu = (() => {
       const title = game.inTitle();
       toTitle.hidden = title;
       restart.hidden = title || game.mode() === 'career';
-      toTitle.textContent = confirming ? 'Sure? It won\'t count' : 'Main menu';
+      toTitle.textContent = confirming ? 'Sure? Forfeit (a loss)' : 'Main menu';
       resume.textContent = title ? 'Back' : 'Resume';
     };
     toTitle.addEventListener('click', () => {

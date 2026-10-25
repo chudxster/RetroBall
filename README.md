@@ -10,7 +10,7 @@ The game opens on the **main menu**, with the computer playing a game against it
 **Quick game**, **2 Player**, **Practice**, **Customize** (your team's look and names) and **Settings** (controls and
 display), plus a Fullscreen button. Click, or use the arrow keys / WASD and Enter or Space; Esc goes back. In a game,
 Esc (or P) opens the pause menu, whose **Main menu** button leaves the game (in a career game it asks first: a game
-left early doesn't count) and **Restart** starts it over (not in career).
+left early is a forfeit loss, also if the page is closed mid-game) and **Restart** starts it over (not in career).
 
 **Career** is a season in an 8-team league: every team plays every other once, then the top 4 play semifinals and a
 final, and the next season starts with tougher opponents. Each AI team has its own colors and strength; their other

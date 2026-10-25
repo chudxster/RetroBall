@@ -595,7 +595,11 @@ Menu.init({
   over: () => !!(state.clock && state.clock.over),
   inTitle: () => state.mode === 'demo',
   restart: () => startMode(state.mode),
-  toTitle,
+  // Leaving a career game before the final buzzer forfeits it (Career.forfeit: a loss, no tokens).
+  toTitle: () => {
+    if (state.mode === 'career' && !state.clock.over) Career.forfeit();
+    toTitle();
+  },
   // Opened from the main menu (Customize, Settings): closing it goes back there.
   closed: () => {
     if (state.mode === 'demo') Title.show();
@@ -607,7 +611,7 @@ Title.init({
   start: startMode,
   // Career: the picked challenge (0..2) starts the next game.
   startCareer(choice) {
-    Career.begin(choice);
+    Career.begin(choice, state.rules);
     startMode('career');
   },
   openTab: Menu.openTab,

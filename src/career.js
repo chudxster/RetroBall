@@ -106,8 +106,15 @@ const Career = (() => {
     });
   }
 
+  // A career game still marked as in progress (the page was closed or reloaded mid-game) is lost by forfeit.
   function load() {
-    return clean(loadStored(CAREER_STORAGE_KEY)) || fresh();
+    const saved = clean(loadStored(CAREER_STORAGE_KEY));
+    if (!saved) return fresh();
+    if (saved.current) {
+      c = saved;
+      forfeit();
+    }
+    return saved;
   }
 
   // A saved career made safe to use, or null if it isn't one: names and levels are cleaned, and anything
@@ -132,7 +139,11 @@ const Career = (() => {
     if (saved.offer && !(Array.isArray(saved.offer) && saved.offer.every((o) => o && CHALLENGES[o.tier] && CHALLENGES[o.tier][o.index] && Number.isInteger(o.n)))) {
       saved.offer = null;
     }
-    saved.current = null;
+    const cur = saved.current;
+    const validChallenge = (o) => o === null || (o && CHALLENGES[o.tier] && CHALLENGES[o.tier][o.index] && Number.isInteger(o.n));
+    saved.current = cur && typeof cur === 'object' && validChallenge(cur.challenge ?? null) && saved.phase !== 'over'
+      ? { challenge: cur.challenge ?? null, k: Number.isFinite(cur.k) && cur.k > 0 ? cur.k : 1 }
+      : null;
     saved.titles = Number.isInteger(saved.titles) && saved.titles >= 0 ? saved.titles : 0;
     for (let i = 1; i < n; i++) Object.assign(saved.league[i], LEAGUE[i - 1], { strength: clamp(saved.league[i].strength, 0.05, 0.95) });
     saved.team = ROSTER[0].map((_, i) => {
@@ -219,9 +230,10 @@ const Career = (() => {
     }
   }
 
-  // Picking a challenge starts the next game (main.js then sets the game up with setup()).
-  function begin(choice) {
-    c.current = { challenge: c.offer[choice] };
+  // Picking a challenge starts the next game (main.js then sets the game up with setup()). The game is saved as in
+  // progress, so leaving it early, even by closing the page, is a forfeit (see forfeit and load).
+  function begin(choice, rules) {
+    c.current = { challenge: c.offer[choice], k: lengthK(rules) };
     save();
   }
 
@@ -282,7 +294,26 @@ const Career = (() => {
     const tokens = Math.ceil(us * resultMult * challengeMult - 1e-9);
     c.tokens += tokens;
     c.last = { opp, us, them, won, points: us, resultMult, challenge: ch && challengeText(ch), tier: ch && ch.tier, done, challengeMult, tokens };
+    settle(opp, us, them, k);
+    return c.last;
+  }
 
+  // Leaving a career game before the final buzzer: a loss, 0 to CAREER.forfeitPoints (scaled by the game's length),
+  // no tokens, the challenge missed. The rest of the round plays out as usual.
+  function forfeit() {
+    if (!c.current) return;
+    const { opp } = next();
+    const ch = c.current.challenge;
+    const { k } = c.current;
+    const them = Math.max(1, Math.round(CAREER.forfeitPoints * k));
+    c.last = { opp, us: 0, them, won: false, points: 0, resultMult: 0, challenge: ch && challengeText(ch), tier: ch && ch.tier, done: false, challengeMult: 1, tokens: 0, forfeit: true };
+    settle(opp, 0, them, k);
+  }
+
+  // The user's game against `opp` ended `us` to `them`: the standings, the rest of the round (other teams' games
+  // simulated, scaled by game length k), and the next game or the playoffs.
+  function settle(opp, us, them, k) {
+    const won = us > them;
     if (c.phase === 'season') {
       tally(0, us, them);
       tally(opp, them, us);
@@ -307,7 +338,6 @@ const Career = (() => {
     c.current = null;
     c.offer = null;
     save();
-    return c.last;
   }
 
   function startPlayoffs(k) {
@@ -361,7 +391,8 @@ const Career = (() => {
     save();
   }
 
-  let c = load();
+  let c = null;
+  c = load();
 
   return {
     get: () => c,
@@ -372,6 +403,7 @@ const Career = (() => {
     challengeText,
     challengeState,
     begin,
+    forfeit,
     setup,
     finish,
     standings,

@@ -81,6 +81,7 @@ function newGame(mode, runBack = false) {
   state.challenge = setup ? setup.challenge : null;
   state.careerResult = null;
   state.dailyResult = null;
+  state.goalMet = null; // { t }: a career challenge met mid-game, its box floating away (see drawHud)
   state.gameCounted = false;
   state.roster = makePlayers(state.look, state.team);
   for (const p of state.roster) p.stats = newStats(); // each player's own line on the final screen's box score
@@ -187,8 +188,18 @@ function update(dt) {
   Play.pickups(state);
   Clock.update(dt, state, frozen);
   // A career game's final buzzer: tokens, standings and the next game are settled right away.
-  if (state.mode === 'career' && state.clock.over && !state.careerResult) state.careerResult = Career.finish(state);
+  if (state.mode === 'career' && state.clock.over && !state.careerResult) {
+    state.careerResult = Career.finish(state);
+    // A win / margin / hold goal is only settled at the buzzer: its jingle plays then.
+    if (state.careerResult.done && !state.goalMet) Sfx.play('goal');
+  }
   if (state.mode === 'daily' && state.clock.over && !state.dailyResult) state.dailyResult = Daily.finish(state);
+  // A career challenge met for good mid-game (a stat goal): a jingle, and its box floats up and away.
+  if (state.mode === 'career' && state.challenge && !state.goalMet && Career.challengeState(state.challenge, state).locked) {
+    state.goalMet = { t: 0 };
+    Sfx.play('goal');
+  }
+  if (state.goalMet) state.goalMet.t += dt;
   // A finished game (Quick, career, 2 Player) counts toward the Iron Man trophy once.
   if (state.clock && state.clock.over && !state.gameCounted) {
     state.gameCounted = true;

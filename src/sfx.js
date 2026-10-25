@@ -83,6 +83,11 @@ const Sfx = (() => {
 
   // Every sound: how to make it, and the shortest gap before it can play again.
   const SOUNDS = {
+    // A career challenge met: a quick rising arpeggio with a sparkle on top.
+    goal: { gap: 1, make: (d, t, v) => {
+      [523, 659, 784, 1047].forEach((f, i) => tone(d, t + i * 0.07, { type: 'square', f0: f, len: 0.12, vol: 0.1 * v }));
+      tone(d, t + 0.28, { type: 'triangle', f0: 2093, f1: 2637, len: 0.3, vol: 0.12 * v });
+    } },
     // The ball on the hardwood: a dribble, or a loose ball bouncing.
     dribble: { gap: 0.05, make: (d, t, v) => {
       tone(d, t, { type: 'sine', f0: 150, f1: 55, len: 0.09, vol: 0.5 * v });

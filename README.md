@@ -19,7 +19,9 @@ left early is a forfeit loss, also if the page is closed mid-game) and **Restart
 final, and the next season starts with tougher opponents. Each AI team has its own colors and strength; their other
 games are simulated for the standings. The Career screen shows the season, the next opponent and the standings.
 Before each game pick one of three challenges from different tiers, in random order (Easy x1.1, Medium x1.25, Hard
-x1.5, Pro x2), shown top left during the game. A game pays a token per point your team scores, x1.25 for a win or
+x1.5, Pro x2), shown top left during the game. Meet a
+stat challenge (threes, steals, dunks, blocks, points) and a little jingle plays as its box flashes and floats away; a
+win, win-by or hold-them goal can still slip until the buzzer, so its jingle plays then. A game pays a token per point your team scores, x1.25 for a win or
 x0.75 for a loss, times the challenge's multiplier if you completed it, rounded up. Spend tokens on the Career screen
 (a level costs 10 x its number); the career team has its own names and levels, separate from the free testing
 upgrades. After a career game, shoot takes you back to the Career screen for the next one. Career progress saves

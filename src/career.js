@@ -251,14 +251,15 @@ const Career = (() => {
     return CHALLENGES[ch.tier][ch.index].text(ch.n);
   }
 
-  // How the challenge stands right now: { text (progress), done (would count if the game ended now) }.
+  // How the challenge stands right now: { text (progress), done (would count if the game ended now), locked (done
+  // and can't come undone: a stat goal reached) }.
   function challengeState(ch, game) {
     const def = CHALLENGES[ch.tier][ch.index];
     const [us, them] = game.score;
     switch (def.type) {
       case 'stat': {
         const v = game.stats[0][def.key];
-        return { text: `${Math.min(v, ch.n)}/${ch.n}`, done: v >= ch.n };
+        return { text: `${Math.min(v, ch.n)}/${ch.n}`, done: v >= ch.n, locked: v >= ch.n };
       }
       case 'win':
         return { text: `${us}-${them}`, done: us > them };

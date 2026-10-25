@@ -2,6 +2,7 @@ const POPUP_LIFE = 1.1;
 const POPUP_NEAR = 30;   // popups closer than this (world units, across and in depth) count as the same spot
 const POPUP_LINE = 10;   // how far apart (in height) they have to be not to overlap
 const POPUP_MERGE = 0.3; // the same text again this soon just restarts the first one
+const GOAL_RISE_TIME = 1.4; // seconds a met career challenge takes to float away
 const METER_H = 48;
 const METER_W = 8;
 const TEXT_SCALE = 2; // the 3x5 font is drawn with 2px pixels at 640x360
@@ -10,6 +11,21 @@ const METER_GREEN_SHINE = mix(COLORS.good, COLORS.line, 0.4);
 
 function drawHud(ctx, game) {
   const free = !isFullGame(game);
+  // A career game's challenge and how it stands, green once it's met. Met for good mid-game (game.goalMet), it
+  // flashes and floats up out of the way (drawn first, so it slides behind the stats box).
+  const rise = game.goalMet ? game.goalMet.t / GOAL_RISE_TIME : 0;
+  if (game.challenge && !(game.clock && game.clock.over) && rise < 1) {
+    const ch = game.challenge;
+    const now = Career.challengeState(ch, game);
+    const tier = CAREER.tiers[ch.tier];
+    const head = game.mode === 'daily' ? 'DAILY GOAL' : `${tier.name} X${tier.mult}`;
+    const line = rise ? `${head}  ${Career.challengeText(ch)}  DONE!` : `${head}  ${Career.challengeText(ch)}  ${now.text}`;
+    const flash = rise && Math.floor(rise * 12) % 2 ? COLORS.line : COLORS.good;
+    ctx.save();
+    ctx.globalAlpha = 1 - Math.max(0, rise - 0.5) * 2; // fades out over the second half
+    drawInfoBox(ctx, line, (game.ui.stats ? 26 : 4) - Math.round(rise * rise * 40), now.done ? flash : COLORS.okay);
+    ctx.restore();
+  }
   if (game.drill) drawDrill(ctx, game.drill);
   // The stats box in the top left can be turned off in the pause menu's UI tab.
   else if (game.ui.stats) {
@@ -18,15 +34,6 @@ function drawHud(ctx, game) {
     const score = free ? `PTS ${s.pts}` : `${home} ${game.score[0]}  ${away} ${game.score[1]}`;
     const ft = !free && game.rules.freeThrows ? `  FT ${s.ftm}/${s.fta}` : '';
     drawInfoBox(ctx, `${score}  FG ${s.fgm}/${s.fga}  3PT ${s.tpm}/${s.tpa}${ft}`);
-  }
-  // A career game's challenge and how it stands, green once it's met.
-  if (game.challenge && !(game.clock && game.clock.over)) {
-    const ch = game.challenge;
-    const now = Career.challengeState(ch, game);
-    const tier = CAREER.tiers[ch.tier];
-    const head = game.mode === 'daily' ? 'DAILY GOAL' : `${tier.name} X${tier.mult}`;
-    const line = `${head}  ${Career.challengeText(ch)}  ${now.text}`;
-    drawInfoBox(ctx, line, game.ui.stats ? 26 : 4, now.done ? COLORS.good : COLORS.okay);
   }
 
   ctx.fillStyle = COLORS.bg;

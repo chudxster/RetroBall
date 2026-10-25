@@ -113,7 +113,7 @@ opponent gets as many levels as your player in the same spot, spread at random (
 | Space | Hold for a jump shot: release in the green zone. Hold away from the hoop for a fadeaway (jumps back, smaller green, harder to contest) | Jump to block or contest a shot |
 | E | Dunk (range grows with your speed toward the rim) | Steal (reaching in too close risks a foul) |
 | Q | Pass (to the teammate in the held direction, or the most open one) | Switch to the teammate nearest the ball (free shot: get the ball back where you stand) |
-| Esc / P | Pause menu, a dock on the right with its tabs down a rail: Player (customize), Upgrades, Controls (dash double-tap timing, and a drawn keyboard showing each action's keys in its color: click an action, then press or click its new key; 1 Player or either 2 Player player), UI (stats box, sound, trophies), plus Resume, Restart and Main menu | |
+| Esc / P | Pause menu, a dock on the right with its tabs down a rail (Settings tabs always; the Customize tabs, Player, Upgrades and Gear, only in a Quick game; the main menu's Customize and Settings open just their own): Player (customize), Upgrades, Controls (dash double-tap timing, and a drawn keyboard showing each action's keys in its color: click an action, then press or click its new key; 1 Player or either 2 Player player), UI (stats box, sound, trophies), plus Resume, Restart and Main menu | |
 
 All keys except Esc can be rebound in the Controls tab; the arrow keys always move.
 

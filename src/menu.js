@@ -211,6 +211,7 @@ const Menu = (() => {
   let syncFoot = () => {};
   let syncTools = () => {};
   let syncGearView = () => {};
+  let showGroups = () => {};
   let showTab = () => {};
   let preview = null;
   let look = null;  // player 1's look, which also carries the team kit
@@ -395,6 +396,14 @@ const Menu = (() => {
     for (const s of panel.querySelectorAll('span.ico[data-icon]')) s.replaceWith(pixelIcon(s.dataset.icon));
     show(tabs[0]);
     showTab = (id) => show(tabs.find((t) => t.dataset.panel === id));
+    // Which groups' tabs show (Customize, Settings; see index.html), and the rail's title. If the open tab is hidden,
+    // the first one showing opens.
+    showGroups = (groups, title) => {
+      for (const t of tabs) t.hidden = !groups.includes(t.dataset.group) || (t.dataset.panel === 'dev-view' && !DEV);
+      document.getElementById('rail-head').textContent = title;
+      const current = tabs.find((t) => t.getAttribute('aria-selected') === 'true');
+      if (!current || current.hidden) show(tabs.find((t) => !t.hidden));
+    };
   }
 
   // Gear: a row per cosmetic, stepping through none and the unlocked styles (worn items for the picked player), with
@@ -913,6 +922,8 @@ const Menu = (() => {
     button.setAttribute('aria-expanded', String(open));
     if (open) {
       lastFrame = 0;
+      // Paused in a game: Settings, plus Customize in a Quick game (casual) only.
+      if (!game.inTitle()) showGroups(game.mode() === '3v3' ? ['customize', 'settings'] : ['settings'], 'Paused');
       syncFoot(true);
       syncTools();
       renderTrophies();
@@ -926,9 +937,13 @@ const Menu = (() => {
     }
   }
 
-  // From the main menu: the menu opened on one of its tabs (Customize, Settings).
+  // From the main menu: the menu opened on one of its tabs, showing just that tab's group (Customize or Settings).
   function openTab(id) {
     setOpen(true);
+    if (game.inTitle()) {
+      const group = panel.querySelector(`.tab[data-panel="${id}"]`).dataset.group;
+      showGroups([group], group === 'customize' ? 'Customize' : 'Settings');
+    }
     showTab(id);
   }
 

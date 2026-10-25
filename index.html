@@ -18,18 +18,21 @@
     </button>
 
     <!-- Pause menu (the Side Rail design): a full-height dock on the right, the tabs down a rail on its left with
-         Resume, Restart and Main menu at the rail's foot, and the picked tab beside it (its reset button below it). -->
+         Resume, Restart and Main menu at the rail's foot, and the picked tab beside it (its reset button below it).
+         Its tabs come in two groups: Customize (Player, Upgrades, Gear) and Settings (Controls, UI, Testing). The main
+         menu's Customize and Settings open just their group; paused in a game it's Settings, plus Customize in a
+         Quick game only (menu.js). -->
     <div id="menu" role="dialog" aria-label="Pause menu" hidden>
       <div class="menu-rail">
-        <p class="rail-head">Paused</p>
+        <p class="rail-head" id="rail-head">Paused</p>
         <div class="tabs" role="tablist" aria-label="Pause menu sections" aria-orientation="vertical">
-          <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true"><span class="ico" data-icon="jersey"></span>Player</button>
-          <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false"><span class="ico" data-icon="star"></span>Upgrades</button>
-          <button type="button" class="tab" role="tab" data-panel="gear-view" aria-selected="false"><span class="ico" data-icon="trophy"></span>Gear</button>
-          <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false"><span class="ico" data-icon="pad"></span>Controls</button>
-          <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false"><span class="ico" data-icon="gear"></span>UI</button>
+          <button type="button" class="tab" role="tab" data-panel="player-view" data-group="customize" aria-selected="true"><span class="ico" data-icon="jersey"></span>Player</button>
+          <button type="button" class="tab" role="tab" data-panel="upgrade-view" data-group="customize" aria-selected="false"><span class="ico" data-icon="star"></span>Upgrades</button>
+          <button type="button" class="tab" role="tab" data-panel="gear-view" data-group="customize" aria-selected="false"><span class="ico" data-icon="trophy"></span>Gear</button>
+          <button type="button" class="tab" role="tab" data-panel="controls-view" data-group="settings" aria-selected="false"><span class="ico" data-icon="pad"></span>Controls</button>
+          <button type="button" class="tab" role="tab" data-panel="ui-view" data-group="settings" aria-selected="false"><span class="ico" data-icon="gear"></span>UI</button>
           <!-- Only with ?dev=1 in the address (see menu.js): playtesting tools, testing sliders and player tuning. -->
-          <button type="button" class="tab tab-dev" role="tab" data-panel="dev-view" aria-selected="false" hidden><span class="ico" data-icon="cone"></span>Testing</button>
+          <button type="button" class="tab tab-dev" role="tab" data-panel="dev-view" data-group="settings" aria-selected="false" hidden><span class="ico" data-icon="cone"></span>Testing</button>
         </div>
         <span class="rail-space"></span>
         <!-- In a game only (menu.js hides them when the menu was opened from the main menu). -->

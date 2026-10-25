@@ -34,6 +34,11 @@ function crowdLevel() {
 }
 
 function drawArena(ctx, time) {
+  if (court.outdoor) {
+    drawOutdoor(ctx, court.outdoor);
+    if (arenaBanner) drawRaftersBanner(ctx, arenaBanner);
+    return;
+  }
   ctx.fillStyle = COLORS.wall;
   ctx.fillRect(0, 0, VIEW_W, CROWD_TOP);
 
@@ -45,7 +50,7 @@ function drawArena(ctx, time) {
   ctx.fillRect(0, 22, VIEW_W, 1);
   const bannerOffset = Math.round(camera.renderX * 0.9);
   for (let bx = -((bannerOffset % 180) + 180); bx < VIEW_W + 180; bx += 180) {
-    drawText(ctx, 'RETROBALL', bx, 10, COLORS.bannerText, { scale: 2 });
+    drawText(ctx, court.banner || 'RETROBALL', bx, 10, COLORS.bannerText, { scale: 2 });
   }
   ctx.fillStyle = COLORS.wallStripe;
   ctx.fillRect(0, CROWD_TOP - 3, VIEW_W, 2);
@@ -65,6 +70,13 @@ function drawArena(ctx, time) {
 }
 
 // `row` counts back from the court (0 = front row).
+// A court's own crowd shirt colors, shaded once each.
+const COURT_SHIRT_SHADES = new Map();
+function courtShirtShade(color) {
+  if (!COURT_SHIRT_SHADES.has(color)) COURT_SHIRT_SHADES.set(color, shade(color, 0.8));
+  return COURT_SHIRT_SHADES.get(color);
+}
+
 function drawCrowdRow(ctx, row, top, time) {
   ctx.fillStyle = COLORS.risers[row % 2];
   ctx.fillRect(0, top, VIEW_W, CROWD_ROW_H);
@@ -80,7 +92,7 @@ function drawCrowdRow(ctx, row, top, time) {
   const { sign } = crowdHype;
   for (let k = first; k <= last; k++) {
     const seat = k + CROWD_SEED;
-    if (hash2(seat, row + 1013) >= CROWD.density) continue; // empty seat
+    if (hash2(seat, row + 1013) >= CROWD.density * (court.density ?? 1)) continue; // empty seat
     const h = hash2(seat, row);
     const sx = Math.round(VIEW_W / 2 + k * SEAT_SPACING - offset);
     // Each fan has a fixed eagerness: the most eager get up for small plays, everyone for a big one.
@@ -91,12 +103,13 @@ function drawCrowdRow(ctx, row, top, time) {
     const hop = holdsSign ? 1 : 3;
     const y = top - (hyped ? Math.round(Math.abs(Math.sin(time * 8 + h * 40)) * hop) + 1 : cheering ? 2 : 0);
     const skin = SKINS[Math.floor(h * 31) % SKINS.length];
-    const shirtIndex = Math.floor(h * 97) % CROWD_SHIRTS.length;
-    const shirt = CROWD_SHIRTS[shirtIndex];
+    const shirts = court.shirts || CROWD_SHIRTS;
+    const shirtIndex = Math.floor(h * 97) % shirts.length;
+    const shirt = shirts[shirtIndex];
 
     ctx.fillStyle = shirt;
     ctx.fillRect(sx, y + 7, 7, 6);
-    ctx.fillStyle = CROWD_SHIRT_SHADES[shirtIndex];
+    ctx.fillStyle = court.shirts ? courtShirtShade(shirt) : CROWD_SHIRT_SHADES[shirtIndex];
     ctx.fillRect(sx, y + 7, 1, 6);
     ctx.fillStyle = skin;
     ctx.fillRect(sx + 1, y + 1, 5, 5);
@@ -110,6 +123,11 @@ function drawCrowdRow(ctx, row, top, time) {
     }
     ctx.fillStyle = CROWD_HAIR[Math.floor(h * 53) % CROWD_HAIR.length];
     ctx.fillRect(sx + 1, y + 1, 5, 2);
+    // In the dark arenas (Finals Night, Neon Night) phones flash here and there.
+    if (court.flashes && Math.sin(time * 3 + h * 90) > 0.96) {
+      ctx.fillStyle = COLORS.line;
+      ctx.fillRect(sx + 5, y + 2, 2, 2);
+    }
     if (holdsSign) drawCrowdSign(ctx, sign, sx + 3, y - 2, Math.round(Math.sin(time * 5 + h * 30) * 1.5), h);
   }
 }
@@ -144,30 +162,59 @@ function drawCourt(ctx) {
     fillSpan(ctx, 0, VIEW_W, sy, COLORS.apron);
     if (wy < 0 || wy > W) continue;
 
-    // Planks run the length of the court in alternating shades, with staggered seams where boards meet.
-    const plank = Math.floor(wy / PLANK_W);
-    fillSpan(ctx, toX(0), toX(L), sy, plank % 2 ? COLORS.woodA : COLORS.woodB);
-    ctx.fillStyle = COLORS.woodSeam;
-    const visibleFrom = camera.renderX - VIEW_W / 2 / s;
-    const start = hash2(plank, 7) * PLANK_SEAM_GAP;
-    for (let x = start + Math.max(0, Math.floor((visibleFrom - start) / PLANK_SEAM_GAP)) * PLANK_SEAM_GAP; x < L; x += PLANK_SEAM_GAP) {
-      const px = Math.round(toX(x));
-      if (px >= VIEW_W) break;
-      ctx.fillRect(px, sy, 1, 1);
-    }
+    drawFloorRow(ctx, sy, wy, s, toX);
 
     const fromMid = wy - W / 2;
-    if (Math.abs(fromMid) <= COURT.keyHalfWidth) {
+    if (Math.abs(fromMid) <= COURT.keyHalfWidth && !court.noPaint) {
       fillSpan(ctx, toX(0), toX(COURT.keyDepth), sy, COLORS.paint);
       fillSpan(ctx, toX(L - COURT.keyDepth), toX(L), sy, COLORS.paint);
     }
     if (Math.abs(fromMid) < COURT.circleR) {
       const dx = Math.sqrt(COURT.circleR ** 2 - fromMid ** 2);
-      fillSpan(ctx, toX(L / 2 - dx), toX(L / 2 + dx), sy, COLORS.paint);
+      fillSpan(ctx, toX(L / 2 - dx), toX(L / 2 + dx), sy, court.center || COLORS.paint);
     }
   }
 
   drawCourtLines(ctx);
+}
+
+// One screen row of the court's floor, by the court's texture: planks running the length of the court in two shades
+// with staggered seams (the default), speckled asphalt or concrete, sport-court tiles, or a checkerboard. Speckles and
+// seams are fixed to the floor, so they scroll with it.
+function drawFloorRow(ctx, sy, wy, s, toX) {
+  const L = COURT.length;
+  const visibleFrom = Math.max(0, camera.renderX - VIEW_W / 2 / s);
+  const visibleTo = Math.min(L, camera.renderX + VIEW_W / 2 / s);
+  const floor = court.floor || 'planks';
+  if (floor === 'checker' || floor === 'tiles') {
+    const size = floor === 'checker' ? 20 : 12;
+    const row = Math.floor(wy / size);
+    for (let x = Math.floor(visibleFrom / size) * size; x < visibleTo; x += size) {
+      const odd = (Math.floor(x / size) + row) % 2;
+      fillSpan(ctx, toX(Math.max(0, x)), toX(Math.min(L, x + size)), sy, odd ? COLORS.woodA : COLORS.woodB);
+      if (floor === 'tiles') fillSpan(ctx, toX(x), toX(x) + 1, sy, COLORS.woodSeam);
+    }
+    if (floor === 'tiles' && wy % size < 0.9) fillSpan(ctx, toX(0), toX(L), sy, COLORS.woodSeam);
+    return;
+  }
+  if (floor === 'speckle') {
+    fillSpan(ctx, toX(0), toX(L), sy, COLORS.woodA);
+    const row = Math.round(wy * 2);
+    for (let x = Math.floor(visibleFrom); x < visibleTo; x += 2) {
+      const r = hash2(x, row);
+      if (r < 0.12) fillSpan(ctx, toX(x), toX(x) + 1, sy, court.speckle[r < 0.06 ? 0 : 1]);
+    }
+    return;
+  }
+  const plank = Math.floor(wy / PLANK_W);
+  fillSpan(ctx, toX(0), toX(L), sy, plank % 2 ? COLORS.woodA : COLORS.woodB);
+  ctx.fillStyle = COLORS.woodSeam;
+  const start = hash2(plank, 7) * PLANK_SEAM_GAP;
+  for (let x = start + Math.max(0, Math.floor((visibleFrom - start) / PLANK_SEAM_GAP)) * PLANK_SEAM_GAP; x < L; x += PLANK_SEAM_GAP) {
+    const px = Math.round(toX(x));
+    if (px >= VIEW_W) break;
+    ctx.fillRect(px, sy, 1, 1);
+  }
 }
 
 function fillSpan(ctx, x0, x1, sy, color) {
@@ -178,9 +225,20 @@ function fillSpan(ctx, x0, x1, sy, color) {
   ctx.fillRect(a, sy, b - a, 1);
 }
 
+// The court's lines in its line color; Neon Night draws them a second time first, a pixel lower, as the glow.
 function drawCourtLines(ctx) {
+  if (court.glow) {
+    ctx.save();
+    ctx.translate(0, 1);
+    drawCourtLineSet(ctx, court.glow);
+    ctx.restore();
+  }
+  drawCourtLineSet(ctx, court.line || COLORS.line);
+}
+
+function drawCourtLineSet(ctx, color) {
   const { length: L, width: W } = COURT;
-  ctx.fillStyle = COLORS.line;
+  ctx.fillStyle = color;
 
   plotLine(ctx, 0, 0, L, 0);
   plotLine(ctx, 0, W, L, W);
@@ -243,6 +301,8 @@ function plotArc(ctx, cx, cy, r, a0, a1, mx = (x) => x, dashed = false) {
 
 function plotPoint(ctx, x, y) {
   const p = project(x, y);
+  // Worn lines on the blacktop: a few pixels missing.
+  if (court.wear && hash2(Math.round(x * 2), Math.round(y * 2)) < court.wear) return;
   ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
 }
 
@@ -298,4 +358,123 @@ function drawRaftersBanner(ctx, b) {
       rect(sx, 27, 3, 1, '#ffcd75');
     }
   }
+}
+
+// An outdoor court's backdrop instead of the stands (court.outdoor): sky bands, the sun or the moon, the city's
+// buildings with lit windows (or trees in the park), a brick wall if there is one, and the chain-link fence.
+// Everything scrolls a little slower than the court for depth.
+function drawOutdoor(ctx, o) {
+  const floorTop = Math.floor(screenYForWorldY(-COURT.apron));
+  const band = Math.ceil(floorTop / o.sky.length);
+  o.sky.forEach((color, i) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, i * band, VIEW_W, band);
+  });
+  const far = Math.round(camera.renderX * 0.15);
+  if (o.sun || o.moon) {
+    ctx.fillStyle = o.sun || o.moon;
+    ctx.beginPath();
+    ctx.arc(470 - far * 0.3, o.sun ? 46 : 22, o.sun ? 16 : 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const near = Math.round(camera.renderX * 0.35);
+  const base = floorTop - (o.wall ? 14 : 0);
+  if (o.buildings) {
+    // Fixed widths and heights from a hash of each block, so the skyline doesn't change as it scrolls.
+    for (let k = Math.floor(near / 48) - 1; k < Math.floor(near / 48) + 16; k++) {
+      const x = k * 48 - near;
+      const w = 30 + Math.floor(hash2(k, 3) * 16);
+      const h = 24 + Math.floor(hash2(k, 5) * 56);
+      ctx.fillStyle = o.buildings[k & 1];
+      ctx.fillRect(x, base - h, w, h);
+      ctx.fillStyle = o.windows;
+      for (let wy = base - h + 4; wy < base - 6; wy += 7) {
+        for (let wx = x + 4; wx < x + w - 4; wx += 6) if (hash2(wx + k * 7, wy) < 0.3) ctx.fillRect(wx, wy, 2, 3);
+      }
+    }
+  }
+  if (o.trees) {
+    for (let k = Math.floor(near / 40) - 1; k < Math.floor(near / 40) + 18; k++) {
+      const x = k * 40 - near + Math.floor(hash2(k, 9) * 14);
+      const r = 12 + Math.floor(hash2(k, 11) * 8);
+      ctx.fillStyle = '#5a3524';
+      ctx.fillRect(x - 2, base - 16, 4, 16);
+      ctx.fillStyle = o.trees[k & 1];
+      ctx.beginPath();
+      ctx.arc(x, base - 16 - r * 0.6, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  if (o.wall) {
+    ctx.fillStyle = o.wall;
+    ctx.fillRect(0, base, VIEW_W, floorTop - base);
+    ctx.fillStyle = shade(o.wall, 0.75);
+    for (let y = base + 3; y < floorTop; y += 4) ctx.fillRect(0, y, VIEW_W, 1);
+  }
+  // The fence: a diamond mesh over the lower backdrop, with posts.
+  const top = Math.max(0, floorTop - 70);
+  ctx.fillStyle = o.fence;
+  ctx.globalAlpha = 0.45;
+  for (let y = top; y < floorTop; y++) {
+    for (let x = (y - near) % 8; x < VIEW_W; x += 8) ctx.fillRect(x, y, 1, 1);
+    for (let x = 8 - ((y + near) % 8); x < VIEW_W; x += 8) ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillRect(0, top - 2, VIEW_W, 2);
+  for (let x = -(Math.round(camera.renderX * 0.6) % 120); x < VIEW_W; x += 120) ctx.fillRect(x, top - 2, 3, floorTop - top + 2);
+  // Rooftop: a string of lights across the top.
+  if (o.lights) {
+    for (let x = -(near % 24); x < VIEW_W; x += 24) {
+      ctx.fillStyle = '#ffcd75';
+      ctx.fillRect(x, 18 + Math.round(Math.sin((x + near) / 60) * 4), 2, 2);
+    }
+  }
+}
+
+// The court's lighting, over the floor and players and under the HUD: a night tint (Rooftop Cage), or Finals Night's
+// house lights down with a spotlight from above pooled on whoever has the ball (or the loose ball itself).
+const spot = { x: VIEW_W / 2, y: VIEW_H / 2 };
+let spotLayer = null;
+function drawCourtLighting(ctx, game) {
+  if (court.night) {
+    ctx.fillStyle = `rgba(13, 14, 22, ${court.night})`;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  }
+  if (!court.spotlight) return;
+  const { ball } = game;
+  const target = ball.held && ball.holder ? { x: ball.holder.sx, y: ball.holder.sy } : { x: ball.sx, y: ball.sy };
+  if (Number.isFinite(target.x) && Number.isFinite(target.y)) {
+    spot.x += (target.x - spot.x) * 0.2;
+    spot.y += (target.y - spot.y) * 0.2;
+  }
+  // The cone: narrow at the rafters, an ellipse of light on the floor around the ball.
+  const cone = (c) => {
+    c.beginPath();
+    c.moveTo(spot.x - 10, 0);
+    c.lineTo(spot.x + 10, 0);
+    c.lineTo(spot.x + 40, spot.y - 4);
+    c.ellipse(spot.x, spot.y, 40, 14, 0, 0, Math.PI);
+    c.lineTo(spot.x - 40, spot.y - 4);
+    c.closePath();
+  };
+  if (!spotLayer) {
+    spotLayer = document.createElement('canvas');
+    spotLayer.width = VIEW_W;
+    spotLayer.height = VIEW_H;
+  }
+  const s = spotLayer.getContext('2d');
+  s.globalCompositeOperation = 'source-over';
+  s.clearRect(0, 0, VIEW_W, VIEW_H);
+  s.fillStyle = 'rgba(13, 14, 22, 0.55)';
+  s.fillRect(0, 0, VIEW_W, VIEW_H);
+  s.globalCompositeOperation = 'destination-out';
+  cone(s);
+  s.fill();
+  ctx.drawImage(spotLayer, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = 'rgba(255, 205, 117, 0.10)';
+  cone(ctx);
+  ctx.fill();
+  ctx.restore();
 }

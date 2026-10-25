@@ -1477,3 +1477,9 @@ input[type="color"]::-moz-color-swatch {
 .gear-hint {
   grid-column: 1 / -1;
 }
+
+/* Quick game / Practice: the court picker, its name between the arrows */
+.court-row .value {
+  flex: 1;
+  text-align: center;
+}

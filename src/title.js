@@ -56,6 +56,12 @@ const Title = (() => {
     }
 
     document.getElementById('daily-start').addEventListener('click', () => start('daily'));
+    for (const b of box.querySelectorAll('[data-court-step]')) {
+      b.addEventListener('click', () => {
+        Courts.step(Number(b.dataset.courtStep));
+        render();
+      });
+    }
     for (const b of box.querySelectorAll('[data-difficulty]')) {
       b.addEventListener('click', () => {
         game.rules.difficulty = Number(b.dataset.difficulty);
@@ -169,6 +175,7 @@ const Title = (() => {
   }
 
   function render() {
+    for (const n of box.querySelectorAll('.court-name')) n.textContent = Courts.picked().name;
     if (view === 'home') {
       renderHome();
     } else if (view === 'quick') {

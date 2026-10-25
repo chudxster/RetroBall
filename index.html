@@ -369,6 +369,13 @@
             <span class="mode-desc" id="daily-text"></span>
             <button type="button" class="btn btn-quiet" id="daily-start">Play today's game</button>
           </div>
+          <!-- The court for casual games (Courts; the same pick in Practice). -->
+          <div class="row court-row">
+            <span class="label">Court</span>
+            <button type="button" class="step" data-court-step="-1" aria-label="Previous court">&lt;</button>
+            <span class="value court-name"></span>
+            <button type="button" class="step" data-court-step="1" aria-label="Next court">&gt;</button>
+          </div>
           <!-- How good the AI opponents are (DIFFICULTY; title.js marks the picked one). -->
           <div class="row difficulty-row">
             <span class="label">Difficulty</span>
@@ -452,6 +459,12 @@
         <!-- Practice: just the user's player. -->
         <div class="title-view stack-view" id="title-practice" data-back="casual" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Practice</span></div>
+          <div class="row court-row">
+            <span class="label">Court</span>
+            <button type="button" class="step" data-court-step="-1" aria-label="Previous court">&lt;</button>
+            <span class="value court-name"></span>
+            <button type="button" class="step" data-court-step="1" aria-label="Next court">&gt;</button>
+          </div>
           <button type="button" class="mode-option title-start" data-mode="free">
             <span class="mode-name">Free shot</span>
             <span class="mode-desc">Just you and the ball, either hoop</span>
@@ -478,6 +491,7 @@
   <script src="src/sprite.js"></script>
   <script src="src/input.js"></script>
   <script src="src/camera.js"></script>
+  <script src="src/courts.js"></script>
   <script src="src/court.js"></script>
   <script src="src/hoop.js"></script>
   <script src="src/debris.js"></script>

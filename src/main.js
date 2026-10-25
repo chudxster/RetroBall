@@ -112,6 +112,7 @@ function newGame(mode, runBack = false) {
   else state.clock = null;
   state.drill = null;
   if (mode === 'world') Practice.start(state);
+  setCourt(Courts.forMode(mode));
   if (duo) Duo.start(state, runBack);
   // The countdown (2 Player's starts when both players are done with the upgrade draft, see Duo).
   state.countdown = mode !== 'demo' && mode !== 'free' && !state.draft ? COUNTDOWN.seconds : 0;
@@ -527,6 +528,7 @@ function render(alpha) {
   const jersey = state.look.jersey;
   const layers = [...benchLayers(jersey), tableLayer(jersey, state.ui.trophies ? Trophies.shelf() : []), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
+  drawCourtLighting(ctx, state);
 
   for (const p of state.players) {
     if (p.dashT > 0) drawDashPuff(ctx, p);

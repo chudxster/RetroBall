@@ -61,6 +61,7 @@ function drawArena(ctx, time) {
   while (floorTop - (rows + 1) * CROWD_ROW_H + CROWD_ROW_H > CROWD_TOP) rows++;
   for (let row = rows - 1; row >= 0; row--) drawCrowdRow(ctx, row, floorTop - (row + 1) * CROWD_ROW_H, time);
   ctx.restore();
+  if (arenaBanner) drawRaftersBanner(ctx, arenaBanner);
 }
 
 // `row` counts back from the court (0 = front row).
@@ -243,4 +244,58 @@ function plotArc(ctx, cx, cy, r, a0, a1, mx = (x) => x, dashed = false) {
 function plotPoint(ctx, x, y) {
   const p = project(x, y);
   ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+}
+
+// Your banner in the rafters (Cosmetics, set per game by main.js): { tier, jersey, number, trim, stars, x (the world
+// x it hangs over) } or null.
+// It hangs over the top rows of the crowd above your home basket, scrolling with the crowd: a pennant, a banner, a
+// gold-trimmed banner with a star per trophy on your shelf, or your retired jersey under its own spotlight.
+let arenaBanner = null;
+function drawRaftersBanner(ctx, b) {
+  const x = Math.round(VIEW_W / 2 + (b.x - camera.renderX) * PROJ.nearScale * 0.6);
+  if (x < -40 || x > VIEW_W + 40) return;
+  const top = 25;
+  const rect = (dx, dy, w, h, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + dx, top + dy, w, h);
+  };
+  if (b.tier === 3) {
+    ctx.fillStyle = 'rgba(255, 205, 117, 0.08)'; // the spotlight
+    ctx.beginPath();
+    ctx.moveTo(x - 6, 0);
+    ctx.lineTo(x + 6, 0);
+    ctx.lineTo(x + 26, top + 52);
+    ctx.lineTo(x - 26, top + 52);
+    ctx.fill();
+  }
+  rect(-16, -1, 32, 2, '#94b0c2'); // the rod
+  if (b.tier === 0) {
+    for (let i = 0; i < 30; i++) rect(-11, 1 + i, Math.max(1, Math.round(22 * (1 - i / 30))), 1, b.jersey);
+    drawText(ctx, String(b.number), x - 4, top + 5, b.trim, { align: 'center' });
+    return;
+  }
+  if (b.tier === 3) {
+    rect(-16, 1, 32, 46, '#29366f');
+    rect(-15, 2, 30, 44, '#1a1c2c');
+    rect(-9, 8, 18, 30, b.jersey);   // the jersey: body, shoulders, armholes
+    rect(-13, 8, 4, 8, b.jersey);
+    rect(9, 8, 4, 8, b.jersey);
+    rect(-3, 8, 6, 3, '#1a1c2c');
+    drawText(ctx, String(b.number), x, top + 18, b.trim, { align: 'center', scale: 2 });
+    rect(-12, 40, 24, 3, '#ffcd75');
+    return;
+  }
+  const gold = b.tier === 2;
+  rect(-12, 1, 24, 36, gold ? '#ffcd75' : b.jersey);
+  if (gold) rect(-11, 2, 22, 34, b.jersey);
+  for (let i = 0; i < 6; i++) rect(-12 + i, 37 + i, 12 - i, 1, gold ? '#ffcd75' : b.jersey); // the notched bottom
+  for (let i = 0; i < 6; i++) rect(i, 37 + i, 12 - i, 1, gold ? '#ffcd75' : b.jersey);
+  drawText(ctx, String(b.number), x, top + 10, b.trim, { align: 'center', scale: 2 });
+  if (gold) {
+    for (let i = 0; i < Math.min(b.stars, 5); i++) {
+      const sx = -8 + i * 4;
+      rect(sx + 1, 26, 1, 3, '#ffcd75');
+      rect(sx, 27, 3, 1, '#ffcd75');
+    }
+  }
 }

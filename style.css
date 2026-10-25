@@ -1455,3 +1455,25 @@ input[type="color"]::-moz-color-swatch {
   height: calc(var(--u) * 8);
   border: var(--u) solid #f4f4f4;
 }
+
+/* Gear tab: name, < style >, and what unlocks the next style on its own line */
+.gear-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+}
+
+.gear-row {
+  display: grid;
+  grid-template-columns: calc(var(--px) * 76) calc(var(--px) * 11) 1fr calc(var(--px) * 11);
+  align-items: center;
+  gap: var(--px) calc(var(--px) * 3);
+}
+
+.gear-row .value {
+  text-align: center;
+}
+
+.gear-hint {
+  grid-column: 1 / -1;
+}

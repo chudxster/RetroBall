@@ -25,6 +25,7 @@
         <div class="tabs" role="tablist" aria-label="Pause menu sections" aria-orientation="vertical">
           <button type="button" class="tab" role="tab" data-panel="player-view" aria-selected="true"><span class="ico" data-icon="jersey"></span>Player</button>
           <button type="button" class="tab" role="tab" data-panel="upgrade-view" aria-selected="false"><span class="ico" data-icon="star"></span>Upgrades</button>
+          <button type="button" class="tab" role="tab" data-panel="gear-view" aria-selected="false"><span class="ico" data-icon="trophy"></span>Gear</button>
           <button type="button" class="tab" role="tab" data-panel="controls-view" aria-selected="false"><span class="ico" data-icon="pad"></span>Controls</button>
           <button type="button" class="tab" role="tab" data-panel="ui-view" aria-selected="false"><span class="ico" data-icon="gear"></span>UI</button>
           <!-- Only with ?dev=1 in the address (see menu.js): playtesting tools, testing sliders and player tuning. -->
@@ -156,6 +157,7 @@
             <p class="test-note">Career</p>
             <div class="tool-grid">
               <button type="button" class="btn btn-quiet" data-tool="tokens">+100 tokens</button>
+            <button type="button" class="btn btn-quiet" data-tool="allGear" title="Every cosmetic unlocked until the page reloads">All gear</button>
             </div>
           </div>
 
@@ -201,6 +203,21 @@
             </div>
             <div class="tuning-list" id="tuning-list"></div>
           </div>
+        </div>
+
+        <!-- Gear: cosmetics unlocked by trophies (see Cosmetics): what the picked player wears, the team's kit and shoes,
+             and the ball, dunk trail, banner and rim for your games. Rows are built by menu.js. Saved. -->
+        <div class="tab-panel stack-view" id="gear-view" role="tabpanel" hidden>
+          <div class="row player-pick">
+            <div class="faces" role="group" aria-label="Pick a player to dress"></div>
+          </div>
+          <p class="test-note">This player</p>
+          <div class="gear-list" id="gear-player"></div>
+          <p class="test-note">The team</p>
+          <div class="gear-list" id="gear-team"></div>
+          <p class="test-note">Your games</p>
+          <div class="gear-list" id="gear-game"></div>
+          <p class="key-hint">Earn trophies to unlock more: each metal unlocks a style.</p>
         </div>
 
         <!-- Controls: dash timing and keybinds (rows are built by menu.js). Saved between visits. -->
@@ -461,6 +478,7 @@
   <script src="src/menu.js"></script>
   <script src="src/sfx.js"></script>
   <script src="src/trophies.js"></script>
+  <script src="src/cosmetics.js"></script>
   <script src="src/career.js"></script>
   <script src="src/daily.js"></script>
   <script src="src/duo.js"></script>

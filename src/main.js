@@ -113,6 +113,45 @@ function newGame(mode, runBack = false) {
   state.drill = null;
   if (mode === 'world') Practice.start(state);
   if (duo) Duo.start(state, runBack);
+  dressUp();
+}
+
+// Cosmetics for this game (none in the demo behind the main menu): your team's gear, the ball, the rim and net on
+// your home basket (the one you defend at tip-off) and your banner in the rafters above it.
+let dunkTrail = null;
+function dressUp() {
+  const on = state.mode !== 'demo';
+  // A Showtime kit too close to the away team's colors sends them out in the kit's opposite.
+  const kit = on ? Cosmetics.pick('kit') : null;
+  if (kit && kit.jersey && colorsClash(awayJersey(state.look.jersey), kit.jersey)) {
+    const away = invertColor(kit.jersey);
+    awayKit = { jersey: away, shorts: shade(away, 0.7), shoe: COLORS.line, laces: away };
+    setTeamLooks(state.roster, state.look, state.team);
+  }
+  for (const p of state.roster) p.setGear(on && p.team === 0 ? Cosmetics.gearFor(p.role) : null);
+  setBallSkin(on ? Cosmetics.pick('ball') : null);
+  dunkTrail = on ? Cosmetics.pick('trail') : null;
+  const jersey = state.look.jersey;
+  const home = defendHoop(0);
+  const rim = on ? Cosmetics.pick('rim') : null;
+  for (const h of HOOPS) h.skin = rim && h === home ? rimSkin(rim, jersey) : null;
+  const banner = on ? Cosmetics.pick('banner') : null;
+  arenaBanner = banner && {
+    tier: COSMETICS.find((c) => c.id === 'banner').styles.indexOf(banner),
+    jersey,
+    trim: isLightColor(jersey) ? COLORS.outline : COLORS.line,
+    number: state.look.number,
+    stars: Trophies.shelf().length,
+    x: home.x,
+  };
+}
+
+// A rim and net style as the hoop's colors (the Team skin takes your jersey color).
+function rimSkin(style, jersey) {
+  const rim = style.rim === 'team' ? jersey : style.rim;
+  const net = style.net;
+  const net2 = style.net2 === 'team' ? jersey : style.net2;
+  return { rim, rimBack: style.rimBack || shade(rim, 0.6), rimShine: mix(rim, COLORS.line, 0.5), net, netBack: shade(net, 0.75), net2: net2 === net ? null : net2, crack: style.crack || null };
 }
 
 function update(dt) {
@@ -469,11 +508,15 @@ function render(alpha) {
   ctx.drawImage(shadowLayer, 0, 0);
   ctx.globalAlpha = 1;
 
+  // A dunk trail goes under everyone.
+  if (dunkTrail) for (const p of state.players) if (p.gear) drawDunkTrail(ctx, p, dunkTrail, state.time);
+
   const jersey = state.look.jersey;
   const layers = [...benchLayers(jersey), tableLayer(jersey, state.ui.trophies ? Trophies.shelf() : []), ...movers, ...HOOP_LAYERS, ...debrisLayers(state)].sort((a, b) => a.y - b.y);
   for (const l of layers) l.draw(ctx);
 
   for (const p of state.players) {
+    if (p.dashT > 0) drawDashPuff(ctx, p);
     if (p.dashT > 0) drawDashLines(ctx, p);
     if (p.dazedT > 0) drawDazed(ctx, p, state.time);
   }
@@ -606,11 +649,17 @@ const testing = {
     const u = state.user;
     switch (tool) {
       case 'tokens': return true;
+      case 'allGear': return true;
       case 'shotClock': return playing && state.rules.shotClock;
       case 'ballToMe': return !!u && state.mode !== 'demo' && state.mode !== 'world' && !(c && c.over) && !u.shot;
       case 'freeThrow': return playing && !!state.ref && !!u && !u.shot;
       default: return playing; // endGame, endPeriod, tenSeconds, homePoints, awayPoints
     }
+  },
+  // Every cosmetic unlocked for this visit (not saved), to try them on.
+  allGear() {
+    Cosmetics.unlockAll();
+    dressUp();
   },
   endGame: () => Clock.finish(state),
   endPeriod: () => Clock.endPeriodNow(state),
@@ -657,6 +706,7 @@ Menu.init({
   },
   team: state.team,
   // Free upgrades re-roll the opponents to match (career levels are only bought between games).
+  gearChanged: dressUp,
   upgradesChanged: () => {
     if (state.mode !== 'career') rollAIUpgrades(state.roster, state.team);
   },

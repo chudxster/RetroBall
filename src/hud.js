@@ -434,3 +434,37 @@ function drawFocusOverlay(ctx, time) {
     });
   }
 }
+
+// The shoe line's dash puff (Cosmetics): little dust discs dropped behind the feet in the shoes' accent color.
+function drawDashPuff(ctx, p) {
+  const s = p.gear && p.gear.shoes;
+  if (!s) return;
+  const k = p.scale;
+  const back = p.dashDir.x ? -Math.sign(p.dashDir.x) : 0;
+  const fade = p.dashT / DASH.time;
+  for (let i = 0; i < 3; i++) {
+    const r = Math.max(1, Math.round((3 - i) * k * (0.5 + fade / 2)));
+    ctx.fillStyle = i === 0 ? s.accent : mix(s.accent, COLORS.line, 0.5);
+    ctx.fillRect(p.sx + back * Math.round((10 + i * 7) * k) - r, p.sy - r - i, r * 2, r);
+  }
+}
+
+// The dunk trail (Cosmetics): while a player dunks, a point is kept each moment of the flight, and they're drawn as
+// pixel discs (or streaks) that shrink and cool through the style's colors as they age.
+function drawDunkTrail(ctx, p, style, time) {
+  const last = p.trail[p.trail.length - 1];
+  if (p.shot && p.shot.dunk && (!last || last.t !== time)) p.trail.push({ x: p.sx, y: p.by - Math.round(34 * p.scale), t: time });
+  p.trail = p.trail.filter((q) => time - q.t < style.life);
+  for (const q of p.trail) {
+    const age = (time - q.t) / style.life;
+    const r = Math.max(1, Math.round(style.size * (1 - age) * p.scale));
+    ctx.fillStyle = style.colors[Math.min(style.colors.length - 1, Math.floor(age * style.colors.length))];
+    if (style.lines) ctx.fillRect(q.x - r * 5, q.y + ((q.t * 997) % 1 > 0.5 ? r * 4 : -r * 4), r * 10, 1);
+    else ctx.fillRect(q.x - r, q.y - r, r * 2, r * 2);
+    // Plasma crackles: a short jagged spark off some of the points.
+    if (style.sparks && (q.t * 7919) % 1 < 0.3) {
+      ctx.fillStyle = COLORS.line;
+      for (let i = 0; i < 4; i++) ctx.fillRect(q.x + r + i * 2, q.y - r - (i % 2 ? 2 : 0), 2, 1);
+    }
+  }
+}

@@ -57,6 +57,8 @@ const HAIR_STYLES = {
   bald: { side: [], front: [], back: [], shine: { side: [], front: [], back: [] } },
 };
 const HAIR_STYLE_NAMES = Object.keys(HAIR_STYLES);
+// The Showtime kit's tube sock stripes (see Player.sockParts).
+const KIT_STRIPES = ['#5d275d', '#ffcd75'];
 
 class Player {
   constructor({ x, y, look, facing = 1 }) {
@@ -99,6 +101,8 @@ class Player {
     this.sy = 0;
     this.by = 0;      // ...and of the feet including jump height
     this.scale = 1;   // sprite size for the current depth
+    this.gear = null; // cosmetics worn (see Cosmetics.gearFor): { band, sleeve, goggles, shoes, kit }
+    this.trail = [];  // a dunk trail's recent points (see drawDunkTrail)
     this.setLook(look);
   }
 
@@ -125,6 +129,36 @@ class Player {
       sole: shade(look.shoe, 0.7),
       laces: look.laces,
     };
+    this.colors.wrist = this.colors.trim; // wristbands
+    this.wearGear();
+  }
+
+  setGear(gear) {
+    this.gear = gear;
+    this.setLook(this.look);
+  }
+
+  // Cosmetics recolor the look: the Showtime kit's jersey and shorts, the shoe line, the headband's wristbands and
+  // the sleeve (the shapes they add are in the parts below).
+  wearGear() {
+    const g = this.gear;
+    if (!g) return;
+    const c = this.colors;
+    if (g.kit && g.kit.jersey) {
+      Object.assign(c, {
+        jersey: g.kit.jersey,
+        jerseyLight: mix(g.kit.jersey, COLORS.line, 0.2),
+        jerseyDark: shade(g.kit.jersey, 0.8),
+        trim: g.kit.trim,
+        shorts: g.kit.jersey,
+        shortsDark: shade(g.kit.jersey, 0.8),
+        shortsTrim: g.kit.trim,
+        wrist: g.kit.trim,
+      });
+    }
+    if (g.shoes) Object.assign(c, { shoe: g.shoes.upper, sole: g.shoes.sole, laces: g.shoes.accent });
+    if (g.band) c.wrist = g.band.color;
+    if (g.sleeve) Object.assign(c, { sleeve: g.sleeve.color, sleeveDark: shade(g.sleeve.color, 0.8) });
   }
 
   // `speedK` scales top speed (defenders hustling back, see Play.retreatBoost).
@@ -360,7 +394,67 @@ class Player {
       ...style[hairView].map(([x, y, w, h]) => [hx + x, hy + y, w, h, c.hair]),
       ...style.shine[hairView].map(([x, y, w, h]) => [hx + x, hy + y, w, h, c.hairShine]),
       ...face.map(([x, y, w, h, color]) => [hx + x, hy + y, w, h, color]),
+      ...this.headGear(hx, hy),
     ];
+  }
+
+  // Head cosmetics (relative to the head's top-left), over the hair and face: the headband, with tails flapping
+  // behind side-on, and the goggles, a metal frame over the eyes with a strap round the head (Platinum's mirrored
+  // lenses hide the pupils).
+  headGear(hx, hy) {
+    const g = this.gear;
+    if (!g || (!g.band && !g.goggles)) return [];
+    const view = this.pose === 'sit' ? 'side' : this.view;
+    const parts = [];
+    if (g.band) {
+      const dark = shade(g.band.color, 0.8);
+      parts.push([0, 3, 16, 3, g.band.color], [0, 3, 16, 1, mix(g.band.color, COLORS.line, 0.4)]);
+      if (view === 'side' || view === 'frontQ') parts.push([-3, 4, 3, 2, dark], [-4, 6, 2, 2, dark]);
+    }
+    if (g.goggles) {
+      const { frame, strap, lens, mirror } = g.goggles;
+      // [x, y, pupil column] of each eye, as the face draws them.
+      const eyes = { side: [[11, 6, 2]], frontQ: [[5, 6, 2], [11, 6, 2]], front: [[3, 7, 1], [9, 7, 1]] }[view] || [];
+      if (view === 'side' || view === 'frontQ') parts.push([0, 6, eyes[0][0] - 1, 2, strap]);
+      else if (view === 'front') parts.push([-2, 7, 3, 2, strap], [15, 7, 3, 2, strap]);
+      else parts.push([-1, 7, 18, 2, strap]);
+      for (const [ex, ey, pupil] of eyes) {
+        parts.push([ex - 1, ey - 1, 6, 5, frame], [ex, ey, 4, 3, lens, 2], [ex, ey, 1, 1, COLORS.line]);
+        if (!mirror) parts.push([ex + pupil, ey + 1, 2, 2, COLORS.eye, 2]);
+      }
+      if (eyes.length === 2) parts.push([eyes[0][0] + 4, eyes[0][1], eyes[1][0] - eyes[0][0] - 4, 1, frame]);
+    }
+    return parts.map(([x, y, w, h, color, min]) => [hx + x, hy + y, w, h, color, min]);
+  }
+
+  // Socks: the team stripe at the ankle, or the Showtime kit's tube socks pulled up the calf with two stripes.
+  // `lift` raises a foot off the floor.
+  sockParts(x, lift = 0) {
+    const kit = this.gear && this.gear.kit;
+    if (kit && kit.tube) {
+      return [[x, -18 - lift, 6, 10, COLORS.sock], [x, -17 - lift, 6, 1, KIT_STRIPES[0]], [x, -15 - lift, 6, 1, KIT_STRIPES[1]]];
+    }
+    return [[x, -12 - lift, 6, 4, COLORS.sock], [x, -11 - lift, 6, 1, this.colors.jersey]];
+  }
+
+  // The shoe line's details on a shoe drawn at x (side-on: a toe cap and a side stripe; Neon glows along the sole).
+  shoeDetail(x, lift = 0, sideOn = true) {
+    const s = this.gear && this.gear.shoes;
+    if (!s) return [];
+    const parts = sideOn ? [[x + 6, -6 - lift, 2, 4, s.accent], [x + 1, -5 - lift, 5, 1, s.accent]] : [[x, -4 - lift, 6, 1, s.accent]];
+    if (s.glow) parts.push([x, -1 - lift, sideOn ? 8 : 6, 1, s.glow]);
+    return parts;
+  }
+
+  // How much higher the shorts end in the Showtime kit's short shorts (more leg shows).
+  thigh() {
+    return this.gear && this.gear.kit && this.gear.kit.short ? 3 : 0;
+  }
+
+  // The Showtime home and road kits: two stripes at the jersey's hem.
+  hemStripes(u) {
+    const kit = this.gear && this.gear.kit;
+    return kit && kit.stripe ? [[-10, -36 + u, 20, 1, kit.trim], [-10, -35 + u, 20, 1, kit.stripe]] : [];
   }
 
   // -1..1 over the stride: +1 when the far arm is fully forward (with the near leg forward, run frame 0).
@@ -383,7 +477,7 @@ class Player {
     for (let t = 0; t <= U; t++) stamp(point(x, y, upper, t), skin);
     const [ex, ey] = point(x, y, upper, U);
     for (let t = 0; t <= F; t++) stamp(point(ex, ey, a, t), skin);
-    stamp(point(ex, ey, a, F - 2), this.colors.trim, 1, 2);
+    stamp(point(ex, ey, a, F - 2), this.colors.wrist, 1, this.gear && this.gear.band ? 3 : 2);
     stamp(point(ex, ey, a, F), shadeColor, w - 1, 1);
     return parts;
   }
@@ -426,15 +520,16 @@ class Player {
     const backShade = backNear || armsInFront ? c.skinDark : c.skinDarker;
     let backArm = this.armChain(-11, -50 + u, swing, swing + bend, backW, backNear ? 1 : 0, backSkin, backShade);
     const frontW = turn > 0 ? 8 : turn < 0 ? 4 : 6;
-    const frontSkin = frontNear ? c.skin : c.skinDark;
-    const frontShade = frontNear ? c.skinDark : c.skinDarker;
+    // The near (shooting) arm wears the sleeve, if there is one.
+    const frontSkin = c.sleeve || (frontNear ? c.skin : c.skinDark);
+    const frontShade = c.sleeve ? c.sleeveDark : frontNear ? c.skinDark : c.skinDarker;
     let frontArm = this.hasBall
       ? [
           [8, -50 + u, frontW, 10, frontSkin],          // upper arm
           [8, -48 + u, 1, 7, frontShade],
           [12, -42 + u, frontW, 10 + dip, frontSkin],   // forearm and hand, stretching with the dribble push
           [12, -41 + u, 1, 8 + dip, frontShade],
-          [12, -38 + u, frontW, 2, c.trim],             // wristband
+          [12, -38 + u, frontW, 2, c.wrist],            // wristband
           [12, -35 + u + dip, frontW, 1, frontShade],   // knuckles
         ]
       : this.reachT > 0
@@ -446,23 +541,23 @@ class Player {
     if (this.airborne()) {
       backArm = [
         [-10, -64, 6, 14, c.skinDark],
-        [-10, -56, 6, 2, c.trim],
+        [-10, -56, 6, 2, c.wrist],
       ];
       frontArm = [
-        [6, -66, 6, 16, c.skin],
-        [6, -64, 1, 12, c.skinDark],
-        [6, -60, 6, 2, c.trim],
+        [6, -66, 6, 16, c.sleeve || c.skin],
+        [6, -64, 1, 12, c.sleeveDark || c.skinDark],
+        [6, -60, 6, 2, c.wrist],
         ...(this.hasBall ? [] : [[10, -70, 4, 4, c.skin], [10, -70, 4, 1, c.skinLight]]),
       ];
     }
 
     // Leg from the knee down: skin with a shaded calf, sock with a team stripe, shoe with criss-cross laces,
     // heel tab and sole.
+    const t = this.thigh();
     const leg = (x, skin, calf) => [
-      [x, -22 + u, 6, 10 - u, skin],
-      [x, -21 + u, 1, 8 - u, calf],
-      [x, -12, 6, 4, COLORS.sock],
-      [x, -11, 6, 1, c.jersey],
+      [x, -22 + u - t, 6, 10 - u + t, skin],
+      [x, -21 + u - t, 1, 8 - u + t, calf],
+      ...this.sockParts(x),
       [x, -8, 8, 6, c.shoe],
       [x, -8, 1, 4, c.sole],
       [x + 3, -8, 1, 1, c.laces],
@@ -470,6 +565,7 @@ class Player {
       [x + 4, -7, 1, 1, c.laces],
       [x + 6, -7, 1, 1, c.laces],
       [x, -2, 8, 2, c.sole],
+      ...this.shoeDetail(x),
     ];
 
     // Faces kept simple: ear, eye(s), nose. Side-on shows one eye; three-quarter front shows both with the ear
@@ -520,11 +616,12 @@ class Player {
       ...(legsKicked
         ? this.kickedShorts()
         : [
-            [-10, -32 + u, 20, 12, c.shorts],
-            [-10, -32 + u, 4, 12, c.shortsDark],
+            [-10, -32 + u, 20, 12 - t, c.shorts],
+            [-10, -32 + u, 4, 12 - t, c.shortsDark],
             [-10, -32 + u, 20, 2, c.shortsDark],
-            [3, -30 + u, 1, 8, c.shortsTrim],
-            [-10, -22 + u, 20, 2, c.shortsTrim],
+            [3, -30 + u, 1, 8 - t, c.shortsTrim],
+            ...(this.hemStripes(u).length ? [[4, -30 + u, 1, 8 - t, this.gear.kit.stripe]] : []),
+            [-10, -22 + u - t, 20, 2, c.shortsTrim],
           ]),
 
       ...this.sideJerseyParts(u, turn < 0, numberLeft),
@@ -563,6 +660,7 @@ class Player {
       [-10, -52 + u, 4, 20, c.jerseyDark],
       [5, -48 + u, 2, 14, c.jerseyLight],
       [-10, -34 + u, 20, 1, c.jerseyDark],
+      ...this.hemStripes(u),
       ...this.collarParts(u, fromBehind),
       ...this.numberParts(numberLeft, -47 + u, c.trim),
     ];
@@ -614,7 +712,7 @@ class Player {
       [-14, -32, 6, 8, c.skinDark],
       [-17, -25, 6, 8, c.skinDark],
       [-20, -18, 6, 10, c.skinDark],
-      [-20, -14, 6, 2, c.trim],
+      [-20, -14, 6, 2, c.wrist],
       [-22, -8, 8, 4, c.skinDark],
 
       ...leg(0, -2, c.skinDark),
@@ -630,7 +728,7 @@ class Player {
       // Front arm resting forward on the knee.
       [8, -32, 6, 8, c.skin],
       [12, -26, 6, 12, c.skin],
-      [12, -20, 6, 2, c.trim],
+      [12, -20, 6, 2, c.wrist],
       [14, -14, 6, 4, c.skin],
 
       ...this.strapParts(d),
@@ -649,22 +747,23 @@ class Player {
     const liftR = frame === 2 ? 3 : 0;
     const swing = Math.round(this.armSwingPhase() * 3 * clamp(this.speed / ARM_FULL_SPEED, 0, 1.25));
 
+    const t = this.thigh();
     const leg = (x, lift) => [
-      [x, -22 + u, 6, 10 - u - lift, c.skin],
-      [x, -12 - lift, 6, 4, COLORS.sock],
-      [x, -11 - lift, 6, 1, c.jersey],
+      [x, -22 + u - t, 6, 10 - u - lift + t, c.skin],
+      ...this.sockParts(x, lift),
       [x - 1, -8 - lift, 8, 6, c.shoe],
       ...(fromFront
         ? [[x + 1, -8 - lift, 1, 1, c.laces], [x + 3, -8 - lift, 1, 1, c.laces], [x + 2, -7 - lift, 1, 1, c.laces], [x + 4, -7 - lift, 1, 1, c.laces]]
         : [[x + 1, -8 - lift, 4, 2, c.sole]]),
       [x - 1, -2 - lift, 8, 2, c.sole],
+      ...this.shoeDetail(x, lift, false),
     ];
 
     // Arms hang at both sides; the dribbling (right, in facing terms) forearm stretches with the push.
-    const arm = (x, dy, push) => [
-      [x, -50 + u + dy, 6, 18 + push, c.skin],
-      [x, -48 + u + dy, 1, 14 + push, c.skinDark],
-      [x, -38 + u + dy, 6, 2, c.trim],
+    const arm = (x, dy, push, skin = c.skin, dark = c.skinDark) => [
+      [x, -50 + u + dy, 6, 18 + push, skin],
+      [x, -48 + u + dy, 1, 14 + push, dark],
+      [x, -38 + u + dy, 6, 2, c.wrist],
       [x, -35 + u + dy + push, 6, 1, c.skinDark],
     ];
 
@@ -686,25 +785,26 @@ class Player {
       ...leg(2, liftR),
 
       // Shorts: waistband, stripes down both sides, hem, and a shadow between the legs.
-      [-10, -32 + u, 20, 12, c.shorts],
+      [-10, -32 + u, 20, 12 - t, c.shorts],
       [-10, -32 + u, 20, 2, c.shortsDark],
-      [-1, -25 + u, 2, 3, c.shortsDark],
-      [-10, -30 + u, 1, 8, c.shortsTrim],
-      [9, -30 + u, 1, 8, c.shortsTrim],
-      [-10, -22 + u, 20, 2, c.shortsTrim],
+      [-1, -25 + u - t, 2, 3, c.shortsDark],
+      [-10, -30 + u, 1, 8 - t, c.shortsTrim],
+      [9, -30 + u, 1, 8 - t, c.shortsTrim],
+      [-10, -22 + u - t, 20, 2, c.shortsTrim],
 
       // Jersey: shaded edges, collar (V-neck in front), hem, centered number.
       [-10, -52 + u, 20, 20, c.jersey],
       [-10, -52 + u, 2, 20, c.jerseyDark],
       [8, -52 + u, 2, 20, c.jerseyDark],
       [-10, -34 + u, 20, 1, c.jerseyDark],
+      ...this.hemStripes(u),
       ...this.collarParts(u, !fromFront),
       ...this.numberParts(-7, -47 + u, c.trim),
 
       ...this.headParts(u, fromFront ? 'front' : 'back', face),
 
       ...arm(-16, swing, 0),
-      ...arm(10, -swing, dip),
+      ...arm(10, -swing, dip, c.sleeve, c.sleeveDark), // the sleeve, if any (undefined: bare arm)
 
       ...this.strapParts(u),
     ];

@@ -87,6 +87,13 @@ Bronze, Silver, Gold, then Platinum, and a few secret ones stay hidden as ??? un
 trophy flashes a banner and the crowd cheers; earned ones stand on a shelf on top of the scorer's table. The pause
 menu's UI tab lists them all with your counts, and turns the shelf off.
 
+**Gear** (pause menu, Gear tab) is cosmetics your trophies unlock, each metal unlocking the next style: a headband and
+wristbands (Pickpocket), a shooting sleeve (Shooter) and goggles (Rim Protector), worn per player; a shoe line with
+a matching dash puff (Burst) and the Showtime kit, tube socks to the full road kit (Dime Dropper), for the team; and
+for your games a ball (Long Range, plus the Brick ball from the Brick Mason secret), a dunk trail (Dunker), a banner
+in the rafters over your home basket (Iron Man) and the rim and net pack (the Demolition secret). The AI demo behind
+the main menu never wears any. A Showtime kit that clashes with the away team sends them out in its opposite color.
+
 The home crowd mostly sits on its hands, but jumps up for big plays: steals, blocks, baskets, threes and dunks, a
 rim-hanging or rim-shattering dunk loudest of all (the other team's plays get half the cheer). After a basket some
 fans may wave signs with the scorer's number.
@@ -151,6 +158,7 @@ give it keyboard focus.
 | `src/menu.js` | Pause menu tabs: customization, per-player upgrades and names, controls, UI, the Testing tab (tools, test sliders, tuning) |
 | `src/hud.js` | Score, meter, pop-up text, the final screen's box score |
 | `src/net.js` | Online play prototype: hosting, joining, the lobby finder, state snapshots |
+| `src/cosmetics.js` | Cosmetics: every item's styles, which trophy unlocks them, what you picked |
 | `src/quests.js` | Locker room quests: who gives which, progress from finished games, rewards |
 | `src/locker.js` | The locker room: walking around, the people and their talk panel, the trophy case |
 

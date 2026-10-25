@@ -150,5 +150,9 @@ const Trophies = (() => {
     toasts.push({ text, color, t: 0 });
   }
 
-  return { count, update, shelf, earned, onShelf, toggleShelf, list, notify, toast: () => toasts[0] || null };
+  // A family's metal (tier index, or -1 before Bronze), and whether a secret is earned (cosmetic unlocks).
+  const metalOf = (id) => metals[id] ?? -1;
+  const hasSecret = (id) => !!secrets[id];
+
+  return { count, update, shelf, earned, onShelf, toggleShelf, list, notify, metalOf, hasSecret, toast: () => toasts[0] || null };
 })();

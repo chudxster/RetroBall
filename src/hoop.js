@@ -97,6 +97,11 @@ function plotPixels(ctx, pixels, x, y, color, h = null) {
 
 const PAD_SHINE = mix(COLORS.padTop, COLORS.line, 0.25);
 
+// A hoop's rim and net colors: the standard ones, or a rim and net skin (h.skin, see Cosmetics; main.js puts your
+// pick on your home basket). net2 stripes the net by row; crack draws a crack across the board.
+const HOOP_STANDARD = { rim: COLORS.rim, rimBack: COLORS.rimBack, rimShine: COLORS.rimShine, net: COLORS.net, netBack: COLORS.netBack, net2: null, crack: null };
+const hoopColors = (h) => h.skin || HOOP_STANDARD;
+
 function drawHoopBack(ctx, h) {
   const d = h.dir;
 
@@ -154,6 +159,12 @@ function drawHoopBack(ctx, h) {
   ctx.fillRect(d > 0 ? x0 : x0 + 6, bt, 1, bb - bt);
   ctx.fillStyle = COLORS.board;
   ctx.fillRect(faceX, bt + 2, 4, bb - bt - 4);
+  // The Cracked skin: a crack zigzagging down the face, from the dunk that broke the last one.
+  const k = hoopColors(h);
+  if (k.crack) {
+    ctx.fillStyle = k.crack;
+    for (let y = bt + 4, i = 0; y < bb - 4; y++, i++) ctx.fillRect(faceX + [0, 1, 2, 3, 2, 1][i % 6], y, 1, 1);
+  }
 
   // Shooter's square on the face, around rim height.
   const { rx, ry } = rimScreen(h);
@@ -176,8 +187,8 @@ function drawHoopBack(ctx, h) {
   // Inside of the hoop, the far strands of the net (behind the ball), then the far half of the rim.
   if (h.broken) return;
   plotPixels(ctx, RIM_PX.backing, rx, ry, COLORS.outline, h);
-  drawNet(ctx, h, rx, ry, COLORS.netBack, 2, false);
-  plotPixels(ctx, RIM_PX.back, rx, ry, COLORS.rimBack, h);
+  drawNet(ctx, h, rx, ry, k.netBack, 2, false, k.net2 && shade(k.net2, 0.7));
+  plotPixels(ctx, RIM_PX.back, rx, ry, k.rimBack, h);
 }
 
 // Net half-widths from the rim down; it stretches longer for a moment after a make.
@@ -201,11 +212,11 @@ function netRows(h) {
 }
 
 // Criss-cross diamond mesh hanging from the rim. `phase` offsets the diamonds so the far strands sit between
-// the near ones; `edges` draws the solid outer cords.
-function drawNet(ctx, h, rx, ry, color, phase, edges) {
-  ctx.fillStyle = color;
+// the near ones; `edges` draws the solid outer cords; `color2` (a skin's) stripes it, every other row.
+function drawNet(ctx, h, rx, ry, color, phase, edges, color2 = null) {
   const top = ry + 3 + Math.round(h.bend * 0.5); // hangs from a bent rim's middle
   netRows(h).forEach(({ hw, shift }, k) => {
+    ctx.fillStyle = color2 && k % 4 >= 2 ? color2 : color;
     for (let x = -hw; x <= hw; x++) {
       const diag = (((x + k + phase) % 4) + 4) % 4 === 0 || (((x - k + phase) % 4) + 4) % 4 === 0;
       if (diag || (edges && Math.abs(x) === hw)) ctx.fillRect(rx + x + shift, top + k, 1, 1);
@@ -216,14 +227,16 @@ function drawNet(ctx, h, rx, ry, color, phase, edges) {
 function drawHoopFront(ctx, h) {
   if (h.broken) return;
   const { rx, ry } = rimScreen(h);
-  drawNet(ctx, h, rx, ry, COLORS.net, 0, true);
+  const k = hoopColors(h);
+  drawNet(ctx, h, rx, ry, k.net, 0, true, k.net2);
   drawRimFront(ctx, rx, ry, h);
 }
 
 function drawRimFront(ctx, rx, ry, h = null) {
+  const k = h ? hoopColors(h) : HOOP_STANDARD;
   plotPixels(ctx, RIM_PX.frontOutline, rx, ry, COLORS.outline, h);
-  plotPixels(ctx, RIM_PX.front, rx, ry, COLORS.rim, h);
-  plotPixels(ctx, RIM_PX.shine, rx, ry, COLORS.rimShine, h);
+  plotPixels(ctx, RIM_PX.front, rx, ry, k.rim, h);
+  plotPixels(ctx, RIM_PX.shine, rx, ry, k.rimShine, h);
 }
 
 // The hoop's shadow on the floor: every part is sampled in world space and dropped along the light direction.

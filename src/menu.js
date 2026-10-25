@@ -210,6 +210,7 @@ const Menu = (() => {
   let syncUpgradeView = () => {};
   let syncFoot = () => {};
   let syncTools = () => {};
+  let syncGearView = () => {};
   let showTab = () => {};
   let preview = null;
   let look = null;  // player 1's look, which also carries the team kit
@@ -276,6 +277,7 @@ const Menu = (() => {
     initFaces();
     initTabs();
     initUpgradeView();
+    initGearView();
     initControlsView();
     initToggle(document.getElementById('show-stats'), game.ui, 'stats', UI_STORAGE_KEY);
     initToggle(document.getElementById('show-trophies'), game.ui, 'trophies', UI_STORAGE_KEY);
@@ -332,6 +334,7 @@ const Menu = (() => {
     for (const btn of panel.querySelectorAll('.face')) {
       const i = Number(btn.dataset.face);
       const p = new Player({ x: 0, y: 0, look: lookOf(i) });
+      p.setGear(Cosmetics.gearFor(i));
       Object.assign(p, { hasBall: false, view: 'front', facing: 1, sx: FACE_W / 2, by: 76, scale: 1 });
       const fctx = btn.firstChild.getContext('2d');
       fctx.fillStyle = '#262b44';
@@ -348,7 +351,8 @@ const Menu = (() => {
     preview.setLook(lookOf(pick));
     syncControls();
     syncUpgradeView();
-    drawFaces();
+    syncGearView();
+    dressPreview();
   }
 
   // A random skin tone (one of the recommended), hair style, hair color and number; the team kit stays.
@@ -391,6 +395,50 @@ const Menu = (() => {
     for (const s of panel.querySelectorAll('span.ico[data-icon]')) s.replaceWith(pixelIcon(s.dataset.icon));
     show(tabs[0]);
     showTab = (id) => show(tabs.find((t) => t.dataset.panel === id));
+  }
+
+  // Gear: a row per cosmetic, stepping through none and the unlocked styles (worn items for the picked player), with
+  // what unlocks the next style. A change shows on the preview, the faces and in the game right away.
+  function initGearView() {
+    const lists = { player: 'gear-player', team: 'gear-team', game: 'gear-game' };
+    const rows = Cosmetics.items.map((item) => {
+      const row = el('div', 'row gear-row');
+      const step = (text, dir, label) => {
+        const b = el('button', 'step', text);
+        b.type = 'button';
+        b.setAttribute('aria-label', `${label} ${item.name.toLowerCase()}`);
+        b.addEventListener('click', () => {
+          Cosmetics.step(item.id, pick, dir);
+          game.gearChanged();
+          dressPreview();
+          syncGearView();
+        });
+        return b;
+      };
+      const prev = step('<', -1, 'Previous');
+      const next = step('>', 1, 'Next');
+      const value = el('span', 'value gear-value');
+      const hint = el('span', 'upgrade-effect gear-hint');
+      row.append(el('span', 'label', item.name), prev, value, next, hint);
+      document.getElementById(lists[item.per]).append(row);
+      return { item, value, hint, prev, next };
+    });
+    syncGearView = () => {
+      for (const r of rows) {
+        const s = Cosmetics.row(r.item.id, pick);
+        r.value.textContent = s.value;
+        r.hint.textContent = s.hint;
+        r.prev.disabled = !s.open;
+        r.next.disabled = !s.open;
+      }
+    };
+    syncGearView();
+  }
+
+  // The preview and the faces wear what's picked.
+  function dressPreview() {
+    preview.setGear(Cosmetics.gearFor(pick));
+    drawFaces();
   }
 
   // Upgrades: the picked player (faces at the top, name editable in place) with +/- per stat, shown as pips with
@@ -807,7 +855,7 @@ const Menu = (() => {
 
   // Testing tab tools: each button runs main.js's tool of the same name; the game ones close the menu so the result
   // plays out. Buttons that don't apply right now (no game clock, the main menu...) are disabled.
-  const STAYS_OPEN = ['tokens'];
+  const STAYS_OPEN = ['tokens', 'allGear'];
   function initTestingTools() {
     const buttons = [...document.querySelectorAll('#testing-tools [data-tool]')];
     syncTools = () => {
@@ -818,7 +866,11 @@ const Menu = (() => {
         const tool = b.dataset.tool;
         if (!game.testing.can(tool)) return;
         game.testing[tool]();
-        if (STAYS_OPEN.includes(tool)) syncTools();
+        if (STAYS_OPEN.includes(tool)) {
+          syncTools();
+          syncGearView();
+          dressPreview();
+        }
         else setOpen(false);
       });
     }
@@ -865,6 +917,8 @@ const Menu = (() => {
       syncTools();
       renderTrophies();
       syncUpgradeView(); // the mode (free or career levels) may have changed
+      syncGearView(); // new trophies may have unlocked more
+      dressPreview();
       requestAnimationFrame(drawPreview);
     } else {
       document.getElementById('game').focus();

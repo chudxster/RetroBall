@@ -35,6 +35,12 @@ on a split screen at the same time (up/down to pick, right to add, left to take 
 they upgrade their whole team, in co-op their own player. At halftime they get more. After the final buzzer player
 1's shoot key **runs it back** with the same pre-game upgrades, player 2's starts a new draft.
 
+**Online** (prototype) is 2 Player versus (1v1 or 3v3) across two browsers: one person hosts and gets a 4-letter
+code, the other types the code or picks the game from the list of open games. The host's game is the real one: the
+guest's keys play player 2 and the guest's screen shows the host's game. For now it only connects two tabs of the
+same browser on one computer (`src/net.js`, a BroadcastChannel); playing over the internet needs a small relay
+server, which slots into the same place. Leaving with Main menu ends the game for both.
+
 **Practice** has **Free shot** (just you, either hoop) and **Around the world**: 15 shots in order (three across
 under the hoop, two from each elbow, three free throws, five threes around the arc), make each to move on, timed,
 with your best time saved.

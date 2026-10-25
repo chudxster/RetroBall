@@ -57,7 +57,7 @@ function newGame(mode, runBack = false) {
   state.mode = mode;
   endsSwapped = false;
   const duo = mode === 'duo';
-  Input.setTwoPlayer(duo);
+  Input.setTwoPlayer(duo && !Net.online()); // online, the host plays on the solo keys
   Sfx.setQuiet(mode === 'demo' ? SOUND.demoVolume : 1);
   // A career game: the opponent's kit (unless it's too close to the home jersey), AI level and upgrades, and the
   // career team's own levels.
@@ -495,7 +495,15 @@ let acc = 0;
 function frame(now) {
   const elapsed = Math.min((now - last) / 1000, 0.25);
   last = now;
-  if (state.mode === 'demo' || (!Menu.isOpen() && document.hasFocus())) {
+  Net.tick(elapsed);
+  // An online guest doesn't run the game: it draws the host's latest snapshot (see Net).
+  if (Net.isGuest()) {
+    Net.applyLatest();
+    render(1);
+    requestAnimationFrame(frame);
+    return;
+  }
+  if (state.mode === 'demo' || Net.online() || (!Menu.isOpen() && document.hasFocus())) {
     acc += elapsed;
     while (acc >= STEP) {
       update(STEP);
@@ -535,6 +543,13 @@ function startMode(mode) {
   newGame(mode);
   canvas.focus();
 }
+
+// Online: a guest joined the hosted game, so a 2 Player game starts (player 2 plays from the other browser). The
+// host plays on the solo keys and keeps running the game even without focus, so the guest isn't left frozen.
+Net.startMatch = () => {
+  Title.hide();
+  startMode('duo');
+};
 
 // The pause menu's Testing tab (?dev=1): jump a game to the moment worth checking. can(name) says whether a tool
 // applies right now; the clock ones need a game in progress (Quick game, career, 2 Player), not the demo.
@@ -607,6 +622,7 @@ Menu.init({
   // Leaving a career game before the final buzzer forfeits it (Career.forfeit: a loss, no tokens).
   toTitle: () => {
     if (state.mode === 'career' && !state.clock.over) Career.forfeit();
+    if (Net.role()) Net.leave();
     toTitle();
   },
   // Opened from the main menu (Customize, Settings): closing it goes back there.

@@ -60,6 +60,7 @@ const Title = (() => {
       else stage.requestFullscreen();
     });
 
+    initOnline();
     window.addEventListener('keydown', onKey);
   }
 
@@ -116,6 +117,8 @@ const Title = (() => {
   }
 
   function show(next = 'home', { focus = true } = {}) {
+    // Leaving the Online screen before anyone joined closes the hosted game (or the pending join).
+    if (view === 'online' && next !== 'online' && Net.role() && !Net.joined()) Net.leave();
     view = next;
     open = true;
     box.hidden = false;
@@ -156,10 +159,65 @@ const Title = (() => {
       const keys = (set) => ['shoot', 'action', 'pass'].map((n) => Input.keyLabel(n, set)).join(' ');
       document.getElementById('duo-keys').textContent = `P1: ${Input.moveLabel('p1')} + ${keys('p1')}. `
         + `P2: ${Input.moveLabel('p2')} + ${keys('p2')} (shoot, dunk/steal, pass/switch; change them in Settings). Esc pauses.`;
+    } else if (view === 'online') {
+      renderOnline();
     } else if (view === 'practice') {
       const best = Practice.best();
       document.getElementById('world-best').textContent = best === null ? 'Best: none yet' : `Best: ${Practice.format(best)}`;
     }
+  }
+
+  // Online (see Net): pick the format, then host (your code shows, and the game is listed in other players' lobby
+  // finders until someone joins) or join by code or from the list. A guest's screen switches to the host's game
+  // as soon as the host lets them in.
+  function initOnline() {
+    for (const b of box.querySelectorAll('[data-online-format]')) {
+      b.addEventListener('click', () => {
+        Duo.setFormat(b.dataset.onlineFormat);
+        render();
+      });
+    }
+    const codeBox = document.getElementById('online-join-code');
+    document.getElementById('online-host').addEventListener('click', () => {
+      Net.host(Career.get().teamName);
+      render();
+    });
+    const join = (c) => {
+      if (c.length === 4) Net.join(c);
+      render();
+    };
+    document.getElementById('online-join').addEventListener('click', () => join(codeBox.value.trim().toUpperCase()));
+    codeBox.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') join(codeBox.value.trim().toUpperCase());
+    });
+    Net.onChange = () => {
+      if (Net.isGuest() && open) {
+        hide();
+        stage.querySelector('canvas').focus();
+      }
+      if (open && view === 'online') renderOnline();
+    };
+  }
+
+  function renderOnline() {
+    Net.listen();
+    const format = Duo.format() === 'vs1' ? 'vs1' : 'vs3';
+    if (Duo.format() !== format) Duo.setFormat(format);
+    for (const b of box.querySelectorAll('[data-online-format]')) b.setAttribute('aria-pressed', String(b.dataset.onlineFormat === format));
+    const role = Net.role();
+    document.getElementById('online-code').textContent = role === 'host' ? `Your code: ${Net.code()} (waiting for a player)` : '';
+    document.getElementById('online-status').textContent = role === 'guest' ? `Joining ${Net.code()}...` : '';
+    const list = document.getElementById('online-lobbies');
+    const games = Net.lobbyList().filter((l) => l.code !== Net.code());
+    list.replaceChildren(...(games.length ? games.map((l) => {
+      const b = el('button', 'key-btn lobby', `${l.code}  ${l.name}  ${l.format === 'vs1' ? '1v1' : '3v3'}`);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        Net.join(l.code);
+        render();
+      });
+      return b;
+    }) : [el('span', 'upgrade-effect', 'None open right now')]));
   }
 
   // A button that keeps the keyboard focus when the Career screen is rebuilt around it (by `id`).
@@ -317,6 +375,7 @@ const Title = (() => {
   return {
     init,
     show,
+    hide,
     isOpen: () => open,
   };
 })();

@@ -265,6 +265,10 @@
               <span class="mode-name">Practice</span>
               <span class="mode-desc">Free shot and Around the World</span>
             </button>
+            <button type="button" class="mode-option" data-go="online">
+              <span class="mode-name">Online</span>
+              <span class="mode-desc">Prototype: host or join with a code</span>
+            </button>
             <button type="button" class="mode-option" data-go="customize">
               <span class="mode-name">Customize</span>
               <span class="mode-desc">Your team's look and names</span>
@@ -273,9 +277,10 @@
               <span class="mode-name">Settings</span>
               <span class="mode-desc">Controls and display</span>
             </button>
-          </div>
-          <div class="title-foot">
-            <button type="button" class="btn btn-quiet" id="fullscreen">Fullscreen</button>
+            <button type="button" class="mode-option" id="fullscreen">
+              <span class="mode-name">Fullscreen</span>
+              <span class="mode-desc">Fill the screen (Esc leaves)</span>
+            </button>
           </div>
         </div>
 
@@ -333,6 +338,30 @@
           <p class="mode-desc" id="duo-keys"></p>
         </div>
 
+        <!-- Online (prototype, see net.js): host a 2 Player versus game with a code, join one by code or from the
+             lobby finder. For now it connects tabs of this browser; internet play needs a relay server. -->
+        <div class="title-view stack-view" id="title-online" hidden>
+          <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Online</span></div>
+          <p class="mode-desc">Prototype: connects two tabs of this browser for now (playing over the internet needs a server).</p>
+          <div class="row">
+            <span class="label">Format</span>
+            <button type="button" class="key-btn" data-online-format="vs1" aria-pressed="false">1v1</button>
+            <button type="button" class="key-btn" data-online-format="vs3" aria-pressed="false">3v3</button>
+          </div>
+          <div class="row">
+            <button type="button" class="btn" id="online-host">Host a game</button>
+            <span class="upgrade-effect" id="online-code"></span>
+          </div>
+          <div class="row">
+            <label for="online-join-code">Join code</label>
+            <input type="text" id="online-join-code" class="name" maxlength="4" spellcheck="false" autocomplete="off">
+            <button type="button" class="btn btn-quiet" id="online-join">Join</button>
+          </div>
+          <p class="test-note">Open games</p>
+          <div class="lobby-list" id="online-lobbies"></div>
+          <p class="mode-desc" id="online-status"></p>
+        </div>
+
         <!-- Practice: just the user's player. -->
         <div class="title-view stack-view" id="title-practice" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Practice</span></div>
@@ -376,6 +405,7 @@
   <script src="src/sfx.js"></script>
   <script src="src/career.js"></script>
   <script src="src/duo.js"></script>
+  <script src="src/net.js"></script>
   <script src="src/title.js"></script>
   <script src="src/main.js"></script>
 </body>

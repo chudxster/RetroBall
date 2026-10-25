@@ -119,6 +119,8 @@ const Input = (() => {
 
   load();
 
+  let remote = null; // an online guest's pad (see Net), or null
+
   // One player's controls: what their keys in `set` say right now.
   function pad(set) {
     return {
@@ -156,7 +158,12 @@ const Input = (() => {
     setTwoPlayer(on) {
       twoPlayer = on;
     },
-    pad: (set) => pads[set],
+    // Online play (see Net): player 2's pad is the guest's keys over the network, and the host plays player 1 on the
+    // solo keys.
+    pad: (set) => (remote && set === 'p2' ? remote : remote && set === 'p1' ? pads.solo : pads[set]),
+    setRemote(pad) {
+      remote = pad;
+    },
     // The solo keys, as `Input.move()` etc.
     ...pads.solo,
   };

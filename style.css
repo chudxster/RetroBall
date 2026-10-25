@@ -721,11 +721,6 @@ input[type="color"]::-moz-color-swatch {
   padding: calc(var(--px) * 3) calc(var(--px) * 4);
 }
 
-.title-foot {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: calc(var(--px) * 3);
-}
 
 /* A mode's screen: Back and its name across the top */
 .title-bar {
@@ -748,6 +743,13 @@ input[type="color"]::-moz-color-swatch {
 #title .row .label {
   width: calc(var(--px) * 62);
   white-space: nowrap;
+}
+
+/* Online: the lobby finder's open games, one button each */
+.lobby-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--px) * 2);
 }
 
 /* Quick game difficulty: three picks on the label's row */

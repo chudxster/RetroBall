@@ -23,8 +23,9 @@ upgrades. After a career game, shoot takes you back to the Career screen for the
 automatically in the browser after every game and upgrade (the Career screen warns if the browser can't save, as in
 some private windows).
 
-**Quick game** is 3v3 Casual (full court, AI teammates and opponents, half-court defense), with the game options
-(free throws, half length, shot clock: Career and 2 Player games use them too) before you tip off.
+**Quick game** is 3v3 Casual (full court, AI teammates and opponents, half-court defense), with a difficulty
+(Rookie, Pro or All-Star: how good the AI opponents are; 2 Player co-op uses it too) and the game options (free
+throws, half length, shot clock: Career and 2 Player games use them too) before you tip off.
 
 **2 Player** is two people on one keyboard: **Versus 3v3** (each runs a team with two AI teammates), **Versus 1v1**,
 or **Co-op** (together, plus an AI teammate, against three AI players). Player 1 plays with WASD, R (shoot), E

@@ -129,13 +129,16 @@ function drawGameOver(ctx, game) {
   });
   const r = game.careerResult;
   if (r) drawCareerResult(ctx, r, mid, 254);
-  if (game.clock.overT > 1 && Math.floor(game.time * 2) % 2 === 0) {
+  if (game.clock.overT <= 1) return;
+  if (Math.floor(game.time * 2) % 2 === 0) {
     const next = r ? 'FOR THE NEXT GAME' : 'TO PLAY AGAIN';
     const prompt = game.mode === 'duo'
       ? `${Input.keyLabel('shoot', 'p1')}: RUN IT BACK (SAME UPGRADES)   ${Input.keyLabel('shoot', 'p2')}: NEW DRAFT`
       : `PRESS ${Input.keyLabel('shoot')} ${next}`;
-    drawText(ctx, prompt, mid, VIEW_H - 46, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
+    drawText(ctx, prompt, mid, VIEW_H - 50, COLORS.okay, { align: 'center', scale: TEXT_SCALE });
   }
+  // The way out (the pause menu's Main menu button), steady under the blinking prompt.
+  drawText(ctx, 'ESC: MENU', mid, VIEW_H - 34, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
 }
 
 // 2 Player upgrade draft: each player's half of the screen, with their points left, the five stats as pips (a

@@ -301,6 +301,12 @@
         <!-- Quick game: the game options (Career and 2 Player games use them too), then tip off. -->
         <div class="title-view stack-view" id="title-quick" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Quick game</span></div>
+          <!-- The daily game (daily.js): today's opponent and goal, your streak; title.js fills it in. -->
+          <div class="daily-card">
+            <span class="mode-name">Daily game</span>
+            <span class="mode-desc" id="daily-text"></span>
+            <button type="button" class="btn btn-quiet" id="daily-start">Play today's game</button>
+          </div>
           <!-- How good the AI opponents are (DIFFICULTY; title.js marks the picked one). -->
           <div class="row difficulty-row">
             <span class="label">Difficulty</span>
@@ -424,6 +430,7 @@
   <script src="src/sfx.js"></script>
   <script src="src/trophies.js"></script>
   <script src="src/career.js"></script>
+  <script src="src/daily.js"></script>
   <script src="src/duo.js"></script>
   <script src="src/net.js"></script>
   <script src="src/title.js"></script>

@@ -719,12 +719,12 @@ const Menu = (() => {
       if (fresh) confirming = false;
       const title = game.inTitle();
       toTitle.hidden = title;
-      restart.hidden = title || game.mode() === 'career';
+      restart.hidden = title || game.mode() === 'career' || game.mode() === 'daily';
       toTitle.textContent = confirming ? 'Sure? Forfeit (a loss)' : 'Main menu';
       resume.textContent = title ? 'Back' : 'Resume';
     };
     toTitle.addEventListener('click', () => {
-      if (game.mode() === 'career' && !game.over() && !confirming) {
+      if ((game.mode() === 'career' || game.mode() === 'daily') && !game.over() && !confirming) {
         confirming = true;
         syncFoot();
         return;

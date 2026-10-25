@@ -27,6 +27,12 @@ some private windows).
 (Rookie, Pro or All-Star: how good the AI opponents are; 2 Player co-op uses it too) and the game options (free
 throws, half length, shot clock: Career and 2 Player games use them too) before you tip off.
 
+The **Daily game** (on the Quick game screen) is one short game a day, the same for everyone: today's date picks
+the opponent (a league team in its colors), how good they are, their upgrades and a goal, and seeds every random
+roll after tip-off. It always plays two 1.5-minute halves with no upgrades on your side. Your first game each day
+counts: meet the goal on consecutive days to build a streak. Replays are fine but don't change the day's result, and
+leaving a daily game early counts as a miss.
+
 **2 Player** is two people on one keyboard: **Versus 3v3** (each runs a team with two AI teammates), **Versus 1v1**,
 or **Co-op** (together, plus an AI teammate, against three AI players). Player 1 plays with WASD, R (shoot), E
 (dunk/steal) and Q (pass/switch); player 2 with IJKL, P, O and U; both sets can be changed in Settings (the Controls

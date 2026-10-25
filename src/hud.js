@@ -24,7 +24,8 @@ function drawHud(ctx, game) {
     const ch = game.challenge;
     const now = Career.challengeState(ch, game);
     const tier = CAREER.tiers[ch.tier];
-    const line = `${tier.name} X${tier.mult}  ${Career.challengeText(ch)}  ${now.text}`;
+    const head = game.mode === 'daily' ? 'DAILY GOAL' : `${tier.name} X${tier.mult}`;
+    const line = `${head}  ${Career.challengeText(ch)}  ${now.text}`;
     drawInfoBox(ctx, line, game.ui.stats ? 26 : 4, now.done ? COLORS.good : COLORS.okay);
   }
 
@@ -130,6 +131,7 @@ function drawGameOver(ctx, game) {
   drawBoxScore(ctx, game, 128);
   const r = game.careerResult;
   if (r) drawCareerResult(ctx, r, mid, 254);
+  if (game.dailyResult) drawDailyResult(ctx, game.dailyResult, mid, 254);
   if (game.clock.overT <= 1) return;
   if (Math.floor(game.time * 2) % 2 === 0) {
     const next = r ? 'FOR THE NEXT GAME' : 'TO PLAY AGAIN';
@@ -224,6 +226,13 @@ function drawDraft(ctx, game) {
   });
   const who = coop ? 'EACH UPGRADES THEIR OWN PLAYER' : 'UPGRADES GO TO YOUR WHOLE TEAM';
   drawText(ctx, who, VIEW_W / 2, 300, COLORS.hint, { align: 'center', scale: TEXT_SCALE });
+}
+
+// The daily game's result: the goal (made or missed), then the streak (or that a replay doesn't change today's).
+function drawDailyResult(ctx, r, mid, y) {
+  drawText(ctx, `DAILY GOAL: ${r.goal} - ${r.done ? 'DONE!' : 'MISSED'}`, mid, y, r.done ? COLORS.good : COLORS.bad, { align: 'center', scale: TEXT_SCALE });
+  const line = r.first ? `STREAK ${r.streak} DAY${r.streak === 1 ? '' : 'S'}   BEST ${r.best}` : 'REPLAY: YOUR FIRST GAME TODAY IS THE ONE THAT COUNTS';
+  drawText(ctx, line, mid, y + 18, COLORS.okay, { align: 'center', scale: TEXT_SCALE, shadow: COLORS.outline });
 }
 
 // A career game's payout: the challenge (made or missed), then points x the result's and the challenge's multipliers.

@@ -41,6 +41,7 @@ const Title = (() => {
       });
     }
 
+    document.getElementById('daily-start').addEventListener('click', () => start('daily'));
     for (const b of box.querySelectorAll('[data-difficulty]')) {
       b.addEventListener('click', () => {
         game.rules.difficulty = Number(b.dataset.difficulty);
@@ -150,6 +151,10 @@ const Title = (() => {
       const next = Career.next();
       document.getElementById('title-career-desc').textContent = `Season ${c.season} - ${next ? next.label : 'season over'} - ${c.tokens} tokens`;
     } else if (view === 'quick') {
+      const d = Daily.status();
+      const played = d.played ? (d.played.done ? 'Goal met today.' : 'Played today, goal missed.') : 'Not played yet today.';
+      document.getElementById('daily-text').textContent = `Today: vs ${d.opp.name}. Goal: ${d.goalText.toLowerCase()}. ${played} `
+        + `Streak ${d.streak} (best ${d.best}). Same game for everyone, 1.5-minute halves, no upgrades.`;
       const picked = difficultyOf(game.rules);
       for (const b of box.querySelectorAll('[data-difficulty]')) b.setAttribute('aria-pressed', String(Number(b.dataset.difficulty) === picked));
     } else if (view === 'career') {

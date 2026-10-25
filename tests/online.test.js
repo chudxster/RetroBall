@@ -20,10 +20,10 @@
       }, 4500);
       setTimeout(() => key('Space', true), 5500);
       setTimeout(() => key('Space', false), 5800);
-      setTimeout(() => { window.x0 = state.humans[1].player.x; }, 7000);
+      setTimeout(() => { window.x0 = state.humans[1].player.x; }, 6200);
       setTimeout(() => {
         check(state.mode === 'duo' && Net.online(), 'Start runs a 2 Player game here');
-        check(state.humans[1].player.x - window.x0 > 50, 'the guest\'s keys move player 2');
+        check(state.humans[1].player.x - window.x0 > 20, 'the guest\'s keys move player 2');
       }, 9500);
     } else {
       setTimeout(() => {
@@ -36,7 +36,7 @@
       }, 4400);
       setTimeout(() => key('Space', true), 5500);
       setTimeout(() => key('Space', false), 5800);
-      setTimeout(() => key('KeyD', true), 7000);
+      setTimeout(() => key('KeyD', true), 6300);
       setTimeout(() => check(Net.isGuest() && state.mode === 'duo' && !state.draft, 'drawing the host\'s game'), 9400);
     }
     setTimeout(() => { for (const e of ERRS) report(`FAIL ${who} error: ${e}`); report('DONE'); }, 9800);

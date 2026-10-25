@@ -49,7 +49,10 @@ const state = {
   abbrs: ['HOME', 'AWAY'], // the teams' names on the HUD
   challenge: null,    // a career game's picked challenge
   careerResult: null, // a finished career game's tokens and result (see Career.finish)
+  dailyResult: null,  // a finished daily game's goal and streak (see Daily.finish)
 };
+// The Quick game options (saved prefs); the daily game swaps in its own fixed rules while it's on (see newGame).
+const quickRules = state.rules;
 
 // A fresh game in `mode`: scores cleared, hoops fixed, everyone lined up, the user's player with the ball. In 2
 // Player mode `runBack` keeps the last game's pre-game upgrades instead of drafting again.
@@ -59,24 +62,31 @@ function newGame(mode, runBack = false) {
   const duo = mode === 'duo';
   Input.setTwoPlayer(duo && !Net.online()); // online, the host plays on the solo keys
   Sfx.setQuiet(mode === 'demo' ? SOUND.demoVolume : 1);
-  // A career game: the opponent's kit (unless it's too close to the home jersey), AI level and upgrades, and the
-  // career team's own levels.
-  const career = mode === 'career' ? Career.setup() : null;
-  awayKit = career && !colorsClash(career.kit.jersey, state.look.jersey) ? career.kit : null;
-  // Opponents: a career team's own level; in Quick game and 2 Player co-op, the picked difficulty; in the demo,
-  // AI.level. (In 2 Player versus every AI player plays at the teammate level: see evenTeams.)
+  // The daily game rolls every random number from the day's seed, and plays by its own fixed rules.
+  const daily = mode === 'daily';
+  if (daily) Daily.seed();
+  else Daily.restore();
+  state.rules = daily ? DAILY.rules : quickRules;
+  // A career or daily game: the opponent's kit (unless it's too close to the home jersey), AI level and upgrades,
+  // and the home team's levels (the career's own; none in the daily game).
+  const setup = mode === 'career' ? Career.setup() : daily ? Daily.setup() : null;
+  awayKit = setup && !colorsClash(setup.kit.jersey, state.look.jersey) ? setup.kit : null;
+  // Opponents: a career or daily team's own level; in Quick game and 2 Player co-op, the picked difficulty; in the
+  // demo, AI.level. (In 2 Player versus every AI player plays at the teammate level: see evenTeams.)
   const picked = mode === '3v3' || (duo && !Duo.versus()) ? DIFFICULTY[difficultyOf(state.rules)].ai : null;
-  opponentAILevel = career ? career.aiLevel : picked;
-  teammateAILevel = career ? career.teammateLevel : null;
+  opponentAILevel = setup ? setup.aiLevel : picked;
+  teammateAILevel = setup ? setup.teammateLevel : null;
   evenTeams = duo && Duo.versus();
-  state.abbrs = career ? career.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
-  state.challenge = career ? career.challenge : null;
+  state.abbrs = setup ? setup.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
+  state.challenge = setup ? setup.challenge : null;
   state.careerResult = null;
+  state.dailyResult = null;
   state.gameCounted = false;
   state.roster = makePlayers(state.look, state.team);
   for (const p of state.roster) p.stats = newStats(); // each player's own line on the final screen's box score
   const star = state.roster[0];
-  if (career) rollAIUpgrades(state.roster, Career.team(), career.upgrades);
+  if (mode === 'career') rollAIUpgrades(state.roster, Career.team(), setup.upgrades);
+  else if (daily) rollAIUpgrades(state.roster, Daily.team(state.team), setup.upgrades);
   else rollAIUpgrades(state.roster, state.team);
   const solo = !isFullGame(state); // free shot and the practice drills: just the user's player
   state.players = solo ? [star] : duo ? Duo.players(state.roster) : state.roster;
@@ -178,6 +188,7 @@ function update(dt) {
   Clock.update(dt, state, frozen);
   // A career game's final buzzer: tokens, standings and the next game are settled right away.
   if (state.mode === 'career' && state.clock.over && !state.careerResult) state.careerResult = Career.finish(state);
+  if (state.mode === 'daily' && state.clock.over && !state.dailyResult) state.dailyResult = Daily.finish(state);
   // A finished game (Quick, career, 2 Player) counts toward the Iron Man trophy once.
   if (state.clock && state.clock.over && !state.gameCounted) {
     state.gameCounted = true;
@@ -632,9 +643,11 @@ Menu.init({
   over: () => !!(state.clock && state.clock.over),
   inTitle: () => state.mode === 'demo',
   restart: () => startMode(state.mode),
-  // Leaving a career game before the final buzzer forfeits it (Career.forfeit: a loss, no tokens).
+  // Leaving a career game before the final buzzer forfeits it (Career.forfeit: a loss, no tokens); leaving the
+  // daily game early puts the day down as missed (Daily.forfeit).
   toTitle: () => {
     if (state.mode === 'career' && !state.clock.over) Career.forfeit();
+    if (state.mode === 'daily' && !state.clock.over) Daily.forfeit();
     if (Net.role()) Net.leave();
     toTitle();
   },

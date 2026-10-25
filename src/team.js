@@ -28,10 +28,10 @@ let evenTeams = false;
 // A career team's AI teammates, who improve season by season (see Career.setup); null elsewhere: AI.teammateLevel.
 let teammateAILevel = null;
 
-// A full game (3v3 Casual, a career game, 2 Player or the AI demo behind the main menu): both teams, the ref and
-// the clocks.
+// A full game (3v3 Casual, a career or daily game, 2 Player or the AI demo behind the main menu): both teams, the
+// ref and the clocks.
 function isFullGame(game) {
-  return game.mode === '3v3' || game.mode === 'career' || game.mode === 'duo' || game.mode === 'demo';
+  return ['3v3', 'career', 'daily', 'duo', 'demo'].includes(game.mode);
 }
 
 // Whether a person is playing `p` right now (the user, or either player in 2 Player mode).

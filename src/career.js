@@ -196,16 +196,17 @@ const Career = (() => {
     if (!c.offer && next()) {
       const k = lengthK(rules);
       const tiers = shuffle([0, 1, 2, 3]).slice(0, 3); // in a random order
-      c.offer = tiers.map((tier) => {
-        const list = CHALLENGES[tier];
-        const index = Math.floor(Math.random() * list.length);
-        const def = list[index];
-        const n = def.n === undefined ? 0 : Math.max(1, Math.round(def.n * k));
-        return { tier, index, n };
-      });
+      c.offer = tiers.map((tier) => challengeFor(tier, Math.floor(Math.random() * CHALLENGES[tier].length), k));
       save();
     }
     return c.offer || [];
+  }
+
+  // Challenge `index` of `tier`, its target scaled for a game `k` times the length of a 5-minute one (the daily game
+  // borrows these too).
+  function challengeFor(tier, index, k) {
+    const def = CHALLENGES[tier][index % CHALLENGES[tier].length];
+    return { tier, index: index % CHALLENGES[tier].length, n: def.n === undefined ? 0 : Math.max(1, Math.round(def.n * k)) };
   }
 
   function challengeText(ch) {
@@ -403,6 +404,8 @@ const Career = (() => {
     next,
     offer,
     challengeText,
+    challengeFor,
+    league: LEAGUE, // the AI teams (name, abbr, jersey, shorts)
     challengeState,
     begin,
     forfeit,

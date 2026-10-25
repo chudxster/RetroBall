@@ -773,6 +773,17 @@ input[type="color"]::-moz-color-swatch {
   white-space: nowrap;
 }
 
+/* Quick game: the daily game's card above the options */
+.daily-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--px) * 2);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  background: #262b44;
+  border: var(--px) solid #566c86;
+}
+
 /* Online: the lobby both players are in before the host starts */
 .online-lobby {
   display: flex;

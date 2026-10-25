@@ -1,0 +1,32 @@
+// The daily game: the same game for everyone today (seeded from the date), fixed rules, a streak.
+test(() => {
+  const a = Daily.status();
+  const b = Daily.status();
+  ok(a.opp.name === b.opp.name && a.goalText === b.goalText && a.aiLevel === b.aiLevel, `today's card is fixed: vs ${a.opp.name}, ${a.goalText}`);
+  Title.show('quick');
+  ok(document.getElementById('daily-text').textContent.includes(a.opp.name), 'the Quick game screen shows today\'s daily game');
+  document.getElementById('daily-start').click();
+  ok(state.mode === 'daily' && state.rules.halfMinutes === DAILY.rules.halfMinutes, 'daily game starts with its own rules');
+  ok(opponentAILevel === a.aiLevel && state.abbrs[1] === a.opp.abbr, 'today\'s opponent and level');
+  ok(state.roster.filter((p) => p.team === 0).every((p) => Object.values(p.upgrades).every((n) => n === 0)), 'home team plays without upgrades');
+  const awayLevels = JSON.stringify(state.roster.filter((p) => p.team === 1).map((p) => p.upgrades));
+  const roll = Math.random();
+  startMode('daily');
+  ok(JSON.stringify(state.roster.filter((p) => p.team === 1).map((p) => p.upgrades)) === awayLevels && Math.random() === roll, 'every start of today\'s game rolls the same');
+  ok(document.querySelector('#restart-game').hidden || (Menu.openTab('ui-view'), document.querySelector('#restart-game').hidden), 'no Restart in the daily game');
+  document.getElementById('resume').click();
+  sim(1);
+  Clock.finish(state);
+  sim(0.1);
+  ok(state.dailyResult && state.dailyResult.first, 'the first finish goes on the record');
+  const saved = loadStored(DAILY_STORAGE_KEY);
+  ok(saved && saved.days[Daily.today()], 'saved under today\'s date');
+  startMode('daily');
+  sim(1);
+  Clock.finish(state);
+  sim(0.1);
+  ok(state.dailyResult && !state.dailyResult.first, 'a replay doesn\'t change the record');
+  startMode('3v3');
+  ok(state.rules !== DAILY.rules && Math.random() !== roll, 'other modes get their own rules and real randomness back');
+  render(0);
+});

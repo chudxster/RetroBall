@@ -522,6 +522,34 @@ function saveStored(key, value) {
   }
 }
 
+// Saves carry a version ('retroball.version'). When a change reshapes saved data, bump SAVE_VERSION and add the
+// step that turns the old shape into the new one to SAVE_MIGRATIONS (step i takes version i to i + 1), so nobody's
+// career or settings get thrown away. Every step runs once, in order, before anything reads its saves (this file
+// loads first). Each loader still cleans what it reads, so a step only has to move or reshape data.
+const SAVE_VERSION_KEY = 'retroball.version';
+const SAVE_MIGRATIONS = [
+  // 0 -> 1: saves from before versioning already have today's shapes (loadTeam still folds the old single
+  // 'retroball.upgrades' into player 1).
+  () => {},
+];
+const SAVE_VERSION = SAVE_MIGRATIONS.length;
+
+function migrateSaves() {
+  if (!canStore()) return;
+  let version = loadStored(SAVE_VERSION_KEY);
+  if (!Number.isInteger(version) || version < 0) version = 0;
+  if (version > SAVE_VERSION) return; // saved by a newer build: leave it alone
+  for (; version < SAVE_VERSION; version++) {
+    try {
+      SAVE_MIGRATIONS[version]();
+    } catch (e) {
+      // A step that can't run leaves that data as it was; the loaders clean whatever they find.
+    }
+  }
+  saveStored(SAVE_VERSION_KEY, SAVE_VERSION);
+}
+migrateSaves();
+
 function clamp(v, lo, hi) {
   return v < lo ? lo : v > hi ? hi : v;
 }

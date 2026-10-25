@@ -63,7 +63,10 @@ function newGame(mode, runBack = false) {
   // career team's own levels.
   const career = mode === 'career' ? Career.setup() : null;
   awayKit = career && !colorsClash(career.kit.jersey, state.look.jersey) ? career.kit : null;
-  opponentAILevel = career ? career.aiLevel : null;
+  // Opponents: a career team's own level; in Quick game and 2 Player co-op, the picked difficulty; in the demo,
+  // AI.level. (In 2 Player versus every AI player plays at the teammate level: see evenTeams.)
+  const picked = mode === '3v3' || (duo && !Duo.versus()) ? DIFFICULTY[difficultyOf(state.rules)].ai : null;
+  opponentAILevel = career ? career.aiLevel : picked;
   evenTeams = duo && Duo.versus();
   state.abbrs = career ? career.abbrs : duo && Duo.versus() ? ['P1', 'P2'] : ['HOME', 'AWAY'];
   state.challenge = career ? career.challenge : null;

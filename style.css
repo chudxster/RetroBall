@@ -750,6 +750,14 @@ input[type="color"]::-moz-color-swatch {
   white-space: nowrap;
 }
 
+/* Quick game difficulty: three picks on the label's row */
+.difficulty-row .key-btn {
+  min-width: 0;
+  padding: 0 calc(var(--px) * 3);
+  white-space: nowrap;
+  font-size: 0.85em;
+}
+
 /* 2 Player: the stack's gap already spaces the formats, so all three and the keys fit without scrolling */
 #title .duo-format {
   margin-bottom: 0;

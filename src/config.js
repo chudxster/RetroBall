@@ -303,8 +303,22 @@ const UPGRADES = {
   dashDistance: 0.15,  // +15% dash distance (+75% at max)
 };
 
-// Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1), set with the
-// Dev tab's testing sliders.
+// Quick game difficulty (picked on its screen, saved in the rules): the AI opponents' level. 2 Player co-op's
+// opponents use it too; career has its own curve (CAREER) and the demo plays at AI.level.
+const DIFFICULTY = [
+  { name: 'Rookie', ai: 0.2 },
+  { name: 'Pro', ai: 0.5 },
+  { name: 'All-Star', ai: 0.85 },
+];
+
+// The rules' difficulty as an index into DIFFICULTY (a bad saved value counts as Pro).
+function difficultyOf(rules) {
+  const i = rules.difficulty;
+  return Number.isInteger(i) && i >= 0 && i < DIFFICULTY.length ? i : 1;
+}
+
+// Computer players. Values in [easy, hard] pairs are blended by the AI level (0..1): the opponents' comes from the
+// difficulty (or career), else AI.level (the demo; set with the Testing tab's slider).
 // The user's teammates play at a fixed level.
 const AI = {
   level: 0.5,

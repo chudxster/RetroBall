@@ -22,7 +22,7 @@ const OLD_UPGRADE_STORAGE_KEY = 'retroball.upgrades'; // the user's player's lev
 const UPGRADE_KEYS = ['speed', 'shooting', 'dunking', 'defense', 'dash'];
 const NAME_MAX = 12;
 const RULES_STORAGE_KEY = 'retroball.rules';
-const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock };
+const DEFAULT_RULES = { freeThrows: true, halfMinutes: GAME.halfMinutes, shotClock: true, shotSeconds: GAME.shotClock, difficulty: 1 };
 const UI_STORAGE_KEY = 'retroball.ui';
 const DEFAULT_UI = { stats: true };
 

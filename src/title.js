@@ -41,6 +41,13 @@ const Title = (() => {
       });
     }
 
+    for (const b of box.querySelectorAll('[data-difficulty]')) {
+      b.addEventListener('click', () => {
+        game.rules.difficulty = Number(b.dataset.difficulty);
+        saveStored(RULES_STORAGE_KEY, game.rules);
+        render();
+      });
+    }
     initToggle(document.getElementById('free-throws'), game.rules, 'freeThrows', RULES_STORAGE_KEY);
     initToggle(document.getElementById('shot-clock'), game.rules, 'shotClock', RULES_STORAGE_KEY);
     initNumber(document.getElementById('half-minutes'), game.rules, 'halfMinutes', RULES_STORAGE_KEY);
@@ -139,6 +146,9 @@ const Title = (() => {
       const c = Career.get();
       const next = Career.next();
       document.getElementById('title-career-desc').textContent = `Season ${c.season} - ${next ? next.label : 'season over'} - ${c.tokens} tokens`;
+    } else if (view === 'quick') {
+      const picked = difficultyOf(game.rules);
+      for (const b of box.querySelectorAll('[data-difficulty]')) b.setAttribute('aria-pressed', String(Number(b.dataset.difficulty) === picked));
     } else if (view === 'career') {
       renderCareer();
     } else if (view === 'duo') {

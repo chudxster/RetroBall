@@ -169,7 +169,7 @@
           </div>
           <p class="test-note">AI</p>
           <div class="row">
-            <label for="ai-level">AI level</label>
+            <label for="ai-level">Demo AI</label>
             <input type="range" id="ai-level" min="0" max="100" step="1">
             <span class="value pct" id="ai-level-value"></span>
           </div>
@@ -288,6 +288,13 @@
         <!-- Quick game: the game options (Career and 2 Player games use them too), then tip off. -->
         <div class="title-view stack-view" id="title-quick" hidden>
           <div class="title-bar"><button type="button" class="btn btn-quiet title-back">Back</button><span class="title-heading">Quick game</span></div>
+          <!-- How good the AI opponents are (DIFFICULTY; title.js marks the picked one). -->
+          <div class="row difficulty-row">
+            <span class="label">Difficulty</span>
+            <button type="button" class="key-btn" data-difficulty="0" aria-pressed="false">Rookie</button>
+            <button type="button" class="key-btn" data-difficulty="1" aria-pressed="false">Pro</button>
+            <button type="button" class="key-btn" data-difficulty="2" aria-pressed="false">All-Star</button>
+          </div>
           <div class="row">
             <span class="label">Free throws</span>
             <button type="button" class="key-btn" id="free-throws" aria-pressed="false" aria-label="Free throws"></button>
@@ -304,7 +311,7 @@
             <input type="number" id="shot-seconds" class="num" min="5" max="60" step="1" aria-label="Shot clock seconds">
             <span class="upgrade-effect">seconds</span>
           </div>
-          <p class="mode-desc">These options are used by Career and 2 Player games too.</p>
+          <p class="mode-desc">Free throws, half length and the shot clock apply to Career and 2 Player games too; difficulty to 2 Player co-op.</p>
           <button type="button" class="btn title-start" data-mode="3v3">Tip off</button>
         </div>
 

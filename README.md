@@ -122,5 +122,20 @@ give it keyboard focus.
 | `src/court.js` | Arena, crowd and court drawing |
 | `src/camera.js` | Projection, zoom, tilt, panning |
 | `src/tuning.js` | The player-tuning list (which config values the menu exposes, with tips and limits) |
-| `src/menu.js` | Pause menu tabs: customization, per-player upgrades and names, controls, UI, the dev tab (test sliders, tuning) |
-| `src/hud.js` | Score, meter, pop-up text |
+| `src/menu.js` | Pause menu tabs: customization, per-player upgrades and names, controls, UI, the Testing tab (tools, test sliders, tuning) |
+| `src/hud.js` | Score, meter, pop-up text, the final screen's box score |
+| `src/net.js` | Online play prototype: hosting, joining, the lobby finder, state snapshots |
+
+## Tests
+
+`tests/` holds headless tests that run the real game in Microsoft Edge, no installs needed:
+
+```
+powershell -ExecutionPolicy Bypass -File tests\run.ps1          # everything
+powershell -ExecutionPolicy Bypass -File tests\run.ps1 career   # just tests/career.test.js
+```
+
+Each `*.test.js` runs inside a page built from the current `index.html` (`tests/lib.js` loads first: it seeds
+`Math.random`, clears storage and stops the frame loop so tests drive `update()` themselves). Covered: every mode
+running with the AI playing everyone, the box score, popups, the Testing tab's tools, difficulty, 2 Player fairness,
+calling for the ball, save versions, the career forfeit across a reload and an online match between two tabs.

@@ -1,0 +1,35 @@
+// The Testing tab (?dev=1) and its tools.
+test(() => {
+  const click = (t) => document.querySelector(`[data-tool="${t}"]`).click();
+  const tab = document.querySelector('.tab[data-panel="dev-view"]');
+  ok(!tab.hidden && tab.textContent === 'Testing', 'Testing tab shows with ?dev=1');
+  toTitle();
+  Menu.openTab('dev-view');
+  ok(document.querySelector('[data-tool="endGame"]').disabled, 'game tools are off on the main menu');
+  const tokens = Career.get().tokens;
+  click('tokens');
+  ok(Career.get().tokens === tokens + 100 && Menu.isOpen(), '+100 tokens (menu stays open)');
+  document.getElementById('resume').click();
+  startMode('3v3');
+  sim(2);
+  Menu.openTab('dev-view');
+  click('tenSeconds');
+  ok(state.clock.t <= 10 && !Menu.isOpen(), '10 s left (menu closes)');
+  Menu.openTab('dev-view');
+  click('homePoints');
+  ok(state.score[0] === 3, 'Home +3');
+  Menu.openTab('dev-view');
+  click('endPeriod');
+  sim(0.1);
+  ok(state.clock.banner === 'HALFTIME', 'End period: halftime');
+  sim(4);
+  Menu.openTab('dev-view');
+  click('ballToMe');
+  ok(state.ball.holder === state.user, 'Ball to me');
+  Menu.openTab('dev-view');
+  click('freeThrow');
+  ok(state.freeThrow && state.freeThrow.shooter === state.user, 'Free throw');
+  Menu.openTab('dev-view');
+  click('endGame');
+  ok(state.clock.over, 'End game');
+});

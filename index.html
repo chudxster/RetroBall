@@ -8,8 +8,34 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap">
   <link rel="stylesheet" href="style.css">
+  <!-- Startup check, in old-style JavaScript so any browser runs it: if the game hasn't started a few seconds after
+       the page loads (a script file blocked, e.g. by a school filter, or a browser too old for the game's code), it
+       says so on the page with what went wrong, since a school Chromebook may have no console to look in. main.js
+       sets RB_STARTED once the game is running. -->
+  <script>
+    var RB_PROBLEMS = [];
+    window.addEventListener('error', function (e) {
+      var t = e.target;
+      if (t && t.tagName === 'SCRIPT') RB_PROBLEMS.push('Blocked or missing: ' + t.src);
+      else RB_PROBLEMS.push((e.message || 'Error') + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
+    }, true);
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (window.RB_STARTED) return;
+        var box = document.createElement('pre');
+        box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:100;margin:0;padding:8px;' +
+          'background:#b13e53;color:#f4f4f4;font:12px/1.4 monospace;white-space:pre-wrap;max-height:60vh;overflow:auto';
+        box.textContent = 'The game did not start.\n' +
+          (RB_PROBLEMS.length ? RB_PROBLEMS.slice(0, 6).join('\n') + (RB_PROBLEMS.length > 6 ? '\n...and ' + (RB_PROBLEMS.length - 6) + ' more' : '')
+            : 'No error was reported (the game\'s code may be blocked).') +
+          '\n' + navigator.userAgent;
+        document.body.appendChild(box);
+      }, 3000);
+    });
+  </script>
 </head>
 <body>
+  <noscript><p style="position:fixed;left:8px;right:8px;bottom:8px;margin:0;padding:8px;background:#b13e53;color:#f4f4f4;font:12px/1.4 monospace">JavaScript is turned off for this site, and the game needs it to run.</p></noscript>
   <div id="stage">
     <canvas id="game" width="640" height="360" tabindex="0"></canvas>
 

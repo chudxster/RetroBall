@@ -802,3 +802,4 @@ AfterGame.init({
 fitCanvas();
 requestAnimationFrame(frame);
 Title.show('home', { focus: false });
+window.RB_STARTED = true; // for the startup check in index.html

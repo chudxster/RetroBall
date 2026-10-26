@@ -85,7 +85,8 @@ still; in 2 Player it runs once both players are done with the upgrade draft.
 **Courts**: Quick game and Practice play on the court picked on their screens: Classic Hardwood, College
 Fieldhouse, Sunset Blacktop, Neon Night, Rooftop Cage, Arcade Floor, Old School Gym, Park Afternoon or Throwback 77.
 Career games are at home on Classic Hardwood, and the Final is on Finals Night: house lights down, the crowd's phones
-flashing, and a spotlight that follows whoever has the ball. 2 Player and the daily game use Classic Hardwood.
+flashing, and a spotlight that follows whoever has the ball. 2 Player plays on the court picked in its drawer
+(the same pick as Casual; online, the host's). The daily game uses Classic Hardwood.
 
 A 3v3 game is two 2.5-minute halves (teams switch ends at halftime), with 1-minute overtimes while tied and a
 14-second shot clock; the clock stops for dead balls (free throws, resets, halftime). At the final buzzer you get the

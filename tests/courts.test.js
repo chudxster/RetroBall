@@ -29,3 +29,11 @@ test(() => {
   }
   ok(true, 'every court renders');
 });
+// 2 Player: the court is picked in its drawer too (the same pick as Casual).
+test(() => {
+  Title.show('duo');
+  document.querySelector('#versus-local [data-court-step="1"]').click();
+  ok(document.querySelector('#versus-local .court-name').textContent === Courts.picked().name, 'the 2 Player drawer picks the court');
+  document.querySelector('#versus-local .duo-format').click();
+  ok(state.mode === 'duo' && court.id === Courts.picked().id, 'and the 2 Player game is played on it');
+});

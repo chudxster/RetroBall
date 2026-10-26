@@ -4,35 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <title>RetroBall</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap">
-  <link rel="stylesheet" href="style.css">
-  <!-- Startup check, in old-style JavaScript so any browser runs it: if the game hasn't started a few seconds after
-       the page loads (a script file blocked, e.g. by a school filter, or a browser too old for the game's code), it
-       says so on the page with what went wrong, since a school Chromebook may have no console to look in. main.js
-       sets RB_STARTED once the game is running. -->
+  <!-- Startup check, first in the page and in old-style JavaScript so any browser runs it before anything else can
+       hold it up: if the game hasn't started 5 seconds in (a script file blocked or stalled, e.g. by a school filter,
+       or a browser too old for the game's code), it says so on the page with what went wrong, since a school
+       Chromebook may have no console to look in. main.js sets RB_STARTED once the game is running and counts frames
+       in RB_FRAMES. With ?debug in the address a panel shows how the game is doing, live. -->
   <script>
     var RB_PROBLEMS = [];
+    var RB_T0 = Date.now();
     window.addEventListener('error', function (e) {
       var t = e.target;
-      if (t && t.tagName === 'SCRIPT') RB_PROBLEMS.push('Blocked or missing: ' + t.src);
+      if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) RB_PROBLEMS.push('Blocked or missing: ' + (t.src || t.href));
       else RB_PROBLEMS.push((e.message || 'Error') + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
     }, true);
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        if (window.RB_STARTED) return;
-        var box = document.createElement('pre');
-        box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:100;margin:0;padding:8px;' +
-          'background:#b13e53;color:#f4f4f4;font:12px/1.4 monospace;white-space:pre-wrap;max-height:60vh;overflow:auto';
-        box.textContent = 'The game did not start.\n' +
-          (RB_PROBLEMS.length ? RB_PROBLEMS.slice(0, 6).join('\n') + (RB_PROBLEMS.length > 6 ? '\n...and ' + (RB_PROBLEMS.length - 6) + ' more' : '')
-            : 'No error was reported (the game\'s code may be blocked).') +
-          '\n' + navigator.userAgent;
-        document.body.appendChild(box);
-      }, 3000);
-    });
+    function rbBox(id, color) {
+      var box = document.getElementById(id);
+      if (box) return box;
+      box = document.createElement('pre');
+      box.id = id;
+      box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:100;margin:0;padding:8px;' +
+        'background:' + color + ';color:#f4f4f4;font:12px/1.4 monospace;white-space:pre-wrap;max-height:60vh;overflow:auto';
+      (document.body || document.documentElement).appendChild(box);
+      return box;
+    }
+    function rbProblems() {
+      return RB_PROBLEMS.length ? RB_PROBLEMS.slice(0, 6).join('\n') + (RB_PROBLEMS.length > 6 ? '\n...and ' + (RB_PROBLEMS.length - 6) + ' more' : '')
+        : 'No error was reported.';
+    }
+    setTimeout(function () {
+      if (window.RB_STARTED || /[?&]debug/.test(location.search)) return;
+      rbBox('rb-startup', '#b13e53').textContent = 'The game did not start (page: ' + document.readyState + ').\n' +
+        rbProblems() + '\n' + navigator.userAgent;
+    }, 5000);
+    if (/[?&]debug/.test(location.search)) {
+      setInterval(function () {
+        var c = document.getElementById('game');
+        var s = document.getElementById('stage');
+        var r = c && c.getBoundingClientRect();
+        rbBox('rb-debug', '#29366f').textContent = 'RetroBall debug, ' + Math.round((Date.now() - RB_T0) / 1000) + ' s\n' +
+          'page: ' + document.readyState + '   started: ' + !!window.RB_STARTED + '   frames: ' + (window.RB_FRAMES || 0) + '\n' +
+          'window: ' + innerWidth + 'x' + innerHeight + ' @' + (window.devicePixelRatio || 1) + 'x   in a frame: ' + (window.top !== window) + '\n' +
+          'canvas: ' + (c ? c.width + 'x' + c.height + ' shown ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' at ' + Math.round(r.left) + ',' + Math.round(r.top) : 'missing') +
+          '   stage: ' + (s ? s.style.width + ' x ' + s.style.height : 'missing') + '\n' +
+          rbProblems() + '\n' + navigator.userAgent;
+      }, 1000);
+    }
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- The menus' font, loaded without holding up the page (a stalled request can't keep the game from starting). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <noscript><p style="position:fixed;left:8px;right:8px;bottom:8px;margin:0;padding:8px;background:#b13e53;color:#f4f4f4;font:12px/1.4 monospace">JavaScript is turned off for this site, and the game needs it to run.</p></noscript>

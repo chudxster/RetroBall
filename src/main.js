@@ -597,6 +597,7 @@ let acc = 0;
 // stop the ones after it.
 function frame(now) {
   requestAnimationFrame(frame);
+  window.RB_FRAMES = (window.RB_FRAMES || 0) + 1; // for ?debug (see index.html)
   try {
     tick(now);
   } catch (e) {

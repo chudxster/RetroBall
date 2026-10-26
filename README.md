@@ -6,6 +6,15 @@ A Retro Bowl-style 2.5D pixel-art basketball game. Plain HTML5 canvas and JavaSc
 
 Open `index.html` in a browser (double-clicking works), or serve the folder from any static host.
 
+**One file:** `RetroBall.html` is the whole game in a single self-contained HTML5 file (the stylesheet, the menus'
+font and every script inside it), so it runs from that one file alone: from a download, a USB stick or Google Drive.
+Only Online play needs the internet. After changing the game, rebuild it with
+`powershell -ExecutionPolicy Bypass -File tools\build-single.ps1` (the tests check it's up to date).
+
+**If the game doesn't start:** after 5 seconds a red box on the page says why (a script file blocked or missing, an
+error, or JavaScript turned off), for computers with no console to look in. Add `?debug` to the address for a live
+panel: whether the game started, frames drawn, the window and canvas sizes, any errors and the browser version.
+
 The game opens on the **main menu**, with the computer playing a game against itself behind it. A dock on the left
 holds the modes: **Career**, **Locker room**, **Casual** and **2 Player** (each slides a drawer out beside the dock:
 Casual has a 3v3 game with its options under it, the daily game and the practice drills; 2 Player has Local and

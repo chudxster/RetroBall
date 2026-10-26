@@ -54,6 +54,13 @@ foreach ($t in $tests) {
   }
   foreach ($l in $lines) { $results += "$($t.BaseName -replace '\.test$', ''): $l" }
 }
+# The one-file build (RetroBall.html) has to match the game: rebuilt here and compared.
+if (-not $Only) {
+  $fresh = Join-Path $out 'RetroBall.html'
+  & (Join-Path $here '..\tools\build-single.ps1') -Out $fresh | Out-Null
+  $same = [IO.File]::ReadAllText($fresh) -eq [IO.File]::ReadAllText((Join-Path $here '..\RetroBall.html'))
+  $results += "single-file: $(if ($same) { 'PASS' } else { 'FAIL' }) RetroBall.html is up to date$(if (-not $same) { ' (run tools\build-single.ps1)' })"
+}
 $results | ForEach-Object { if ($_ -match ': FAIL') { Write-Host $_ -ForegroundColor Red } else { Write-Host $_ } }
 $failed = ($results | Where-Object { $_ -match ': FAIL' }).Count
 Write-Host ''

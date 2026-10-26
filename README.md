@@ -25,8 +25,9 @@ x1.5, Pro x2), shown top left during the game. Meet a
 stat challenge (threes, steals, dunks, blocks, points) and a little jingle plays as its box flashes and floats away; a
 win, win-by or hold-them goal can still slip until the buzzer, so its jingle plays then. A game pays a token per point your team scores, x1.25 for a win or
 x0.75 for a loss, times the challenge's multiplier if you completed it, rounded up. Spend tokens on the Career screen
-(a level costs 10 x its number); the career team has its own names and levels, separate from the free testing
-upgrades. After a career game, shoot takes you back to the Career screen for the next one. Career progress saves
+(Upgrades: pick a player to see their face and buy levels; a level costs 10 x its number); the career team has its own names and levels, separate from the free testing
+upgrades. After a career game, three buttons: **Main menu**, **Next game** (its three challenges; pick one to tip
+off) and **Upgrades**. Career progress saves
 automatically in the browser after every game and upgrade (the Career screen warns if the browser can't save, as in
 some private windows).
 
@@ -159,7 +160,7 @@ give it keyboard focus.
 
 | File | What it does |
 | --- | --- |
-| `src/config.js` | All tunable numbers: court size, speeds, shot timing, dunk odds, defense, AI, upgrades, camera, colors |
+| `src/config.js` | All tunable numbers: court size, speeds, shot timing, dunk odds, defense, AI, upgrades, camera, colors, and errors shown on the page |
 | `src/main.js` | Game loop, modes, keyboard controls, resets, rendering order |
 | `src/player.js` | Player movement and the pixel-art sprite |
 | `src/team.js` | Teams, rosters and team colors, which hoop each team attacks |
@@ -167,6 +168,7 @@ give it keyboard focus.
 | `src/clock.js` | 3v3 game clock: halves, overtime, shot clock, final buzzer |
 | `src/practice.js` | Practice drills: Around the World |
 | `src/title.js` | The main menu: the dock, the season road and its challenge popover, the Career screen, and the Casual and 2 Player drawers |
+| `src/aftergame.js` | After a career game: the Main menu, Next game (its challenges) and Upgrades buttons |
 | `src/sfx.js` | Sound effects, generated with Web Audio (no files) |
 | `src/career.js` | Career mode: league, schedule, standings, playoffs, challenges, tokens and bought upgrades |
 | `src/duo.js` | 2 Player mode: formats, the split-screen upgrade draft, run it back |

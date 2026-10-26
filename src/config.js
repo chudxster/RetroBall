@@ -1,3 +1,12 @@
+// Older browsers (e.g. school Chromebooks no longer updated, before Chrome 86) lack replaceChildren, which the
+// menus use: this fills it in.
+if (typeof Element !== 'undefined' && !Element.prototype.replaceChildren) {
+  Element.prototype.replaceChildren = function replaceChildren(...nodes) {
+    this.textContent = '';
+    this.append(...nodes);
+  };
+}
+
 // Internal resolution. Everything is drawn at this size, then scaled up in whole pixels.
 const VIEW_W = 640;
 const VIEW_H = 360;

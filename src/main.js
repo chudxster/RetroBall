@@ -770,7 +770,8 @@ Locker.init({
   },
   dynastyTest: () => DEV && state.ui.dynastyTest,
 });
-// (The page may not have the keyboard yet, e.g. in an iframe, so nothing takes focus until it's clicked.)
-Title.show('home', { focus: false });
+// The game first, so a problem drawing the menu can never leave the court blank. (The page may not have the
+// keyboard yet, e.g. in an iframe, so nothing takes focus until it's clicked.)
 fitCanvas();
 requestAnimationFrame(frame);
+Title.show('home', { focus: false });

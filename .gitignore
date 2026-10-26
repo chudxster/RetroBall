@@ -5,3 +5,7 @@ desktop.ini
 .vscode/
 .idea/
 *.log
+
+# Claude Code files (kept outside the repo, in Projects\Claude\RetroBall)
+.claude/
+CLAUDE.md

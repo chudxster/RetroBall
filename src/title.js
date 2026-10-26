@@ -1,7 +1,7 @@
 // Main menu: the game always opens here, with the AI playing itself behind it (main.js runs a 'demo' game while
 // it's up). One view shows at a time: home (the modes in a dock: Career, Locker room, Casual, 2 Player, plus Customize
 // and Settings, which open the pause menu's tabs; and the career season as a road with this week's challenges),
-// Career (the season, the next game's challenges, buying upgrades, the standings), and the drawers that slide out
+// Career (buying upgrades under each player's face, the season, the standings), and the drawers that slide out
 // beside the dock: Casual (a 3v3 game and its options, the daily game, practice) and 2 Player (Local: the formats;
 // Online). Esc goes back (closes a drawer); the arrow keys (or WASD) move between buttons, Enter or Space presses one.
 const Title = (() => {
@@ -11,7 +11,7 @@ const Title = (() => {
   const pauseButton = document.getElementById('pause-btn');
   const stage = document.getElementById('stage');
 
-  // Supplied by main.js: { rules, start(mode), startCareer(choice), openTab(panelId), openLocker() }.
+  // Supplied by main.js: { rules, start(mode), startCareer(choice), openTab(panelId), openLocker(), look(i) }.
   let game = null;
   let view = 'home';
   let open = false;
@@ -443,19 +443,11 @@ const Title = (() => {
     nameRow.append(nameLabel, nameInput, el('span', 'upgrade-effect', `Titles: ${c.titles}`));
     items.push(nameRow);
 
+    items.push(...upgradeSection(c));
+
     if (next) {
       const opp = Career.teamOf(next.opp);
       items.push(el('p', 'test-note', `Next: vs ${opp.name} (${Career.record(next.opp)})`));
-      items.push(el('p', 'mode-desc', 'Pick a challenge to tip off. Complete it to multiply that game\'s tokens:'));
-      Career.offer(game.rules).forEach((ch, i) => {
-        const tier = CAREER.tiers[ch.tier];
-        const b = button(`mode-option challenge tier-${ch.tier}`, '', `challenge-${i}`, () => {
-          hide();
-          game.startCareer(i);
-        });
-        b.append(el('span', 'mode-name', `${tier.name} x${tier.mult}`), el('span', 'mode-desc', Career.challengeText(ch)));
-        items.push(b);
-      });
     } else {
       const champ = c.playoff && c.playoff.champion !== null ? Career.teamOf(c.playoff.champion).name : '';
       items.push(el('p', 'test-note', `Season ${c.season}: ${SEASON_RESULTS[c.result]}${c.result !== 'champion' && champ ? ` (${champ} won it all)` : ''}`));
@@ -470,8 +462,6 @@ const Title = (() => {
       const vs = Career.teamOf(l.opp).abbr;
       items.push(el('p', 'mode-desc', `Last game: ${l.won ? 'W' : 'L'} ${l.us}-${l.them} vs ${vs}, +${l.tokens} tokens${l.forfeit ? ' (forfeit)' : l.challenge ? ` (challenge ${l.done ? 'done' : 'missed'})` : ''}`));
     }
-
-    items.push(...upgradeSection(c));
 
     // Standings: best record first; during the playoffs the seeds are marked.
     items.push(el('p', 'test-note', 'Standings'));
@@ -507,8 +497,24 @@ const Title = (() => {
     if (refocus) refocus.focus();
   }
 
-  // Career upgrades: pick a player (and rename them), then buy their next level of each stat with tokens. Bought
-  // levels stay for good.
+  // The picked player's face under the picker: their sprite from the front, framed on the head and shoulders (like
+  // the pause menu's faces).
+  function careerFace(i) {
+    const canvas = el('canvas', 'career-face');
+    canvas.width = 24;
+    canvas.height = 26;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#262b44';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const p = new Player({ x: 0, y: 0, look: game.look(i) });
+    p.setGear(Cosmetics.gearFor(i));
+    Object.assign(p, { hasBall: false, view: 'front', facing: 1, sx: canvas.width / 2, by: 76, scale: 1 });
+    p.draw(ctx);
+    return canvas;
+  }
+
+  // Career upgrades: pick a player (and rename them), see their face, then buy their next level of each stat with
+  // tokens. Bought levels stay for good.
   function upgradeSection(c) {
     const items = [el('p', 'test-note', `Upgrades (a level costs ${CAREER.levelCost} x its number)`)];
     const picks = el('div', 'row career-picks');
@@ -522,7 +528,9 @@ const Title = (() => {
     });
     items.push(picks);
 
+    // Under the picker: their face, with their name and upgrades beside it.
     const player = c.team[upgradePick];
+    const stats = el('div', 'career-stats');
     const nameRow = el('div', 'row');
     const nameLabel = el('label', '', 'Name');
     const nameInput = el('input', 'name');
@@ -535,7 +543,7 @@ const Title = (() => {
     });
     nameInput.addEventListener('change', () => renderCareer());
     nameRow.append(nameLabel, nameInput);
-    items.push(nameRow);
+    stats.append(nameRow);
 
     for (const key of UPGRADE_KEYS) {
       const n = player.upgrades[key];
@@ -550,8 +558,11 @@ const Title = (() => {
       const levels = el('span', 'pips');
       levels.append(...pips(n));
       row.append(el('span', 'label', key), levels, buy, el('span', 'upgrade-effect', n ? UPGRADE_EFFECTS[key](n) : ''));
-      items.push(row);
+      stats.append(row);
     }
+    const card = el('div', 'career-player');
+    card.append(careerFace(upgradePick), stats);
+    items.push(card);
     return items;
   }
 

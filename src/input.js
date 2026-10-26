@@ -95,8 +95,9 @@ const Input = (() => {
   const now = () => performance.now() / 1000;
 
   window.addEventListener('keydown', (e) => {
-    // Typing (and Space / Enter on buttons) in the pause menu or the main menu shouldn't move a player or be blocked.
-    if (e.target instanceof Element && e.target.closest('#menu, #title')) return;
+    // Typing (and Space / Enter on buttons) in the pause menu, the main menu or the after-game buttons shouldn't move
+    // a player or be blocked.
+    if (e.target instanceof Element && e.target.closest('#menu, #title, #after-game')) return;
     const sets = liveSets();
     const ours = sets.some((s) => Object.keys(binds[s]).some((n) => isBound(s, n, e.code)));
     if (ours) e.preventDefault();

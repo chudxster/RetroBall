@@ -28,5 +28,11 @@ function test(body) {
 }
 const sim = (seconds) => { for (let i = 0; i < seconds * 60; i++) update(STEP); };
 const key = (code, down) => window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code, bubbles: true }));
+// The next career game, started as a player does: this week's first challenge on the main menu's road, then Tip off.
+function tipOff() {
+  Title.show('home');
+  document.querySelector('#home-pop .challenge').click();
+  document.querySelector('[data-focus="home-tip-off"]').click();
+}
 // Tests start games and play them right away: no 3-2-1 (countdown.test.js turns it back on).
 window.addEventListener('load', () => { COUNTDOWN.seconds = 0; });

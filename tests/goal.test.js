@@ -1,8 +1,7 @@
 // A career challenge met mid-game: a jingle, and its box flashes and floats up out of the way (stat goals only; the
 // others can still come undone until the buzzer).
 test(() => {
-  Title.show('career');
-  document.querySelector('#career-panel .challenge').click();
+  tipOff();
   state.challenge = Career.challengeFor(0, 2, 1); // GET 2 STEALS
   sim(0.5);
   ok(state.mode === 'career' && !state.goalMet, 'nothing yet');

@@ -13,8 +13,7 @@ test(() => {
   Menu.openTab('ui-view');
   ok(showing() === 'player-view upgrade-view gear-view controls-view ui-view', 'paused in a Quick game: both');
   document.getElementById('resume').click();
-  Title.show('career');
-  document.querySelector('#career-panel .challenge').click();
+  tipOff();
   Menu.openTab('ui-view');
   ok(showing() === 'controls-view ui-view' && document.getElementById('rail-head').textContent === 'Paused', 'paused in a career game: Settings only');
 });
@@ -38,4 +37,13 @@ test(() => {
   ok(showing() === 'title-home title-versus' && !document.getElementById('versus-local').hidden, 'the old screens open the drawers');
   document.querySelector('#title-versus .title-back').click();
   ok(showing() === 'title-home', 'Close goes home');
+});
+// The Upgrades screen: no challenges (they're on the main menu's road), and the picked player's face under the picker.
+test(() => {
+  Title.show('career');
+  const panel = document.getElementById('career-panel');
+  ok(!panel.querySelector('.challenge'), 'no challenges');
+  ok(panel.querySelector('.career-picks + .career-player .career-face + .career-stats .upgrade'), 'the face and upgrades right under the player picker');
+  panel.querySelector('[data-focus="pick-1"]').click();
+  ok(panel.querySelector('[data-focus="pick-1"]').getAttribute('aria-pressed') === 'true' && panel.querySelector('.career-face'), 'picking another player redraws it');
 });

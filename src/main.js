@@ -58,6 +58,7 @@ const quickRules = state.rules;
 // Player mode `runBack` keeps the last game's pre-game upgrades instead of drafting again.
 function newGame(mode, runBack = false) {
   state.mode = mode;
+  AfterGame.hide();
   endsSwapped = false;
   const duo = mode === 'duo';
   Input.setTwoPlayer(duo && !Net.online()); // online, the host plays on the solo keys
@@ -181,9 +182,9 @@ function update(dt) {
   // foul's whistle until the free throw is set up.
   const whistle = !!(state.freeThrow && state.freeThrow.pending);
   const frozen = !!(camera.pan || state.fade) || Clock.stopped(state) || whistle;
-  // After the final buzzer, a fresh press of the shoot key starts a new game (in career, goes to the main menu's
-  // Career screen to pick the next one). In 2 Player, player 1's shoot key runs it back and player 2's starts a new
-  // draft (see Duo.updateAfter). The demo just starts another.
+  // After the final buzzer, a fresh press of the shoot key starts a new game (in career, the after-game buttons come
+  // up instead: Main menu, Next game, Upgrades; the shoot key presses the picked one). In 2 Player, player 1's shoot
+  // key runs it back and player 2's starts a new draft (see Duo.updateAfter). The demo just starts another.
   if (state.clock && state.clock.over && state.mode === 'demo') {
     if (state.clock.overT > TITLE.demoRestart) {
       newGame('demo');
@@ -194,12 +195,19 @@ function update(dt) {
       const before = state.clock;
       Duo.updateAfter(state, newGame);
       if (state.clock !== before) return;
+    } else if (state.mode === 'career' && !Menu.isOpen()) {
+      if (!AfterGame.isOpen()) AfterGame.show();
+      else if (!Input.shoot()) state.replayReady = true;
+      else if (state.replayReady) {
+        state.replayReady = false;
+        const picked = document.activeElement;
+        if (picked && picked.closest('#after-game')) picked.click();
+      }
     } else if (!Input.shoot()) {
       state.replayReady = true;
     } else if (state.replayReady) {
       state.replayReady = false;
-      if (state.mode === 'career') toTitle('career');
-      else newGame(state.mode);
+      newGame(state.mode);
       return;
     }
   }
@@ -756,6 +764,7 @@ Title.init({
   },
   openTab: Menu.openTab,
   openLocker: Locker.enter,
+  look: (i) => (i ? { ...state.look, ...state.team[i].look } : state.look),
 });
 // The locker room: your player and teammates as they look now; leaving goes back to the main menu.
 Locker.init({
@@ -769,6 +778,16 @@ Locker.init({
     startMode('career');
   },
   dynastyTest: () => DEV && state.ui.dynastyTest,
+});
+// After a career game: the main menu, the next game (its challenges), or the Upgrades screen.
+AfterGame.init({
+  rules: () => state.rules,
+  home: () => toTitle('home'),
+  upgrades: () => toTitle('career'),
+  startCareer(choice) {
+    Career.begin(choice, state.rules);
+    startMode('career');
+  },
 });
 // The game first, so a problem drawing the menu can never leave the court blank. (The page may not have the
 // keyboard yet, e.g. in an iframe, so nothing takes focus until it's clicked.)

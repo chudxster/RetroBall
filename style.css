@@ -836,8 +836,32 @@ input[type="color"]::-moz-color-swatch {
   align-self: flex-start;
 }
 
-/* Career upgrades: which player, then buy the next level of each stat */
+/* Career upgrades: which player, their face, then buy the next level of each stat */
 .career-picks {
+  gap: calc(var(--px) * 2);
+}
+
+/* The picked player: their face on the left, their name and upgrades beside it */
+.career-player {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--px) * 4);
+}
+
+.career-face {
+  flex: none;
+  display: block;
+  width: calc(var(--px) * 24);
+  height: calc(var(--px) * 26);
+  border: var(--px) solid #ffcd75;
+  image-rendering: pixelated;
+}
+
+.career-stats {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: calc(var(--px) * 2);
 }
 
@@ -1857,4 +1881,97 @@ input[type="color"]::-moz-color-swatch {
 
 .duo-keys-p2 .mode-name {
   color: #41a6f6;
+}
+
+/* After a career game (aftergame.js): Main menu, Next game and Upgrades in a row along the bottom of the final
+   screen; Next game swaps them for the next game's three challenges */
+#after-game {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--px) * 8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 3);
+  color: #f4f4f4;
+  font-family: 'Silkscreen', monospace;
+  font-size: calc(var(--px) * 8);
+  text-transform: uppercase;
+}
+
+/* Picking a challenge: a dark band behind the cards so the box score doesn't show through */
+#after-game.picking {
+  bottom: 0;
+  padding: calc(var(--px) * 6) 0 calc(var(--px) * 8);
+  background: #1a1c2c;
+  border-top: var(--px) solid #566c86;
+}
+
+#after-game[hidden] {
+  display: none;
+}
+
+#after-game .btn {
+  color: #f4f4f4;
+  font: inherit;
+  text-transform: inherit;
+}
+
+#after-game .btn:focus-visible {
+  border-color: #ffcd75;
+  outline: var(--px) solid #ffcd75;
+}
+
+.after-row {
+  display: flex;
+  gap: calc(var(--px) * 8);
+}
+
+.after-row .btn {
+  min-width: calc(var(--px) * 60);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+}
+
+/* Next game, the way on, stands out in the middle */
+.after-row [data-focus="after-next"] {
+  min-width: calc(var(--px) * 76);
+  background: #38b764;
+}
+
+.after-row [data-focus="after-next"]:hover {
+  background: #a7f070;
+  color: #1a1c2c;
+}
+
+.after-note {
+  margin: 0;
+  color: #ffcd75;
+}
+
+.after-challenges {
+  display: flex;
+  gap: calc(var(--px) * 3);
+}
+
+.after-challenges .challenge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--px);
+  width: calc(var(--px) * 96);
+  background: #262b44;
+  border: var(--px) solid #566c86;
+  color: #f4f4f4;
+  font: inherit;
+  font-size: 0.75em;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.after-challenges .challenge:hover,
+.after-challenges .challenge:focus-visible {
+  background: #29366f;
+  border-color: #ffcd75;
+  outline: none;
 }

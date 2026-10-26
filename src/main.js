@@ -593,7 +593,18 @@ function render(alpha) {
 // the demo behind the main menu always plays.
 let last = performance.now();
 let acc = 0;
+// The next frame is asked for first, so one that goes wrong (shown on screen, see showError in config.js) can't
+// stop the ones after it.
 function frame(now) {
+  requestAnimationFrame(frame);
+  try {
+    tick(now);
+  } catch (e) {
+    showError(e);
+  }
+}
+
+function tick(now) {
   const elapsed = Math.min((now - last) / 1000, 0.25);
   last = now;
   Net.tick(elapsed);
@@ -601,7 +612,6 @@ function frame(now) {
   if (Net.isGuest()) {
     Net.applyLatest();
     render(1);
-    requestAnimationFrame(frame);
     return;
   }
   // The locker room (main menu) is drawn instead of the demo game while it's open.
@@ -611,7 +621,6 @@ function frame(now) {
     Locker.draw(ctx);
     const toast = Trophies.toast();
     if (toast) drawTrophyToast(ctx, toast);
-    requestAnimationFrame(frame);
     return;
   }
   if (state.mode === 'demo' || Net.online() || (!Menu.isOpen() && document.hasFocus())) {
@@ -622,7 +631,6 @@ function frame(now) {
     }
   }
   render(acc / STEP);
-  requestAnimationFrame(frame);
 }
 
 // Scale to the largest whole multiple of device pixels that fits, so every game pixel is the same size.

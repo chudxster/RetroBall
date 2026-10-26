@@ -1975,3 +1975,20 @@ input[type="color"]::-moz-color-swatch {
   border-color: #ffcd75;
   outline: none;
 }
+
+/* An error shown on the page (showError in config.js), to read off a screen with no console */
+.error-box {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 100;
+  margin: 0;
+  padding: 8px;
+  max-height: 40vh;
+  overflow: auto;
+  background: #b13e53;
+  color: #f4f4f4;
+  font: 12px/1.4 monospace;
+  white-space: pre-wrap;
+}

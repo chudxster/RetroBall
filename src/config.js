@@ -7,6 +7,22 @@ if (typeof Element !== 'undefined' && !Element.prototype.replaceChildren) {
   };
 }
 
+// Something going wrong is shown on the page (a browser that can't run part of the game, e.g. a locked-down school
+// Chromebook with no console to look in), so it can be read off the screen and reported. Each different error once.
+const shownErrors = new Set();
+function showError(e, where) {
+  const text = `${(e && e.message) || e}${where ? ` (${where})` : ''}`;
+  const stack = e && e.stack ? String(e.stack).split('\n').slice(1, 3).join(' ').trim() : '';
+  if (shownErrors.has(text) || shownErrors.size >= 3 || !document.body) return;
+  shownErrors.add(text);
+  const box = document.createElement('pre');
+  box.className = 'error-box';
+  box.textContent = `Something went wrong: ${text}${stack ? `\n${stack}` : ''}\n${navigator.userAgent}`;
+  document.body.append(box);
+}
+window.addEventListener('error', (e) => showError(e.error || e.message, e.filename ? `${e.filename.split('/').pop()}:${e.lineno}` : ''));
+window.addEventListener('unhandledrejection', (e) => showError(e.reason));
+
 // Internal resolution. Everything is drawn at this size, then scaled up in whole pixels.
 const VIEW_W = 640;
 const VIEW_H = 360;

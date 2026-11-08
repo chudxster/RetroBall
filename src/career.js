@@ -17,8 +17,71 @@ const Career = (() => {
   ];
   const TEAM_NAME_MAX = 12;
 
+  const SCHOOL_CATALOG = [
+    { name: 'Northbrook Prep', level: 1, conference: 'State' },
+    { name: 'Metro City Academy', level: 2, conference: 'Metro' },
+    { name: 'Sunset Tech', level: 2, conference: 'West' },
+    { name: 'Riverside Prep', level: 3, conference: 'National' },
+    { name: 'Crescent Heights', level: 3, conference: 'South' },
+    { name: 'Blue Ridge Academy', level: 4, conference: 'Atlantic' },
+    { name: 'Harbor State', level: 5, conference: 'Big East' },
+    { name: 'Phoenix Elite', level: 5, conference: 'Pac 12' },
+    { name: 'Summit University', level: 6, conference: 'Big Ten' },
+    { name: 'Starlight U', level: 6, conference: 'SEC' },
+    { name: 'Diamond State', level: 7, conference: 'ACC' },
+    { name: 'Velocity College', level: 7, conference: 'Big 12' },
+  ];
+
+  const PLAYER_PATHS = {
+    highSchool: 'High school',
+    sophomore: 'Sophomore offers',
+    college: 'College',
+    nba: 'NBA',
+  };
+
   // "1 THREE", "2 THREES" (challenge targets shrink with shorter games, down to 1).
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 'S'}`;
+
+  function createPlayerCareerState() {
+    return {
+      active: false,
+      stage: 'high-school',
+      grade: 9,
+      rating: 68,
+      offers: [],
+      commitment: null,
+      school: null,
+      nbaTeam: null,
+      draftRound: null,
+      draftPick: null,
+      cut: false,
+      transferPortal: false,
+      story: 'The buzz is starting to build. You are still a local star with room to grow.',
+      stats: { points: 0, rebounds: 0, assists: 0, blocks: 0, steals: 0 },
+    };
+  }
+
+  function generateRecruitingOffers(rating, grade = 9) {
+    const count = 4 + (grade >= 10 ? 1 : 0) + (grade >= 11 ? 1 : 0);
+    return shuffle(SCHOOL_CATALOG)
+      .slice(0, Math.min(count, SCHOOL_CATALOG.length))
+      .map((school, index) => ({
+        name: school.name,
+        conference: school.conference,
+        level: school.level,
+        rating: clamp(Math.round(rating + school.level * 7 + (index % 2 === 0 ? 4 : -3) + rand(0, 12)), 52, 99),
+      }))
+      .sort((a, b) => b.rating - a.rating);
+  }
+
+  function playerStageLabel(p) {
+    if (!p) return 'No path';
+    if (p.stage === 'college') return 'College';
+    if (p.stage === 'nba') return 'NBA';
+    if (p.grade >= 10 && p.offers.length) return 'Recruiting';
+    if (p.grade >= 9) return 'High school';
+    return 'High school';
+  }
 
   // Challenges by tier (CAREER.tiers), for a 5-minute game; counts and margins scale with the game's length.
   // stat: the team's stat reaches n. win / margin: win (by n or more). hold: win and keep them to n points or fewer.
@@ -54,7 +117,6 @@ const Career = (() => {
     ],
   ];
 
-
   const shuffle = (list) => {
     for (let i = list.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -89,6 +151,7 @@ const Career = (() => {
       team: ROSTER[0].map((_, i) => ({ name: `Player ${i + 1}`, upgrades: cleanLevels(null) })),
       league: [{ strength: 0 }, ...LEAGUE.map((t, i) => ({ ...t, strength: strengths[i] }))],
       last: null,
+      playerCareer: createPlayerCareerState(),
     };
     startSeason(career);
     return career;
@@ -105,6 +168,7 @@ const Career = (() => {
       offer: null,     // the three challenges for the next game
       results: [],     // the user's games this season, in order: { opp, us, them, won, stage } (the main menu's road)
     });
+    if (!career.playerCareer) career.playerCareer = createPlayerCareerState();
   }
 
   // A career game still marked as in progress (the page was closed or reloaded mid-game) is lost by forfeit.
@@ -160,6 +224,14 @@ const Career = (() => {
     if (typeof saved.teamName !== 'string' || !saved.teamName.trim()) saved.teamName = 'Home';
     saved.teamName = saved.teamName.replace(/\s+/g, ' ').trim().slice(0, TEAM_NAME_MAX);
     saved.tokens = Number.isFinite(saved.tokens) ? Math.max(0, Math.floor(saved.tokens)) : 0;
+    saved.playerCareer = saved.playerCareer && typeof saved.playerCareer === 'object'
+      ? {
+          ...createPlayerCareerState(),
+          ...saved.playerCareer,
+          offers: Array.isArray(saved.playerCareer.offers) ? saved.playerCareer.offers.map((o) => ({ ...o })) : [],
+          stats: { ...createPlayerCareerState().stats, ...(saved.playerCareer.stats || {}) },
+        }
+      : createPlayerCareerState();
     return saved;
   }
 
@@ -178,6 +250,101 @@ const Career = (() => {
   function record(i) {
     const t = c.league[i];
     return `${t.w}-${t.l}`;
+  }
+
+  function beginPlayerCareer() {
+    const p = createPlayerCareerState();
+    p.active = true;
+    p.grade = 9;
+    p.rating = 72;
+    p.story = 'Freshman year: a bright local star with early buzz and growing offers.';
+    p.offers = generateRecruitingOffers(p.rating, p.grade);
+    c.playerCareer = p;
+    save();
+    return p;
+  }
+
+  function playerCareer() {
+    if (!c.playerCareer) c.playerCareer = createPlayerCareerState();
+    return c.playerCareer;
+  }
+
+  function resetPlayerCareer() {
+    c.playerCareer = createPlayerCareerState();
+    save();
+    return c.playerCareer;
+  }
+
+  function commitToSchool(offer) {
+    const p = playerCareer();
+    if (!p.active || !offer) return null;
+    p.commitment = { ...offer };
+    p.school = offer.name;
+    p.stage = 'college';
+    p.story = `Committed to ${offer.name}. The next chapter starts in ${offer.conference} play.`;
+    save();
+    return p;
+  }
+
+  function advancePlayerCareerYear() {
+    const p = playerCareer();
+    if (!p.active) return null;
+    if (p.stage === 'college') {
+      p.story = 'College production is building. NBA scouts are watching every game.';
+      p.stage = 'nba';
+      p.nbaTeam = 'Draft buzz';
+      save();
+      return p;
+    }
+    if (p.grade >= 12) {
+      p.stage = 'nba';
+      p.story = 'The draft is coming. This is the final stretch before pro basketball.';
+      save();
+      return p;
+    }
+    p.grade = Math.min(12, p.grade + 1);
+    if (p.grade >= 10 && !p.offers.length) {
+      p.offers = generateRecruitingOffers(p.rating, p.grade);
+      p.story = 'Sophomore year: college offers are rolling in and the best programs are now in play.';
+    } else if (p.grade >= 11 && !p.commitment) {
+      p.story = 'Junior year: the recruiting picture is getting sharper and the top offers rise in value.';
+      p.offers = generateRecruitingOffers(p.rating, p.grade);
+    } else if (p.grade >= 12 && !p.commitment) {
+      p.story = 'Senior year: all roads lead to a major decision, with bigger offers and more pressure.';
+      p.offers = generateRecruitingOffers(p.rating, p.grade);
+    }
+    if (p.grade >= 10 && !p.commitment && !p.offers.length) p.offers = generateRecruitingOffers(p.rating, p.grade);
+    if (p.commitment && p.grade >= 11) p.stage = 'college';
+    save();
+    return p;
+  }
+
+  function updatePlayerCareerFromGame(game) {
+    const p = playerCareer();
+    if (!p.active) return p;
+    const pts = Number(game?.stats?.[0]?.pts) || 0;
+    const threes = Number(game?.stats?.[0]?.tpm) || 0;
+    const assists = Number(game?.stats?.[0]?.ast) || 0;
+    const rebounds = Number(game?.stats?.[0]?.reb) || 0;
+    const steals = Number(game?.stats?.[0]?.stl) || 0;
+    p.stats.points += pts;
+    p.stats.assists += assists;
+    p.stats.rebounds += rebounds;
+    p.stats.blocks += Number(game?.stats?.[0]?.blk) || 0;
+    p.stats.steals += steals;
+    const growth = 1 + Math.round((pts + threes * 2 + assists + rebounds * 0.6 + steals * 1.2) / 10);
+    p.rating = clamp(p.rating + growth, 55, 99);
+    if (p.grade >= 10 && !p.offers.length) p.offers = generateRecruitingOffers(p.rating, p.grade);
+    if (p.grade >= 10 && p.offers.length && !p.commitment) {
+      p.offers = p.offers.map((offer) => ({
+        ...offer,
+        rating: clamp(Math.round(offer.rating + growth * 0.9), 52, 99),
+      })).sort((a, b) => b.rating - a.rating);
+      p.story = 'The offers keep getting stronger as your numbers rise and scouts get more interested.';
+    }
+    if (!p.commitment && p.grade >= 10) p.stage = 'recruiting';
+    save();
+    return p;
   }
 
   // The user's next game: { opp, label }, or null when the season is over.
@@ -336,6 +503,7 @@ const Career = (() => {
     const tokens = Math.ceil(us * resultMult * challengeMult - 1e-9);
     c.tokens += tokens;
     c.last = { opp, us, them, won, points: us, resultMult, challenge: ch && challengeText(ch), tier: ch && ch.tier, done, challengeMult, tokens };
+    updatePlayerCareerFromGame(game);
     settle(opp, us, them, k);
     return c.last;
   }
@@ -468,5 +636,13 @@ const Career = (() => {
     addTokens,
     setTeamName,
     TEAM_NAME_MAX,
+    beginPlayerCareer,
+    resetPlayerCareer,
+    playerCareer,
+    commitToSchool,
+    advancePlayerCareerYear,
+    updatePlayerCareerFromGame,
+    playerStageLabel,
+    generateRecruitingOffers,
   };
 })();
